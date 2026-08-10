@@ -39,6 +39,14 @@
     the pre-fix plugin (dead `tostring(nil) or msg_unknown` fallback) and
     PASS patched.
 
+    nick-rename section (below): a reg.nickchange onAudit event must
+    re-key a manual block to the new nick, else +nickchange silently
+    unblocks the user (reported by Sopor). The "onAudit listener
+    registered" check FAILS on the pre-fix plugin (no listener) and PASSES
+    patched; the guarded show-blocks assertions then confirm the key moved
+    (new nick blocked, old nick gone) and that an unrelated audit event is
+    ignored.
+
 ]]--
 
 local GiB = 1024 * 1024 * 1024
@@ -397,6 +405,39 @@ do
     eq( "nil-scriptname add: report User is not literal 'nil'", contains( r, "User:  nil" ), false )
     eq( "nil-scriptname add: no 'scriptname: nil' appended",    contains( r, "scriptname: nil" ), false )
     eq( "nil-scriptname add: degrades to msg_unknown",          contains( r, "User:  <UNKNOWN>" ), true )
+end
+
+----------------------------------------------------------------------
+-- nick rename: a reg.nickchange onAudit event re-keys a manual block to
+-- the new nick. Without the listener +nickchange (and the HTTP rename)
+-- renames the user in user.tbl but leaves the block under the old
+-- firstnick, silently unblocking them (reported by Sopor).
+-- RED pre-fix: onAudit is unregistered -> the "registered" check fails
+-- and the guarded move assertions are skipped.
+----------------------------------------------------------------------
+
+do
+    eq( "rename: onAudit listener registered", _registered.onAudit ~= nil, true )
+    if _registered.onAudit then
+        -- manual_guy is in block_tbl from the initial _block_seed.
+        _registered.onAudit( { action = "reg.nickchange",
+            target = { nick = "renamed_guy" },
+            meta   = { previous_nick = "manual_guy" } } )
+        local op, replied_of = op_user( )
+        _online = { }
+        onbmsg( op, "trafficmanager", "show blocks" )
+        local out = replied_of( )
+        eq( "rename: new nick now listed as blocked", contains( out, "renamed_guy" ), true )
+        eq( "rename: old nick no longer blocked",     contains( out, "manual_guy" ),  false )
+
+        -- an unrelated audit event must not disturb the block table
+        _registered.onAudit( { action = "ban.add", target = { nick = "x" }, meta = { } } )
+        local op2, replied_of2 = op_user( )
+        _online = { }
+        onbmsg( op2, "trafficmanager", "show blocks" )
+        eq( "rename: unrelated event ignored (renamed_guy still blocked)",
+            contains( replied_of2( ), "renamed_guy" ), true )
+    end
 end
 
 ----------------------------------------------------------------------

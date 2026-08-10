@@ -5,6 +5,15 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.14:
+                - carry a gag over to the new nick on +nickchange / HTTP
+                  rename. gag_tbl records key on .user_nick (= firstnick);
+                  a rename only updated user.tbl, so the mute was silently
+                  lifted - same class Sopor reported for etc_trafficmanager.
+                  An onAudit tap on reg.nickchange now re-keys the record
+                  (covers the ADC self / othernick / othernicku paths AND
+                  the HTTP API).
+
             v0.13:
                 - resolve an online target by firstnick when a nick-prefix
                   is active. usr_nick_prefix re-keys the hub's nick table
@@ -122,7 +131,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.13"
+local scriptversion = "0.14"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -486,6 +495,34 @@ hub.setlistener("onPrivateMessage", {},
 hub.setlistener("onTimer", {},
     function()
         cleanup_expired()
+        return nil
+    end
+)
+
+--// keep a chat gag attached to its user across a nick rename. gag_tbl
+-- records key on .user_nick (= firstnick); +nickchange (and the HTTP
+-- rename) renames the user in user.tbl but not here, so without this a
+-- rename silently lifted the mute (same class Sopor reported for
+-- etc_trafficmanager). audit.fire is unconditional (core/audit.lua), so
+-- one onAudit tap catches every reg.nickchange. Returns nil (never
+-- PROCESSED) so the etc_auditlog / http_events taps still receive it.
+hub.setlistener("onAudit", {},
+    function(event)
+        if type(event) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type(old_nick) ~= "string" or type(new_nick) ~= "string" or old_nick == new_nick then return nil end
+        local _, entry = find_entry(old_nick)
+        if not entry then return nil end
+        entry.user_nick = new_nick
+        -- drop any stale record already under the new nick so the list
+        -- keeps one entry - the renamed user's own gag wins.
+        for i = #gag_tbl, 1, -1 do
+            if gag_tbl[i] ~= entry and gag_tbl[i].user_nick == new_nick then
+                table.remove(gag_tbl, i)
+            end
+        end
+        util.savearray(gag_tbl, gag_path)
         return nil
     end
 )
