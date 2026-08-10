@@ -38,7 +38,12 @@ start_service() {
 	procd_open_instance
 	# luadch resolves core/, cfg/, scripts/, log/ relative to its working dir,
 	# so cd into the app tree first. exec so procd tracks the hub's own pid.
-	procd_set_param command /bin/sh -c "cd '$APPDIR' && exec ./luadch"
+	# umask 027 restores the hardening the daemon path applies via umask(027)
+	# in hub.c (skipped here because procd runs the hub in the foreground, not
+	# via -d): hub-written non-secret files (logs, cfg.tbl, plugin data) land
+	# 0640/0750, not world-readable. Secrets (master.key, user.tbl, serverkey)
+	# are chmod 0600 by their writers regardless.
+	procd_set_param command /bin/sh -c "umask 027; cd '$APPDIR' && exec ./luadch"
 	procd_set_param respawn
 	procd_set_param stdout 1
 	procd_set_param stderr 1

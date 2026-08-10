@@ -215,11 +215,12 @@ Pi 4 / Pi 5 / Apple Silicon Linux / AWS Graviton, etc.). Verify with
 ## 📡 OpenWRT (routers)
 
 luadch runs on OpenWRT routers - confirmed on a Linksys WRT3200ACM
-(`mvebu/cortexa9`, ARMv7, OpenWRT 25.12). You **cross-compile on a PC**
-using the OpenWRT SDK and copy the result to the router; you do **not**
-build on the router (routers lack the space/RAM for a toolchain, and
-there is no cmake package for OpenWRT because it is not meant to compile
-on-device).
+(`mvebu/cortexa9`, ARMv7, OpenWRT 25.12). Every release ships a ready-to-
+install `.apk` for the three most common targets (see below); for any other
+target you **cross-compile on a PC** using the OpenWRT SDK and copy the result
+over. Either way you do **not** build on the router (routers lack the
+space/RAM for a toolchain, and there is no cmake package for OpenWRT because it
+is not meant to compile on-device).
 
 ### Will it run on my router?
 
@@ -239,6 +240,38 @@ Two hard requirements decide it:
 Flash/RAM: the runtime tree is ~6 MB plus the shared libs, so an 8/16 MB
 router needs **extroot** (USB/SD); a 128 MB+ device (like the WRT3200ACM)
 has ample room.
+
+### Install the pre-built `.apk` (easiest path)
+
+Each release attaches an OpenWRT `.apk` for the three most common
+little-endian targets, built in CI from the OpenWRT **25.12.x** SDK. Read your
+package arch with `apk --print-arch` (it prints the left-column value directly;
+`ubus call system board` names the target, which the device column maps back):
+
+| Package arch | Typical devices |
+|---|---|
+| `arm_cortex-a9_vfpv3-d16` | Linksys WRT3200ACM / WRT1900/1200 (mvebu) |
+| `mipsel_24kc` | mt7621 routers (very common) |
+| `aarch64_cortex-a53` | Belkin RT3200 / Linksys E8450 (mt7622) |
+
+```sh
+# Download luadch-ng-<ver>-openwrt-<arch>.apk from the release, then:
+apk update                                                  # populate the index
+apk add --allow-untrusted ./luadch-ng-<ver>-openwrt-<arch>.apk
+/etc/init.d/luadch-ng enable
+/etc/init.d/luadch-ng start
+```
+
+`apk` pulls the runtime deps (`libopenssl3`, `libstdcpp6`, `zlib`,
+`libatomic1`) automatically. `--allow-untrusted` is needed because the package
+is not signed by an OpenWRT feed key. It installs the app under
+`/usr/share/luadch-ng` with operator state (config, `master.key`, certs, logs)
+under `/etc/luadch-ng`, seeded on first start and preserved across package
+upgrades; first start auto-generates the TLS cert (see First-time login).
+
+This covers **25.12.x** on those three arches only. On a different arch, on
+`<=24.10` (opkg, not apk), or to build from an untagged checkout, use the
+cross-compile path below.
 
 ### Cross-compile with the OpenWRT SDK
 
@@ -338,9 +371,11 @@ cd /opt/luadch && ./luadch               # TLS-only: adcs://<router-ip>:5001
 
 First boot auto-generates the TLS cert + key (see First-time login below).
 
-> Not a native OpenWRT package yet: `apk add luadch` / `opkg install
-> luadch` (with the dependencies pulled in automatically) would need an
-> OpenWRT package Makefile + a package feed - a possible future step.
+> This manual copy is only needed for a self-cross-compiled tree. For the
+> three pre-built arches on 25.12.x, the `.apk` above installs and wires up
+> the deps + init script for you. A hosted, signed feed (the true
+> `apk add luadch-ng` with no `--allow-untrusted`) would additionally need a
+> package index + signing key - out of scope for now (#587).
 
 ---
 

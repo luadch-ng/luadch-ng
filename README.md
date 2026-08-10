@@ -50,7 +50,7 @@ docker compose up -d
 Multi-arch image (`ghcr.io/luadch-ng/luadch-ng:latest`), runs as an unprivileged user. Upon first startup, a self-signed TLS certificate is generated, and the keyprint for the `adcs://` URL is logged.
 
 ### Prebuilt binaries
-Linux/Windows x86_64 versions are included with every [release](https://github.com/luadch-ng/luadch-ng/releases/latest) - just unzip and run.
+Linux (x86_64 + aarch64) and Windows x86_64 builds are included with every [release](https://github.com/luadch-ng/luadch-ng/releases/latest) - just unzip and run. OpenWRT routers get a ready-to-install `.apk` for three common arches; see the [OpenWRT section](docs/BUILDING.md#-openwrt-routers) of the build guide.
 
 ### From source
 ```bash
