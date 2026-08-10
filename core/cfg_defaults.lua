@@ -1234,6 +1234,18 @@ local defaults = {
     },
 
     ---------------------------------------------------------------------------------------------------------------------------------
+    --// cmd_help.lua settings
+
+    -- Command prefix shown in the +help list so each line is copy-pasteable.
+    -- The hub accepts "+", "!" and "#" (core/hub.lua "^[+!#]"); default "+"
+    -- matches the docs and the hub's own "Did you mean +X?" hints.
+    cmd_help_prefix = { "+",
+        function( value )
+            return value == "+" or value == "!" or value == "#"
+        end
+    },
+
+    ---------------------------------------------------------------------------------------------------------------------------------
     --// cmd_mass.lua settings
 
     cmd_mass_permission = { {

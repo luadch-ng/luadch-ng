@@ -2,9 +2,6 @@
   "help_desc":"Shows this help for hub commands",
   "help_title":"cmd_help.lua",
   "help_usage":"[+!#]help",
-  "msg_description":"Description:",
-  "msg_minlevel":"Min. Level:",
-  "msg_out":"\n\n=== AVAILABLE COMMANDS =================================================================================\n%s\n================================================================================= AVAILABLE COMMANDS ===\n  ",
-  "msg_usage":"Usage:",
+  "msg_out":"\n\n=== HUB COMMANDS =================================================================================\n(leading [number] = minimum level; a command also works with ! or #)\n%s\n================================================================================= HUB COMMANDS ===\n  ",
   "ucmd_menu":["General","Help"]
 }

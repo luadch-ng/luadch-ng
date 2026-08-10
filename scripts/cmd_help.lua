@@ -6,6 +6,13 @@
         - it exports also a module to reg a help text which will be shown by help
         - usage: [+!#]help
 
+        v0.07: (#591)
+            - compact one-line-per-command layout: "[level]  <prefix><cmd> <args>
+              <description>", command column aligned, drops the .lua-name title.
+              Level shown first so it stays aligned even for very long commands.
+            - the command is shown with a single copyable prefix (cfg
+              cmd_help_prefix, default "+"); + ! # all work at the hub.
+
         v0.06: by pulsar
             - small typo fix
             - some small code changes
@@ -28,7 +35,7 @@
 
 
 local scriptname = "cmd_help"
-local scriptversion = "0.06"
+local scriptversion = "0.07"
 
 local cmd = "help"
 
@@ -44,6 +51,8 @@ local hub_debug = hub.debug
 local utf_match = utf.match
 local utf_format = utf.format
 local table_concat = table.concat
+local string_rep = string.rep
+local string_format = string.format
 
 --// imports
 local scriptlang = cfg_get( "language" )
@@ -54,18 +63,25 @@ local help_title = lang.help_title or "cmd_help.lua"
 local help_usage = lang.help_usage or "[+!#]help"
 local help_desc = lang.help_desc or "Shows this help for hub commands"
 
-local msg_usage = lang.msg_usage or "Usage:"
-local msg_description = lang.msg_description or "Description:"
-local msg_minlevel = lang.msg_minlevel or "Min. Level:"
 local msg_out = lang.msg_out or [[
 
 
-=== AVAILABLE COMMANDS =================================================================================
+=== HUB COMMANDS ======================================================================================
+(leading [number] = minimum level; a command also works with ! or #)
 %s
-================================================================================= AVAILABLE COMMANDS ===
+====================================================================================== HUB COMMANDS ===
   ]]
 
 local ucmd_menu = lang.ucmd_menu or { "General", "Help" }
+
+--// The single, copyable command prefix shown in the list. +, ! and # are all
+--// valid at the hub (core/hub.lua matches "^[+!#]"); default to "+", luadch's
+--// convention (the docs and the hub's own "Did you mean +X?" hints use it).
+local help_prefix = tostring( cfg_get( "cmd_help_prefix" ) or "+" )
+--// Align the command column up to this width; the few very long multi-verb
+--// commands overflow it (their description just starts later) instead of
+--// padding every row out to their length.
+local CMD_COL = 40
 
 --// code
 local help = {}
@@ -77,19 +93,38 @@ local reghelp = function( title, usage, desc, level )
 end
 
 local onbmsg = function( user, command, parameters )
-    local tmp = {}
     local level = user:level()
-    for id, tbl in ipairs( help ) do
+    --// pass 1: keep the entries this user may see, normalize each to a single
+    --// copyable "<prefix><command> <args>" form, and find the width to align
+    --// the (capped) command column.
+    local rows, width = {}, 0
+    for _, tbl in ipairs( help ) do
         if level >= tbl.level then
-            tmp[ #tmp + 1 ] = "\n" ..
-                              tbl.title .. "\n" ..
-                              msg_usage .. "\t\t" .. tbl.usage .. "\n" ..
-                              msg_description .. "\t" .. tbl.desc .. "\n" ..
-                              msg_minlevel .. "\t" .. tbl.level .. "\n"
+            local c = tbl.usage
+            c = c:gsub( "^%[%+!#%]", "" )   -- strip the leading "[+!#]" marker ...
+            c = c:gsub( "^[%+!#]", "" )     -- ... or a single leading + ! #
+            c = help_prefix .. c
+            c = c:gsub( "%[%+!#%]", help_prefix )   -- and any further "[+!#]" a
+                                                    -- second usage form carries
+                                                    -- ("+cmd a  /  [+!#]cmd b")
+            local w = #c
+            if w > width and w <= CMD_COL then width = w end
+            rows[ #rows + 1 ] = { cmd = c, desc = tbl.desc, level = tbl.level }
         end
     end
-    tmp = table_concat( tmp )
-    local msg = utf_format( msg_out, tmp )
+    --// pass 2: one aligned line per command - "[level]  command  description".
+    --// Level first so it stays aligned even when a long command overflows the
+    --// command column.
+    local tmp = {}
+    for _, r in ipairs( rows ) do
+        local pad = width - #r.cmd
+        if pad < 0 then pad = 0 end
+        -- %3.0f, not %3d: tolerate a plugin that ever registers a fractional
+        -- level (%d errors on a non-integer in Lua 5.4); real levels are ints.
+        tmp[ #tmp + 1 ] = string_format( "  [%3.0f]  %s%s  %s",
+            r.level, r.cmd, string_rep( " ", pad ), r.desc )
+    end
+    local msg = utf_format( msg_out, table_concat( tmp, "\n" ) )
     user:reply( msg, hub_getbot(), hub_getbot() )
     return PROCESSED
 end
