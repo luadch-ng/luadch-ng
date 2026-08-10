@@ -2,9 +2,6 @@
   "help_desc":"Zeigt diese Auflistung der verfügbaren Hubbefehle",
   "help_title":"cmd_help.lua",
   "help_usage":"[+!#]help",
-  "msg_description":"Beschreibung:",
-  "msg_minlevel":"Min. Level:",
-  "msg_out":"\n\n=== VERFÜGBARE BEFEHLE =================================================================================\n%s\n================================================================================= VERFÜGBARE BEFEHLE ===\n  ",
-  "msg_usage":"Gebrauch:",
+  "msg_out":"\n\n=== HUB-BEFEHLE =================================================================================\n(führende [Zahl] = Mindest-Level; ein Befehl geht auch mit ! oder #)\n%s\n================================================================================= HUB-BEFEHLE ===\n  ",
   "ucmd_menu":["Allgemein","Hilfe"]
 }
