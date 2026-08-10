@@ -45,6 +45,12 @@ define Package/luadch-ng
   CATEGORY:=Network
   TITLE:=luadch-ng - DC++ ADC hub server
   URL:=https://github.com/luadch-ng/luadch-ng
+  # Create a dedicated unprivileged user:group at install (apk Require-User).
+  # The hub does not need root - it binds the default TLS port 5001 (>1024) and
+  # writes only under /etc/luadch-ng - so procd runs it as this user (see the
+  # init script), containing any compromise to the hub's own state. Names-only
+  # (no fixed uid) auto-assigns a free id, like the upstream unbound package.
+  USERID:=luadch:luadch
   # libopenssl (libcrypto/libssl 3.x) + libstdcpp (the C++ adclib) + zlib
   # (ZLIF stream compression). libatomic: libcrypto needs it on some 32-bit
   # arches (mips); a no-op dependency elsewhere.
@@ -83,9 +89,21 @@ define Package/luadch-ng/install
 	$(LN) $(STATEDIR)/certs $(1)$(APPDIR)/certs
 	$(LN) $(STATEDIR)/log   $(1)$(APPDIR)/log
 	$(LN) $(STATEDIR)/data  $(1)$(APPDIR)/scripts/data
+	# The single-instance lock is opened cwd-relative (luadch.lock in the app
+	# root, hub.c). The app root is root-owned and read-only to the runtime
+	# user, so redirect the lock into the writable, user-owned state dir too -
+	# open() follows this symlink (no O_NOFOLLOW) and flock locks the target
+	# inode, so the guard keeps working unprivileged.
+	$(LN) $(STATEDIR)/luadch.lock $(1)$(APPDIR)/luadch.lock
 	# procd init.
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/luadch-ng.init $(1)/etc/init.d/luadch-ng
+	# Preserve operator state across a firmware sysupgrade. /etc/luadch-ng is
+	# NOT package-owned (seeded at runtime), so a sysupgrade would otherwise
+	# wipe it - losing master.key, so the encrypted user.tbl can never be
+	# decrypted again (silent data loss). keep.d adds it to the backup set.
+	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
+	$(INSTALL_DATA) ./files/luadch-ng.keep $(1)/lib/upgrade/keep.d/luadch-ng
 endef
 
 $(eval $(call BuildPackage,luadch-ng))

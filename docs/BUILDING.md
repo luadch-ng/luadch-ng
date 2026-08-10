@@ -266,8 +266,11 @@ apk add --allow-untrusted ./luadch-ng-<ver>-openwrt-<arch>.apk
 `libatomic1`) automatically. `--allow-untrusted` is needed because the package
 is not signed by an OpenWRT feed key. It installs the app under
 `/usr/share/luadch-ng` with operator state (config, `master.key`, certs, logs)
-under `/etc/luadch-ng`, seeded on first start and preserved across package
-upgrades; first start auto-generates the TLS cert (see First-time login).
+under `/etc/luadch-ng`, seeded on first start and preserved across both package
+upgrades and firmware `sysupgrade` (a shipped `keep.d` entry); first start
+auto-generates the TLS cert (see First-time login). The hub runs as a dedicated
+unprivileged `luadch` user (not root); the default TLS port 5001 needs no
+privilege, but a custom port below 1024 would.
 
 This covers **25.12.x** on those three arches only. On a different arch, on
 `<=24.10` (opkg, not apk), or to build from an untagged checkout, use the
@@ -371,9 +374,10 @@ cd /opt/luadch && ./luadch               # TLS-only: adcs://<router-ip>:5001
 
 First boot auto-generates the TLS cert + key (see First-time login below).
 
-> This manual copy is only needed for a self-cross-compiled tree. For the
-> three pre-built arches on 25.12.x, the `.apk` above installs and wires up
-> the deps + init script for you. A hosted, signed feed (the true
+> This manual copy is only needed for a self-cross-compiled tree, and runs
+> the hub as whoever invokes it (typically root). For the three pre-built
+> arches on 25.12.x, the `.apk` above installs and wires up the deps + init
+> script for you and runs the hub unprivileged. A hosted, signed feed (the true
 > `apk add luadch-ng` with no `--allow-untrusted`) would additionally need a
 > package index + signing key - out of scope for now (#587).
 
