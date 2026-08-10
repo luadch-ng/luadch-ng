@@ -17,7 +17,10 @@ on:
         default: 'v0.0.0-test'
 
 permissions:
-  contents: write
+  # Least privilege: only the release job needs write (to create the GitHub
+  # release). The build jobs just upload artifacts - and build-openwrt runs a
+  # downloaded OpenWRT SDK toolchain, which should not carry a repo-write token.
+  contents: read
 
 env:
   # Run JavaScript-based actions on Node.js 24 instead of the default
@@ -344,10 +347,214 @@ jobs:
           path: luadch-*-windows-x86_64.zip
           if-no-files-found: error
 
+  build-openwrt:
+    name: Build OpenWRT .apk (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    # Cross-build a router .apk from the OpenWRT 25.12.x SDK (per target).
+    # apk-only: the whole 25.12.x line uses apk; 24.10-and-older (opkg/.ipk)
+    # operators install manually per docs/BUILDING.md. Little-endian targets
+    # only (adclib Tiger is LE-only) - no big-endian in this matrix. Follow-up
+    # to #568 / #587. Recipe validated end-to-end under the WSL SDK lab for all
+    # three arches before this landed.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # arm_cortex-a9_vfpv3-d16 - Linksys WRT3200ACM etc. (confirmed device).
+          - target: mvebu/cortexa9
+            label: mvebu-cortexa9
+            sdk: openwrt-sdk-25.12.5-mvebu-cortexa9_gcc-14.3.0_musl_eabi.Linux-x86_64.tar.zst
+          # mipsel_24kc - the most common home-router SoC family (mt7621).
+          - target: ramips/mt7621
+            label: ramips-mt7621
+            sdk: openwrt-sdk-25.12.5-ramips-mt7621_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+          # aarch64_cortex-a53 - the most common aarch64 OpenWRT base
+          # (Belkin RT3200 / Linksys E8450 and kin).
+          - target: mediatek/mt7622
+            label: mediatek-mt7622
+            sdk: openwrt-sdk-25.12.5-mediatek-mt7622_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+    env:
+      # Pinned OpenWRT release. Bump alongside the SDK filenames above when a
+      # newer 25.12.x (or a future apk-based line) lands. Kept as a build input
+      # like OPENSSL_VERSION / CMAKE_VERSION elsewhere in this file.
+      OPENWRT_RELEASE: 25.12.5
+    steps:
+      - uses: actions/checkout@v4
+
+      # The OpenWRT package (openwrt/luadch-ng) is a 3.2.x+ feature and does not
+      # exist on the 3.1.x maintenance line. Detect its absence and turn every
+      # build step below into a no-op so the job stays GREEN there - otherwise a
+      # 3.1.x tag push would fail this job and, via `release: needs`, block the
+      # entire 3.1.x security release.
+      - name: Check package present
+        id: check
+        run: |
+          if [ -f openwrt/luadch-ng/Makefile ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::openwrt/luadch-ng absent on this ref - skipping the OpenWRT .apk build."
+          fi
+
+      - name: Determine version
+        id: tag
+        if: steps.check.outputs.present == 'true'
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag_name }}
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="${INPUT_TAG}"
+          else
+            # Branch push: derive "vX.Y.Z-dev" from a "release/vX.Y.Z" branch.
+            BRANCH="${GITHUB_REF_NAME}"
+            TAG="${BRANCH#release/}-dev"
+          fi
+          # OpenWRT PKG_VERSION must be dashless: "-" is the reserved
+          # -r<release> delimiter and apk's version grammar rejects it. Strip the
+          # leading "v" and any pre-release suffix; the full tag is kept only for
+          # the human-facing asset filename.
+          PKGVER="${TAG#v}"; PKGVER="${PKGVER%%-*}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "pkgver=${PKGVER}" >> "$GITHUB_OUTPUT"
+
+      - name: Install SDK host dependencies
+        if: steps.check.outputs.present == 'true'
+        # The SDK bundles its own cross-toolchain, but the package build still
+        # rebuilds a few host tools and unpacks the .tar.zst. zstd handles the
+        # SDK archive; the rest is the OpenWRT-recommended host set trimmed to
+        # what a single-package build touches.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libncurses-dev zlib1g-dev gawk gettext \
+            git libssl-dev xsltproc rsync wget unzip python3 file zstd
+
+      - name: Cache OpenWRT SDK tarball
+        if: steps.check.outputs.present == 'true'
+        # The ~200 MB SDK download dominates the job; cache it keyed on the
+        # exact filename (which pins release + gcc + target), so re-runs skip
+        # the fetch. The openssl/zlib compile is not cached (staging paths are
+        # brittle across runs) - a follow-up if job time becomes a problem.
+        uses: actions/cache@v4
+        with:
+          path: dl-cache
+          key: openwrt-sdk-${{ matrix.sdk }}
+
+      - name: Fetch + verify + extract SDK
+        if: steps.check.outputs.present == 'true'
+        env:
+          SDK: ${{ matrix.sdk }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p dl-cache
+          # Fetch <name> from the target dir into <out>, trying both OpenWRT
+          # mirrors (downloads first, then archive - point releases eventually
+          # move to archive.openwrt.org) with a few retries, so a transient blip
+          # does not fail the whole release (the sibling aarch64 job retries
+          # apt for the same reason).
+          fetch() {
+            local name="$1" out="$2" host t
+            for host in downloads.openwrt.org archive.openwrt.org; do
+              for t in 1 2 3; do
+                if wget -q -O "$out" \
+                    "https://${host}/releases/${OPENWRT_RELEASE}/targets/${TARGET}/${name}"; then
+                  return 0
+                fi
+                echo "fetch ${name} from ${host} failed (try ${t}); retrying in 5s..."
+                sleep 5
+              done
+            done
+            return 1
+          }
+          # Verify the SDK against the checksum OpenWRT publishes next to it -
+          # the same integrity bar the CMake/OpenSSL downloads in this file meet
+          # (this component generates the shipped machine code, so it must be
+          # checked). --ignore-missing checks only files present in dl-cache.
+          verify() { ( cd dl-cache && sha256sum --ignore-missing -c sha256sums ); }
+          fetch sha256sums dl-cache/sha256sums
+          # Re-download when the cached tarball is absent OR fails the checksum
+          # (a partial/corrupt cache entry can otherwise brick the arch forever,
+          # since actions/cache saves even on a failed run). Download to .part
+          # and rename only on success so a truncated file is never promoted.
+          if [ ! -f "dl-cache/${SDK}" ] || ! verify; then
+            fetch "${SDK}" "dl-cache/${SDK}.part"
+            mv "dl-cache/${SDK}.part" "dl-cache/${SDK}"
+          fi
+          verify
+          mkdir -p sdk
+          tar --zstd -xf "dl-cache/${SDK}" -C sdk --strip-components=1
+
+      - name: Stage package recipe + source tarball
+        if: steps.check.outputs.present == 'true'
+        env:
+          PKGVER: ${{ steps.tag.outputs.pkgver }}
+        # Copy our out-of-tree package into the SDK, pin its version in the
+        # Makefile (NOT via a global PKG_VERSION env: that leaks into every
+        # package's Makefile in the SDK tree and pulls an unbuildable
+        # package/kernel/linux), and pre-stage the source tarball into the SDK's
+        # dl/ so the Makefile's codeload fetch is skipped entirely (hermetic: we
+        # ship exactly this checkout). The tarball top dir must be
+        # luadch-ng-<ver>/ to match PKG_BUILD_DIR.
+        run: |
+          cp -r openwrt/luadch-ng sdk/package/luadch-ng
+          sed -i "s/^PKG_VERSION?=.*/PKG_VERSION:=${PKGVER}/" sdk/package/luadch-ng/Makefile
+          mkdir -p sdk/dl
+          git archive --format=tar.gz --prefix="luadch-ng-${PKGVER}/" \
+            -o "sdk/dl/luadch-ng-${PKGVER}.tar.gz" HEAD
+
+      - name: Build .apk
+        if: steps.check.outputs.present == 'true'
+        working-directory: sdk
+        env:
+          # OpenWRT's gcc wrapper refuses to run without STAGING_DIR set. (Do
+          # NOT add PKG_VERSION here - see the Stage step's note.)
+          STAGING_DIR: ${{ github.workspace }}/sdk/staging_dir
+        run: |
+          # The ncurses "build dependency" is menuconfig-only; bypass its check
+          # with an empty prereq stamp (FORCE=1 does NOT skip it). A freshly
+          # extracted SDK has no host/ dir yet, so create it first.
+          mkdir -p host && touch host/.prereq-build
+          ./scripts/feeds update base
+          ./scripts/feeds install -p base libopenssl zlib
+          make defconfig
+          echo "CONFIG_PACKAGE_luadch-ng=m" >> .config
+          make defconfig
+          make package/luadch-ng/compile -j"$(nproc)"
+
+      - name: Collect + rename .apk
+        if: steps.check.outputs.present == 'true'
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          # bin/packages/<pkgarch>/base/luadch-ng-<ver>-r<rel>.apk; the arch is
+          # not in the default name, so rename per-arch to avoid a collision
+          # when the release job merges all matrix artifacts into one dir.
+          # -print -quit stops find at the first hit (no head|SIGPIPE under the
+          # runner's pipefail).
+          BUILT=$(find sdk/bin -name 'luadch-ng-*.apk' -print -quit)
+          test -n "${BUILT}"
+          PKGARCH=$(basename "$(dirname "$(dirname "${BUILT}")")")
+          OUT="luadch-ng-${TAG}-openwrt-${PKGARCH}.apk"
+          cp "${BUILT}" "${OUT}"
+          ls -la "${OUT}"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.present == 'true'
+        with:
+          name: luadch-ng-openwrt-${{ matrix.label }}
+          path: luadch-ng-*-openwrt-*.apk
+          if-no-files-found: error
+
   release:
     name: Create GitHub release
-    needs: [build-linux, build-linux-aarch64, build-windows]
+    needs: [build-linux, build-linux-aarch64, build-windows, build-openwrt]
     runs-on: ubuntu-latest
+    # Only this job needs write (to create the release); see the top-level
+    # `permissions: contents: read`.
+    permissions:
+      contents: write
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
