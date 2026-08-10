@@ -205,6 +205,15 @@ jobs:
       - name: Run etc_trafficmanager unit test
         run: lua5.4 tests/unit/etc_trafficmanager_test.lua
 
+      # nick-rename propagation: six plugins (etc_msgmanager,
+      # cmd_usercleaner, usr_hide_share, usr_uptime, cmd_gag, cmd_ban)
+      # re-key their per-firstnick store on a reg.nickchange onAudit
+      # event, so a +nickchange (or HTTP rename) no longer orphans the
+      # block / exception / hide flag / uptime / gag / by-nick ban.
+      # (etc_trafficmanager - the store Sopor reported - is in its own test.)
+      - name: Run nick_rename_propagation unit test
+        run: lua5.4 tests/unit/nick_rename_propagation_test.lua
+
       # hub_cmd_manager: C2C level gates. v0.03 NAT-traversal fix -
       # onNatTraversal/onNatTraversalReply gate DNAT/DRNT by rcm/ctm
       # level, closing a passive/CGNAT bypass of the CTM/RCM gate.
@@ -636,6 +645,10 @@ jobs:
       - name: Run etc_trafficmanager unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/etc_trafficmanager_test.lua
+
+      - name: Run nick_rename_propagation unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/nick_rename_propagation_test.lua
 
       - name: Run hub_cmd_manager unit test
         shell: msys2 {0}

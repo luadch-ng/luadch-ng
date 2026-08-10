@@ -11,6 +11,16 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.47:
+            - carry a ban over to the new nick on +nickchange / HTTP
+              rename. A by-nick ban record carries .nick = firstnick (cid /
+              ip bans are rename-invariant) and history is keyed by
+              firstnick; a rename only updated user.tbl, so a pure by-nick
+              ban was silently bypassable by renaming the account. An
+              onAudit tap on reg.nickchange now re-keys both the bans list
+              and the history map (covers the ADC self / othernick /
+              othernicku paths AND the HTTP API).
+
         v0.46:
             - feat: add a `permanent` entry to the right-click Ban submenu
               (CT2), alongside the existing 1 hour ... 1 year / other
@@ -277,7 +287,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.46"
+local scriptversion = "0.47"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -1299,6 +1309,37 @@ hub.setlistener( "onConnect", {},
                 user:kill( "ISTA 232 " .. hub.escapeto( message ) .. "\n", "TL" .. remaining )
                 return PROCESSED
             end
+        end
+        return nil
+    end
+)
+
+--// keep a ban attached to its user across a nick rename. A by-nick ban
+-- record carries .nick = firstnick (cid / ip bans are rename-invariant),
+-- and history is keyed by firstnick; +nickchange (and the HTTP rename)
+-- renames the user in user.tbl but not here, so without this a pure
+-- by-nick ban was silently bypassable by renaming the account. audit.fire
+-- is unconditional (core/audit.lua), so one onAudit tap catches every
+-- reg.nickchange. Returns nil (never PROCESSED) so the etc_auditlog /
+-- http_events onAudit taps still receive the event.
+hub.setlistener( "onAudit", {},
+    function( event )
+        if type( event ) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type( old_nick ) ~= "string" or type( new_nick ) ~= "string" then return nil end
+        -- guard "": a cid/ip-only ban stores .nick = "", so an empty
+        -- old_nick (should never happen) must not match those records.
+        if old_nick == new_nick or old_nick == "" then return nil end
+        local changed = false
+        for _, b in ipairs( bans ) do
+            if b.nick == old_nick then b.nick = new_nick; changed = true end
+        end
+        if changed then util.savearray( bans, bans_path ) end
+        if history[ old_nick ] ~= nil then
+            history[ new_nick ] = history[ old_nick ]
+            history[ old_nick ] = nil
+            util.savetable( history, "history_tbl", history_path )
         end
         return nil
     end

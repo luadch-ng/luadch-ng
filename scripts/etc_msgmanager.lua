@@ -13,6 +13,15 @@
         [+!#]msgmanager showusers  -- show all blocked users
         [+!#]msgmanager showsettings  -- show settings from 'cfg.tbl'
 
+        v0.12:
+            - carry a chat block over to the new nick on +nickchange /
+              HTTP rename. block_tbl is keyed by firstnick; a rename only
+              updated user.tbl, so the block was silently dropped - an
+              operator could unblock a user just by renaming them. An
+              onAudit tap on reg.nickchange now re-keys block_tbl (covers
+              the ADC self / othernick / othernicku paths AND the HTTP
+              API). Reported by Sopor.
+
         v0.11:
             - resolve an online target by firstnick when a nick-prefix is
               active: usr_nick_prefix re-keys the hub's nick table to the
@@ -73,7 +82,7 @@
 --------------
 
 local scriptname = "etc_msgmanager"
-local scriptversion = "0.11"
+local scriptversion = "0.12"
 
 local cmd = "msgmanager"
 local cmd_b1 = "blockmain"
@@ -735,6 +744,30 @@ hub.setlistener( "onStart", {},
                 },
             } )
         end
+        return nil
+    end
+)
+
+--// keep a chat block attached to its user across a nick rename.
+-- block_tbl is keyed by firstnick; +nickchange (and the HTTP rename)
+-- renames the user in user.tbl but not here, so without this the block
+-- was silently lost on rename (reported by Sopor). audit.fire is
+-- unconditional (core/audit.lua), so one onAudit tap catches every
+-- reg.nickchange - the ADC self / othernick / othernicku paths AND the
+-- HTTP API. Returns nil (never PROCESSED) so the etc_auditlog /
+-- http_events onAudit taps still receive the event.
+hub.setlistener( "onAudit", {},
+    function( event )
+        if type( event ) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type( old_nick ) ~= "string" or type( new_nick ) ~= "string" then return nil end
+        if old_nick == new_nick or block_tbl[ old_nick ] == nil then return nil end
+        -- If a stale entry already sits under the new nick, the renamed
+        -- user's own block wins - overwrite keeps it intact.
+        block_tbl[ new_nick ] = block_tbl[ old_nick ]
+        block_tbl[ old_nick ] = nil
+        util.savetable( block_tbl, "block_tbl", block_file )
         return nil
     end
 )
