@@ -3,7 +3,8 @@
 #
 # The app tree is read-only under /usr/share/luadch-ng, with its writable
 # subdirs (cfg, certs, log, scripts/data) symlinked into /etc/luadch-ng. This
-# seeds that state dir on first start, then runs the hub with its working
+# seeds that state dir on first start, then runs the hub - as the unprivileged
+# luadch user (created at install via the Makefile's USERID) - with its working
 # directory at the app tree so its cwd-relative paths resolve.
 
 USE_PROCD=1
@@ -12,6 +13,10 @@ STOP=10
 
 APPDIR=/usr/share/luadch-ng
 STATEDIR=/etc/luadch-ng
+# Unprivileged runtime user/group, created at install (Makefile USERID). procd
+# runs the hub as this user; all writable state under $STATEDIR is chowned to it.
+RUN_USER=luadch
+RUN_GROUP=luadch
 
 seed_state() {
 	mkdir -p "$STATEDIR/cfg" "$STATEDIR/certs" "$STATEDIR/log" "$STATEDIR/data"
@@ -34,7 +39,28 @@ seed_state() {
 }
 
 start_service() {
+	# Fail VISIBLE, not open: if the unprivileged user was not created at
+	# install (USERID/Require-User not honored on some variant), refuse to
+	# start rather than let procd silently fall back to running as root - which
+	# would defeat the whole point with no signal.
+	if ! id -u "$RUN_USER" >/dev/null 2>&1; then
+		logger -t luadch-ng "runtime user '$RUN_USER' missing (USERID not applied?); refusing to start"
+		return 1
+	fi
+	# seed_state's mkdir runs in this root shell (default umask 022 -> 0755);
+	# 027 makes the state dirs 0750 instead of world-listable. The hub process
+	# gets its own umask 027 in the procd command below.
+	umask 027
 	seed_state
+	# Own all writable state by the runtime user before dropping to it. Run
+	# every start (not just first seed) so it self-heals if a reinstall
+	# re-created the user with a different auto-assigned uid. This also lets the
+	# hub create $STATEDIR/luadch.lock (the app-root lock symlink points here).
+	# -Rh uses lchown: a symlink planted in the (luadch-writable) state dir is
+	# NEVER dereferenced - without it, BusyBox chown -R follows symlink leaves,
+	# so a compromised luadch could point one at /etc/shadow and have root
+	# chown it to luadch on the next start = local root escalation.
+	chown -Rh "$RUN_USER:$RUN_GROUP" "$STATEDIR"
 	procd_open_instance
 	# luadch resolves core/, cfg/, scripts/, log/ relative to its working dir,
 	# so cd into the app tree first. exec so procd tracks the hub's own pid.
@@ -44,6 +70,9 @@ start_service() {
 	# 0640/0750, not world-readable. Secrets (master.key, user.tbl, serverkey)
 	# are chmod 0600 by their writers regardless.
 	procd_set_param command /bin/sh -c "umask 027; cd '$APPDIR' && exec ./luadch"
+	# Drop root: the hub runs unprivileged (user created at install via USERID).
+	procd_set_param user "$RUN_USER"
+	procd_set_param group "$RUN_GROUP"
 	procd_set_param respawn
 	procd_set_param stdout 1
 	procd_set_param stderr 1
