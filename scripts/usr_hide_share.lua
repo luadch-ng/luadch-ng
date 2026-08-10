@@ -4,6 +4,15 @@
 
         Usage: [+!#]hideshare <NICK>
 
+        v0.7:
+            - carry a hidden-share flag over to the new nick on
+              +nickchange / HTTP rename. hide_share_tbl is keyed by
+              firstnick; a rename only updated user.tbl, so the flag was
+              silently dropped on rename and the user's share became
+              visible again. An onAudit tap on reg.nickchange now re-keys
+              hide_share_tbl (covers the ADC self / othernick / othernicku
+              paths AND the HTTP API).
+
         v0.6:
             - resolve an online target by firstnick when a nick-prefix is
               active: usr_nick_prefix re-keys the hub's nick table to the
@@ -44,7 +53,7 @@
 --------------
 
 local scriptname = "usr_hide_share"
-local scriptversion = "0.6"
+local scriptversion = "0.7"
 
 local cmd = "hideshare"
 
@@ -216,6 +225,30 @@ onbmsg = function( user, command, parameters )
     user:reply( msg_usage, hub.getbot() )
     return PROCESSED
 end
+
+--// keep a hidden-share flag attached to its user across a nick rename.
+-- hide_share_tbl is keyed by firstnick; +nickchange (and the HTTP
+-- rename) renames the user in user.tbl but not here, so without this
+-- the flag was silently dropped on rename and the share became visible
+-- again. audit.fire is unconditional (core/audit.lua), so one onAudit
+-- tap catches every reg.nickchange - the ADC self / othernick /
+-- othernicku paths AND the HTTP API. Returns nil (never PROCESSED) so
+-- the etc_auditlog / http_events onAudit taps still receive the event.
+hub.setlistener( "onAudit", {},
+    function( event )
+        if type( event ) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type( old_nick ) ~= "string" or type( new_nick ) ~= "string" then return nil end
+        if old_nick == new_nick or hide_share_tbl[ old_nick ] == nil then return nil end
+        -- If a stale entry already sits under the new nick, the renamed
+        -- user's own flag wins - overwrite keeps it intact.
+        hide_share_tbl[ new_nick ] = hide_share_tbl[ old_nick ]
+        hide_share_tbl[ old_nick ] = nil
+        util.savetable( hide_share_tbl, "hide_share_tbl", path )
+        return nil
+    end
+)
 
 hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
 

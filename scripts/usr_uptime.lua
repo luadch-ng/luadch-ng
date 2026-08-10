@@ -4,6 +4,14 @@
 
         usage: [+!#]useruptime [CT1 <FIRSTNICK> | CT2 <NICK>]
 
+        v0.13: by Aybo
+            - carry a user's accumulated uptime over to the new nick on
+              +nickchange / HTTP rename. uptime_tbl is keyed by firstnick;
+              a rename only updated user.tbl, so the stats were orphaned
+              and read as zero under the new nick. An onAudit tap on
+              reg.nickchange now re-keys the entry (covers the ADC self /
+              othernick / othernicku paths AND the HTTP API).
+
         v0.12: by Aybo
             - fix undercounting on busy hubs and across +reload
               (reported by Sopor: 24/7 users showing only a few hours
@@ -114,7 +122,7 @@
 --------------
 
 local scriptname = "usr_uptime"
-local scriptversion = "0.12"
+local scriptversion = "0.13"
 
 local cmd = { "useruptime", "uu" }
 
@@ -354,6 +362,28 @@ local onbmsg = function( user, command, parameters )
     user:reply( msg_usage, hub.getbot() )
     return PROCESSED
 end
+
+--// keep a user's accumulated uptime attached across a nick rename.
+-- uptime_tbl is keyed by firstnick; +nickchange (and the HTTP rename)
+-- renames the user in user.tbl but not here, so without this a rename
+-- orphaned the user's online-time stats (they read as zero under the new
+-- nick). audit.fire is unconditional (core/audit.lua), so one onAudit tap
+-- catches every reg.nickchange. Returns nil (never PROCESSED) so the
+-- etc_auditlog / http_events onAudit taps still receive the event.
+hub.setlistener( "onAudit", {},
+    function( event )
+        if type( event ) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        if type( uptime_tbl ) ~= "table" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type( old_nick ) ~= "string" or type( new_nick ) ~= "string" then return nil end
+        if old_nick == new_nick or uptime_tbl[ old_nick ] == nil then return nil end
+        uptime_tbl[ new_nick ] = uptime_tbl[ old_nick ]
+        uptime_tbl[ old_nick ] = nil
+        util.savetable( uptime_tbl, "uptime", uptime_file )
+        return nil
+    end
+)
 
 hub.setlistener( "onStart", {},
     function()

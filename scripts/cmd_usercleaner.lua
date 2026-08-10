@@ -18,6 +18,15 @@
             [+!#]usercleaner setdays <DAYS>        -- Change the expired days (default = 365)
 
 
+        v0.9:
+            - carry a nick exception over to the new nick on +nickchange /
+              HTTP rename. exception_tbl is keyed by nick; a rename only
+              updated user.tbl, so the exception was silently orphaned -
+              the renamed account then looked "unused" and could be
+              auto-deleted (delghosts / delexpired). An onAudit tap on
+              reg.nickchange now re-keys exception_tbl (covers the ADC
+              self / othernick / othernicku paths AND the HTTP API).
+
         v0.8:
             - route the showall / showexpired / showghosts / showexceptions
               status-column "true" / "false" booleans through lang
@@ -55,7 +64,7 @@
 --------------
 
 local scriptname = "cmd_usercleaner"
-local scriptversion = "0.8"
+local scriptversion = "0.9"
 
 --// command
 local cmd = "usercleaner"
@@ -909,6 +918,31 @@ local onbmsg = function( user, command, parameters )
     user:reply( msg_usage, hub.getbot() )
     return PROCESSED
 end
+
+--// keep a nick exception attached to its user across a rename.
+-- exception_tbl is keyed by nick; +nickchange (and the HTTP rename)
+-- renames the user in user.tbl but not here, so without this the
+-- protection was silently orphaned on rename - the renamed account
+-- then looked "unused" and could be auto-deleted (delghosts /
+-- delexpired). audit.fire is unconditional (core/audit.lua), so one
+-- onAudit tap catches every reg.nickchange - the ADC self / othernick
+-- / othernicku paths AND the HTTP API. Returns nil (never PROCESSED)
+-- so the etc_auditlog / http_events onAudit taps still receive it.
+hub.setlistener( "onAudit", {},
+    function( event )
+        if type( event ) ~= "table" or event.action ~= "reg.nickchange" then return nil end
+        local new_nick = event.target and event.target.nick
+        local old_nick = event.meta and event.meta.previous_nick
+        if type( old_nick ) ~= "string" or type( new_nick ) ~= "string" then return nil end
+        if old_nick == new_nick or exception_tbl[ old_nick ] == nil then return nil end
+        -- If a stale entry already sits under the new nick, the renamed
+        -- user's own exception wins - overwrite keeps it intact.
+        exception_tbl[ new_nick ] = exception_tbl[ old_nick ]
+        exception_tbl[ old_nick ] = nil
+        util.savetable( exception_tbl, "exception_tbl", exception_file )
+        return nil
+    end
+)
 
 hub.setlistener( "onStart", {},
     function()
