@@ -311,17 +311,41 @@ local defaults = {
     http_api_tokens = { { },
         function( value )
             if not types_table( value ) then return false end
+            -- Per-entry validation, NOT whole-table. A single malformed
+            -- entry (a scope typo, a non-string key, ...) must not
+            -- invalidate the ENTIRE table: that path returned false here,
+            -- the cfg loader reset the key to the default {}, and the HTTP
+            -- listener then refused to bind at all - one typo locked the
+            -- operator out of an otherwise-healthy hub. Instead drop only
+            -- the offending entries, keep the valid tokens, and log each
+            -- drop so a vanished token is explained rather than silent.
+            -- `use "out"` is resolved lazily (out.lua loads AFTER cfg in
+            -- the _core order, so it cannot be imported at file top); this
+            -- validator only runs at checkcfg / reload time, long after
+            -- out is up. Setting an existing field to nil during a pairs()
+            -- walk is explicitly permitted by Lua.
+            local dropped = 0
             for token, spec in pairs( value ) do
+                local ok = true
                 if type( token ) ~= "string" or #token == 0 then
-                    return false
+                    ok = false
+                elseif type( spec ) ~= "table" then
+                    ok = false
+                elseif spec.scope ~= "read" and spec.scope ~= "admin" then
+                    ok = false
+                elseif spec.comment ~= nil and type( spec.comment ) ~= "string" then
+                    ok = false
                 end
-                if type( spec ) ~= "table" then return false end
-                if spec.scope ~= "read" and spec.scope ~= "admin" then
-                    return false
+                if not ok then
+                    value[ token ] = nil
+                    dropped = dropped + 1
                 end
-                if spec.comment ~= nil and type( spec.comment ) ~= "string" then
-                    return false
-                end
+            end
+            if dropped > 0 then
+                use( "out" ).error(
+                    "cfg.lua: http_api_tokens: dropped ", dropped,
+                    " invalid token entr", ( dropped == 1 and "y" or "ies" ),
+                    " (bad scope or shape); the remaining valid tokens are kept" )
             end
             return true
         end
