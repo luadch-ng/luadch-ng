@@ -806,6 +806,47 @@ do
 end
 
 -- ============================================================
+-- parse_query url-decodes query keys AND values (application/x-www-form-urlencoded).
+-- Unlike path vars, query components use '+' for space, so '+' -> ' ' precedes the
+-- %XX pass (a literal '+' arrives as %2B and survives the '+' pass). Decoding is
+-- POST-split, so a %26/%3D inside a value can never forge an extra &/= boundary.
+-- RED pre-fix: parse_query stored values verbatim, so a filter term with a space /
+-- non-ASCII (browser URLSearchParams encodes both) never matched the decoded field.
+-- ============================================================
+do
+    local umlaut = "M" .. string.char( 0xC3, 0xBC ) .. "ller"   -- UTF-8 "Mueller" with u-umlaut
+
+    eq( "query: %20 -> space in value",
+        ( router._parse_query( "nick=John%20Doe" ) ).nick, "John Doe" )
+    eq( "query: + -> space in value",
+        ( router._parse_query( "nick=John+Doe" ) ).nick, "John Doe" )
+    eq( "query: non-ASCII %C3%BC -> UTF-8",
+        ( router._parse_query( "nick=M%C3%BCller" ) ).nick, umlaut )
+    eq( "query: %2B -> literal '+' (survives the + pass)",
+        ( router._parse_query( "x=a%2Bb" ) ).x, "a+b" )
+    eq( "query: %26 in value is not a pair boundary (post-split decode)",
+        ( router._parse_query( "a=1%262" ) ).a, "1&2" )
+    eq( "query: %3D in value is not an assignment boundary",
+        ( router._parse_query( "q=a%3Db" ) ).q, "a=b" )
+    eq( "query: lone % left as-is",
+        ( router._parse_query( "x=50%off" ) ).x, "50%off" )
+    eq( "query: key is decoded too",
+        ( router._parse_query( "ni%63k=x" ) ).nick, "x" )
+    eq( "query: bare key (no '=') yields empty value, key decoded",
+        ( router._parse_query( "fo%6f" ) ).foo, "" )
+    eq( "query: empty value preserved",
+        ( router._parse_query( "nick=" ) ).nick, "" )
+    -- multiple pairs, and a '-' sort prefix must pass through untouched.
+    do
+        local q = router._parse_query( "nick=a&sort=-nick" )
+        eq( "query: multi-pair key 1", q.nick, "a" )
+        eq( "query: multi-pair key 2 (sort '-' untouched)", q.sort, "-nick" )
+    end
+    eq( "query: empty string -> empty table (no keys)",
+        next( router._parse_query( "" ) ), nil )
+end
+
+-- ============================================================
 -- _user_to_json ADC-unescapes free-text INF fields (NI/DE/EM/AP/VE) so the JSON
 -- API returns plain UTF-8, not the raw wire form. getnp() hands back the escaped
 -- bytes (a nick "John Doe" arrives as "John\sDoe", a description "[ ADMIN ]" as
