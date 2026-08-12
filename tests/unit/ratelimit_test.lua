@@ -117,6 +117,35 @@ eq( "accept_ip(valid) refuses 4th (conn-rate burst exhausted)",
 eq( "accept_ip(other IP) unaffected", ( rl.accept_ip( "9.9.9.9" ) ), true )
 
 ----------------------------------------------------------------------
+-- HTTP /v1/auth/verify password-oracle bucket: per-nick AND per-IP,
+-- BOTH must have budget. Defaults (nil cfg) -> burst 3; fixed clock so
+-- no refill. Uses the "authverify*" key namespace, distinct from the
+-- accept_ip "ip:" buckets above (no cross-talk).
+----------------------------------------------------------------------
+
+-- per-nick exhaustion (brute one account): burst 3, 4th refused.
+eq( "authverify: alice allow 1", ( rl.http_authverify( "alice", "1.1.1.1" ) ), true )
+eq( "authverify: alice allow 2", ( rl.http_authverify( "alice", "1.1.1.1" ) ), true )
+eq( "authverify: alice allow 3", ( rl.http_authverify( "alice", "1.1.1.1" ) ), true )
+eq( "authverify: alice refuse 4 (bucket empty)", ( rl.http_authverify( "alice", "1.1.1.1" ) ), false )
+
+-- per-IP gates spraying a DIFFERENT nick from the same IP (1.1.1.1's
+-- IP bucket was drained by alice, so bob is refused despite a fresh nick).
+eq( "authverify: bob/1.1.1.1 refused (per-IP bucket drained)",
+    ( rl.http_authverify( "bob", "1.1.1.1" ) ), false )
+
+-- per-nick gates a DISTRIBUTED brute-force of one account across fresh
+-- IPs (dave's nick bucket empties regardless of the source IP).
+eq( "authverify: dave/ip-a allow", ( rl.http_authverify( "dave", "10.0.0.1" ) ), true )
+eq( "authverify: dave/ip-b allow", ( rl.http_authverify( "dave", "10.0.0.2" ) ), true )
+eq( "authverify: dave/ip-c allow", ( rl.http_authverify( "dave", "10.0.0.3" ) ), true )
+eq( "authverify: dave/ip-d refused (per-nick empty, fresh IP)",
+    ( rl.http_authverify( "dave", "10.0.0.4" ) ), false )
+
+-- a fresh nick + fresh IP is independent.
+eq( "authverify: carol/fresh -> allow", ( rl.http_authverify( "carol", "203.0.113.7" ) ), true )
+
+----------------------------------------------------------------------
 -- Disabled limiter: accept_ip returns true for any input incl. nil,
 -- without touching the bucket machinery.
 ----------------------------------------------------------------------
@@ -125,6 +154,7 @@ _cfg.ratelimit_activate = false
 rl.init( )
 eq( "disabled: accept_ip(nil) true",   ( rl.accept_ip( nil ) ),       true )
 eq( "disabled: accept_ip(valid) true", ( rl.accept_ip( "1.2.3.4" ) ), true )
+eq( "disabled: http_authverify true",  ( rl.http_authverify( "x", "1.2.3.4" ) ), true )
 
 ----------------------------------------------------------------------
 -- Output

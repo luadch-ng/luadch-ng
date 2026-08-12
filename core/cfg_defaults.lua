@@ -395,6 +395,21 @@ local defaults = {
             return ratelimit_pos_number( value )
         end
     },
+    -- /v1/auth/verify password-oracle bucket (WebUI operator login).
+    -- The endpoint checks a hub password via ADC challenge-response, so
+    -- it is a password oracle - keep the rate low. Keyed per-nick AND
+    -- per-IP (both gate). Values are requests per MINUTE (converted to
+    -- per-second internally, like the sibling http_api_* rates).
+    http_api_authverify_rate = { 6,
+        function( value )
+            return ratelimit_pos_number( value )
+        end
+    },
+    http_api_authverify_burst = { 3,
+        function( value )
+            return ratelimit_pos_number( value )
+        end
+    },
     -- Idempotency-key cache cap (docs/HTTP_API.md §6.2). Cache is
     -- always bounded by both the 5-min TTL AND this entry count;
     -- FIFO eviction on cap hit. Default 1024 fits comfortably even
