@@ -7,6 +7,13 @@
         - this script adds a command "reg" to reg users
         - note: be careful when using the nick prefix script: you should reg user nicks always WITHOUT prefix
 
+        v0.36: by Aybo
+            - doc (#612): the GET /v1/registered `lastseen` filter is a
+              packed-decimal YYYYMMDDHHMMSS integer (hub local time), not
+              epoch. Corrected the filter-spec comment and the bad-input
+              error string ("expected packed YYYYMMDDHHMMSS integer"). No
+              behaviour change - the value was always the packed form.
+
         v0.35:
             - audit_redact_body = true on POST /v1/registered so the
               optional `password` body field does not land verbatim in
@@ -145,7 +152,7 @@
 --------------
 
 local scriptname = "cmd_reg"
-local scriptversion = "0.35"
+local scriptversion = "0.36"
 
 local cmd = "reg"
 
@@ -470,16 +477,18 @@ local _registered_filter_spec = {
             get         = function( p ) return p.date or "" end,
             parse_query = function( q ) return q end,
         },
-        -- lastseen is stored as an epoch integer (0 = never seen).
-        -- Operator passes epoch as the query value; conversion from
-        -- ISO 8601 / wall-clock dates is left to the caller for
-        -- this phase (matches the stored format and avoids a
-        -- locale-sensitive date parser in core).
+        -- lastseen is stored as a packed-decimal YYYYMMDDHHMMSS integer (hub
+        -- local time, util.date()'s "new luadch date style"; 0 = never seen).
+        -- Operator passes that same 14-digit form as the query value - a
+        -- numeric compare on the packed form is chronological. Conversion from
+        -- ISO 8601 / wall-clock dates is left to the caller for this phase
+        -- (matches the stored format and avoids a locale-sensitive date parser
+        -- in core).
         lastseen = {
             get         = function( p ) return tonumber( p.lastseen ) or 0 end,
             parse_query = function( q )
                 local v = tonumber( q )
-                if not v then return nil, "expected epoch integer (got '" .. tostring( q ) .. "')" end
+                if not v then return nil, "expected packed YYYYMMDDHHMMSS integer (got '" .. tostring( q ) .. "')" end
                 return v
             end,
         },
