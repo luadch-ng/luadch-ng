@@ -37,9 +37,18 @@ local function _stub_hashpas( pw, salt )   -- deterministic stand-in for adclib.
     _hashpas_calls[ #_hashpas_calls + 1 ] = { pw = pw, salt = salt }
     return "H:" .. tostring( pw ) .. ":" .. tostring( salt )
 end
+-- Mirror the real hub module shape: core/hub.lua returns { init, loop, object },
+-- so getregusers/escapeto live on hub.object(), NOT on the module directly. A
+-- flat mock (getregusers on the top level) masked the auth-verify handler
+-- calling `use "hub".getregusers()` instead of `.object().getregusers()`, which
+-- 500s on a real hub. Keeping the mock faithful makes that class fail here.
 local _mock_hub = {
-    getregusers = function( ) return { }, _mock_regusers_by_nick, { } end,
-    escapeto    = function( s ) return s end,   -- identity: test nicks have no spaces
+    object = function( )
+        return {
+            getregusers = function( ) return { }, _mock_regusers_by_nick, { } end,
+            escapeto    = function( s ) return s end,   -- identity: test nicks have no spaces
+        }
+    end,
 }
 local _mock_cfg = {
     get = function( key )

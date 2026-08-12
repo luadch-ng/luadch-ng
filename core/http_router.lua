@@ -1665,7 +1665,10 @@ local function auth_verify_handler( req )
     end
     -- Reguser lookup. Nicks with spaces are stored escaped, so escape the
     -- incoming nick exactly as the ADC login path does before indexing.
-    local hub = use "hub"
+    -- getregusers/escapeto live on the hub OBJECT (core/hub.lua returns
+    -- { init, loop, object }), so resolve via .object() like every other
+    -- endpoint handler here - `use "hub"` alone has no getregusers.
+    local hub = ( use "hub" ).object( )
     local _, regs_by_nick = hub.getregusers( )
     local profile = regs_by_nick[ hub.escapeto( nick ) ]
     -- Treat an empty stored password as ABSENT: the reg/setpass paths
