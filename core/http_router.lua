@@ -1160,19 +1160,31 @@ local function stats_handler( )
     } }
 end
 
+-- Decode an ADC-escaped INF free-text value (NI/DE/EM/AP/VE) to plain
+-- UTF-8. getnp() returns the raw wire form (a nick "John Doe" arrives as
+-- "John\sDoe"); the JSON API returns plain text, the same way /v1/chatlog
+-- returns hub.escapefrom-decoded message bodies. nil-safe: an absent INF
+-- field stays nil and is omitted from the JSON, so the "field present
+-- only when sent" shape is preserved.
+local function _decnp( s )
+    return s and _adclib.unescape( s ) or s
+end
+
 -- Build the JSON-safe representation of a user object. Used by
 -- both /v1/users (list) and /v1/users/{sid} (detail). Pulls the
--- subset of INF fields the API documents publicly.
+-- subset of INF fields the API documents publicly. Free-text fields
+-- (nick/description/email/version) are ADC-unescaped; structured fields
+-- (cid = base32 ID, features = SU codes) carry no escapable chars.
 local function _user_to_json( user )
     -- user.hubs returns (HN, HR, HO); guard the unpack so a user
     -- without an INF doesn't crash the serializer.
     local hn, hr, ho = user.hubs( user )
     return {
         sid            = user:sid( ),
-        nick           = user:nick( ),
+        nick           = _decnp( user:nick( ) ),
         cid            = user:cid( ),
-        description    = user:description( ),
-        email          = user:email( ),
+        description    = _decnp( user:description( ) ),
+        email          = _decnp( user:email( ) ),
         level          = user:level( ),
         share_bytes    = user:share( ),
         share_files    = user:files( ),
@@ -1181,24 +1193,27 @@ local function _user_to_json( user )
         hubs_normal    = hn,
         hubs_regged    = hr,
         hubs_op        = ho,
-        version        = user:version( ),
+        version        = _decnp( user:version( ) ),
     }
 end
 
 -- #264 field spec for /v1/users. Getters read the live user object;
 -- string fields are substring-matched, integer fields support exact +
 -- _min / _max range, default sort is by SID (stable for pagination).
+-- Free-text getters are ADC-unescaped so filter/sort operate on the SAME
+-- plain-text value the response returns (see _decnp / _user_to_json): a
+-- substring search on "John Doe" matches a nick that arrives as "John\sDoe".
 local _users_filter_spec = {
     string_fields = {
-        nick        = function( u ) return u:nick( )        end,
-        description = function( u ) return u:description( ) end,
+        nick        = function( u ) return _decnp( u:nick( ) )        end,
+        description = function( u ) return _decnp( u:description( ) ) end,
     },
     integer_fields = {
         level       = function( u ) return u:level( )       end,
         share_bytes = function( u ) return u:share( )       end,
     },
     sortable_fields = {
-        nick        = function( u ) return u:nick( )        end,
+        nick        = function( u ) return _decnp( u:nick( ) ) end,
         level       = function( u ) return tonumber( u:level( ) ) or 0 end,
         share_bytes = function( u ) return tonumber( u:share( ) ) or 0 end,
         files       = function( u ) return tonumber( u:files( ) ) or 0 end,
@@ -1807,6 +1822,7 @@ return {
     _resolve_token        = resolve_token,
     _generate_request_id  = generate_request_id,
     _auth_verify_handler  = auth_verify_handler,
+    _user_to_json         = _user_to_json,
     _compile_path_pattern = compile_path_pattern,
     _match_path           = match_path,
     _idem_lookup          = function( ... ) return idem_lookup( ... ) end,
