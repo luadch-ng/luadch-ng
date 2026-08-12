@@ -76,6 +76,7 @@ local record_authfail
 local http_token
 local http_token_retry_after
 local http_authfail_prefix
+local http_authverify
 local tick
 
 --// tables //--
@@ -102,6 +103,8 @@ local _http_rate_admin          -- HTTP API per-token rate (admin scope), per-se
 local _http_burst               -- HTTP API per-token burst (shared across scopes)
 local _http_authfail_prefix_rate    -- HTTP per-prefix failed-auth bucket, per-second
 local _http_authfail_prefix_burst   -- HTTP per-prefix failed-auth bucket, burst
+local _http_authverify_rate         -- HTTP /v1/auth/verify oracle bucket, per-second
+local _http_authverify_burst        -- HTTP /v1/auth/verify oracle bucket, burst
 local _msg_rate
 local _msg_burst
 local _pm_rate
@@ -404,6 +407,32 @@ http_authfail_prefix = function( prefix )
         _http_authfail_prefix_burst, _http_authfail_prefix_rate )
 end
 
+-- HTTP /v1/auth/verify password-oracle bucket (WebUI operator login).
+-- The verify endpoint checks a hub password via ADC challenge-response,
+-- so it is a password oracle - throttle hard. Consume BOTH a per-nick
+-- and a per-IP bucket: the per-nick bucket bounds brute-forcing one
+-- account, the per-IP bucket bounds spraying across many accounts from
+-- one host. Both are consumed when present and the request is allowed
+-- only if neither bucket was empty - an attack request pays both
+-- tokens, which is intended. Returns true if the request may proceed.
+http_authverify = function( nick, ip )
+    if not _activate then return true end
+    local ok = true
+    if nick and nick ~= "" then
+        if not _consume( "authverifynick:" .. nick, "authverify",
+            _http_authverify_burst, _http_authverify_rate ) then
+            ok = false
+        end
+    end
+    if ip and ip ~= "" then
+        if not _consume( "authverifyip:" .. ip, "authverify",
+            _http_authverify_burst, _http_authverify_rate ) then
+            ok = false
+        end
+    end
+    return ok
+end
+
 tick = function( )
     local now = socket_gettime( )
     if ( now - _last_cleanup ) < _cleanup_interval then return end
@@ -479,6 +508,12 @@ init = function( )
     _http_authfail_prefix_rate = ( pf_rate and pf_rate > 0 )
         and ( pf_rate / 60 ) or ( 10 / 60 )
     _http_authfail_prefix_burst = cfg_get "http_api_authfail_prefix_burst" or 5
+    -- HTTP /v1/auth/verify password-oracle bucket (WebUI login). Cfg'd
+    -- per-minute; deliberately low - this is a password oracle, not a
+    -- normal read endpoint. Keyed per-nick AND per-IP (both gate).
+    local av_rate = cfg_get "http_api_authverify_rate"
+    _http_authverify_rate = ( av_rate and av_rate > 0 ) and ( av_rate / 60 ) or ( 6 / 60 )
+    _http_authverify_burst = cfg_get "http_api_authverify_burst" or 3
     _last_cleanup = socket_gettime( )
 end
 
@@ -502,6 +537,7 @@ return {
     http_token = http_token,
     http_token_retry_after = http_token_retry_after,
     http_authfail_prefix = http_authfail_prefix,
+    http_authverify = http_authverify,
     tick = tick,
 
 }

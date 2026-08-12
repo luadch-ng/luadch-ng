@@ -1594,6 +1594,64 @@ local function events_get_handler( req )
     }
 end
 
+-- Fixed non-matching password used to equalize the timing of an
+-- unknown-nick verify against a known-nick one: we compute hashpas +
+-- a constant-time compare in BOTH cases, so response time does not
+-- reveal whether a nick is registered. Never a valid stored password.
+local _AUTHVERIFY_DUMMY_PW = "\0no-such-account\0"
+
+-- POST /v1/auth/verify - verify an operator's hub credential via the
+-- ADC challenge-response, for the WebUI login (BFF) flow. The caller
+-- (a token-bearing BFF) mints a fresh base32 salt, the browser returns
+-- adclib.hashpas(password, salt); we recompute from the stored password
+-- and compare in CONSTANT TIME. Returns { ok = true, level } on success,
+-- { ok = false } otherwise (no level leaked). scope=read keeps this
+-- password oracle behind the bearer (never unauthenticated); the body is
+-- audit-redacted (auth material). Mirrors core/hub_dispatch.lua's HPAS
+-- recompute (:644) but, unlike the native `~=` there, is constant-time.
+local function auth_verify_handler( req )
+    local body = req.body or { }
+    local nick, salt, response = body.nick, body.salt, body.response
+    if type( nick ) ~= "string" or nick == ""
+        or type( salt ) ~= "string" or type( response ) ~= "string" then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "nick, salt, response are required strings" } }
+    end
+    -- Password-oracle throttle: per-nick AND per-IP (both gate).
+    local ratelimit = use "ratelimit"
+    if not ratelimit.http_authverify( nick, req.source_ip ) then
+        return { status = 429, error = { code = "E_RATE_LIMITED",
+            message = "auth-verify rate limit exceeded" } }
+    end
+    -- Salt must be RFC4648 base32 (upper, no padding) within the length
+    -- adclib.hashpas accepts (saltBytes = len*5/8 in (0, 64]); reject a
+    -- malformed salt as a clean 400 rather than letting hashpas raise.
+    if #salt < 16 or #salt > 102 or string_find( salt, "[^A-Z2-7]" ) then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "salt must be RFC4648 base32 (A-Z2-7), 16..102 chars" } }
+    end
+    -- Reguser lookup. Nicks with spaces are stored escaped, so escape the
+    -- incoming nick exactly as the ADC login path does before indexing.
+    local hub = use "hub"
+    local _, regs_by_nick = hub.getregusers( )
+    local profile = regs_by_nick[ hub.escapeto( nick ) ]
+    -- Treat an empty stored password as ABSENT: the reg/setpass paths
+    -- reject "", but a corrupt or hand-edited user.tbl could carry
+    -- password="", and hashpas("", salt) must never become a valid login.
+    -- An empty password falls through to the DUMMY -> ok=false.
+    local stored = ( profile and type( profile.password ) == "string"
+        and profile.password ~= "" ) and profile.password or nil
+    -- Timing-equalized: always compute hashpas + a constant-time compare,
+    -- even for an unknown nick (dummy password). `not stored` still
+    -- forces ok=false regardless of the compare result.
+    local expected = _adclib.hashpas( stored or _AUTHVERIFY_DUMMY_PW, salt )
+    local matched  = constant_time_eq( response, expected )
+    if not ( stored and matched ) then
+        return { status = 200, data = { ok = false } }
+    end
+    return { status = 200, data = { ok = true, level = tonumber( profile.level ) or 20 } }
+end
+
 -- /v1/endpoints + /health registration. Called from
 -- register_core_endpoints below at module-init time so the discovery
 -- surface is always available (no plugin owns it).
@@ -1654,6 +1712,23 @@ register_core_endpoints = function( )
         plugin = "core",
         description = "polled event stream; ?since=<id>&types=<csv>; PR-A immediate-return (PR-B adds long-poll)",
     } )
+    -- WebUI operator login: verify a hub credential via ADC challenge-
+    -- response. scope=read keeps the password oracle behind a bearer;
+    -- the body carries auth material, so it is audit-redacted.
+    register( "POST", "/v1/auth/verify", "read", auth_verify_handler, {
+        plugin = "core",
+        description = "verify an operator's hub credential via ADC challenge-response (WebUI login); body {nick, salt, response} -> {ok, level}",
+        request_schema = {
+            nick     = { type = "string", required = true, max_length = 64 },
+            salt     = { type = "string", required = true, max_length = 128 },
+            response = { type = "string", required = true, max_length = 128 },
+        },
+        response_schema = {
+            ok    = { type = "boolean", required = true },
+            level = { type = "integer", required = false },
+        },
+        audit_redact_body = true,
+    } )
 end
 
 -- init() is called by core/hub.lua after cfg has loaded and before
@@ -1682,6 +1757,7 @@ return {
     _envelope_error       = envelope_error,
     _resolve_token        = resolve_token,
     _generate_request_id  = generate_request_id,
+    _auth_verify_handler  = auth_verify_handler,
     _idem_lookup          = function( ... ) return idem_lookup( ... ) end,
     _idem_store           = function( ... ) return idem_store( ... ) end,
     _idem_clear           = function( ... ) return idem_clear( ... ) end,
