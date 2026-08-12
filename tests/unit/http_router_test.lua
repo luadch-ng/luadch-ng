@@ -29,6 +29,18 @@ local _stub_cfg_tokens = { }
 local _stub_cfg_idem_cap = nil    -- nil = use default; integer overrides
 local _last_audit_args = nil
 local _last_error_args = nil
+-- auth-verify (POST /v1/auth/verify) test state.
+local _authverify_allow = true             -- toggled by the rate-limit test
+local _hashpas_calls = { }                 -- records adclib.hashpas calls (timing-equalization test)
+local _mock_regusers_by_nick = { }         -- populated per auth-verify test
+local function _stub_hashpas( pw, salt )   -- deterministic stand-in for adclib.hashpas (real crypto: adclib_hashpas_test + smoke)
+    _hashpas_calls[ #_hashpas_calls + 1 ] = { pw = pw, salt = salt }
+    return "H:" .. tostring( pw ) .. ":" .. tostring( salt )
+end
+local _mock_hub = {
+    getregusers = function( ) return { }, _mock_regusers_by_nick, { } end,
+    escapeto    = function( s ) return s end,   -- identity: test nicks have no spaces
+}
 local _mock_cfg = {
     get = function( key )
         if key == "http_api_tokens" then return _stub_cfg_tokens end
@@ -85,9 +97,11 @@ local _mock_dkjson = {
 -- cache TTL) and `use "adclib"` (constant_time_eq C binding).
 -- `socket.gettime` is the only field touched at module load; a
 -- minimal stub backed by os.time() is enough for unit tests.
--- `adclib = false` exercises the pure-Lua constant_time_eq fallback;
--- the C binding is covered by the smoke harness which runs against
--- a real build.
+-- `adclib` here is a table with only `hashpas` (a deterministic stub)
+-- and NO `constant_time_eq`, so http_router's `_adclib_cte` stays nil and
+-- the pure-Lua constant_time_eq fallback is still exercised; the real C
+-- bindings (hashpas + constant_time_eq) are covered by the adclib_*_test
+-- suite + the smoke harness against a real build.
 local _mock_socket = { gettime = function( ) return os.time( ) end }
 
 -- dispatch() resolves `use "ratelimit"` at request time for any non-
@@ -97,6 +111,7 @@ local _mock_socket = { gettime = function( ) return os.time( ) end }
 local _mock_ratelimit = {
     http_token             = function( ) return true end,
     http_token_retry_after = function( ) return 60 end,
+    http_authverify        = function( ) return _authverify_allow end,
 }
 
 local _real = {
@@ -105,7 +120,8 @@ local _real = {
     type = type, pcall = pcall, xpcall = xpcall, select = select, error = error,
     getmetatable = getmetatable, debug = debug,
     cfg = _mock_cfg, out = _mock_out, dkjson = _mock_dkjson,
-    socket = _mock_socket, adclib = false, ratelimit = _mock_ratelimit,
+    socket = _mock_socket, adclib = { hashpas = _stub_hashpas },
+    ratelimit = _mock_ratelimit, hub = _mock_hub,
 }
 _G.use = function( name )
     local v = _real[ name ]
@@ -532,6 +548,81 @@ do
     eq( "handler-crash: traceback logged", logged:find( "stack traceback", 1, true ) ~= nil, true )
     router.unregister_all( )
     _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
+-- POST /v1/auth/verify handler (WebUI operator login via ADC challenge-
+-- response). The deterministic _stub_hashpas lets this exercise the
+-- HANDLER logic - reguser lookup, per-nick/IP throttle, constant-time
+-- compare, ok/level, timing-equalization - while the real Tiger crypto
+-- is covered by adclib_hashpas_test + smoke. RED pre-feature:
+-- _auth_verify_handler does not exist (nil), so every call below errors.
+----------------------------------------------------------------------
+
+do
+    local SALT = string.rep( "A", 39 )   -- valid RFC4648 base32, 39 chars
+    _mock_regusers_by_nick = {
+        [ "alice" ]   = { password = "secret", level = 60 },
+        [ "bob" ]     = { password = "pw2" },          -- no level -> default 20
+        [ "emptypw" ] = { password = "", level = 100 },-- corrupt user.tbl edge (LOW-1)
+    }
+    _authverify_allow = true
+    local function verify( nickv, respv, ip )
+        return router._auth_verify_handler( {
+            body      = { nick = nickv, salt = SALT, response = respv },
+            source_ip = ip or "127.0.0.1",
+        } )
+    end
+
+    -- correct credential -> 200 { ok = true, level }
+    local r1 = verify( "alice", _stub_hashpas( "secret", SALT ) )
+    eq( "authverify: correct -> 200",      r1.status,                200 )
+    eq( "authverify: correct -> ok true",  r1.data and r1.data.ok,   true )
+    eq( "authverify: correct -> level 60", r1.data and r1.data.level, 60 )
+
+    -- wrong password -> ok false, NO level leaked
+    local r2 = verify( "alice", "H:wrong:" .. SALT )
+    eq( "authverify: wrong pw -> ok false", r2.data and r2.data.ok,    false )
+    eq( "authverify: wrong pw -> no level", r2.data and r2.data.level, nil )
+
+    -- wrong password of the SAME LENGTH as the expected hash: exercises
+    -- the equal-length byte compare, not the length short-circuit (NIT-5).
+    local r2b = verify( "alice", _stub_hashpas( "secre7", SALT ) )   -- 6 chars like "secret"
+    eq( "authverify: same-length wrong pw -> ok false", r2b.data and r2b.data.ok, false )
+
+    -- empty STORED password must never authenticate, even with the
+    -- "correct" hash of "" (LOW-1: empty is treated as absent -> DUMMY).
+    local r_empty = verify( "emptypw", _stub_hashpas( "", SALT ) )
+    eq( "authverify: empty stored pw -> ok false", r_empty.data and r_empty.data.ok, false )
+
+    -- unknown nick -> ok false, but hashpas STILL called (timing-equalized)
+    local before = #_hashpas_calls
+    local r3 = verify( "nobody", "whatever" )
+    eq( "authverify: unknown nick -> ok false", r3.data and r3.data.ok, false )
+    eq( "authverify: unknown nick still hashes (timing-equalized)",
+        #_hashpas_calls > before, true )
+
+    -- reguser with no level field -> default 20
+    local r4 = verify( "bob", _stub_hashpas( "pw2", SALT ) )
+    eq( "authverify: missing level -> default 20", r4.data and r4.data.level, 20 )
+
+    -- rate-limited (per-nick/IP bucket empty) -> 429
+    _authverify_allow = false
+    local r5 = verify( "alice", _stub_hashpas( "secret", SALT ) )
+    eq( "authverify: rate-limited -> 429", r5.status, 429 )
+    _authverify_allow = true
+
+    -- malformed salt -> 400 (clean, not a hashpas crash)
+    local r6 = router._auth_verify_handler( {
+        body = { nick = "alice", salt = "not*base32!", response = "x" },
+        source_ip = "127.0.0.1",
+    } )
+    eq( "authverify: bad salt -> 400", r6.status, 400 )
+    eq( "authverify: bad salt -> E_BAD_INPUT", r6.error and r6.error.code, "E_BAD_INPUT" )
+
+    -- missing fields -> 400
+    local r7 = router._auth_verify_handler( { body = { }, source_ip = "127.0.0.1" } )
+    eq( "authverify: missing fields -> 400", r7.status, 400 )
 end
 
 ----------------------------------------------------------------------
