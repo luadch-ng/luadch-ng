@@ -301,6 +301,16 @@ local function percent_decode( s )
     end ) )
 end
 
+-- Url-decode a query-string key or value (application/x-www-form-urlencoded).
+-- Unlike path vars, query components also encode space as '+', so '+' -> ' '
+-- runs BEFORE the %XX pass (a literal '+' arrives as %2B and survives the '+'
+-- pass to be decoded here). Applied by parse_query AFTER the &/= split, so a
+-- %26/%3D inside a value can never forge an extra pair/assignment boundary. A
+-- lone/invalid '%' is left as-is, matching percent_decode.
+local function query_decode( s )
+    return percent_decode( ( s:gsub( "%+", " " ) ) )
+end
+
 match_path = function( route, path )
     local matches = { string_match( path, route.pattern ) }
     if matches[ 1 ] == nil then return nil end
@@ -604,9 +614,9 @@ parse_query = function( s )
     for pair in string_gmatch( s, "([^&]+)" ) do
         local k, v = string_match( pair, "^([^=]+)=(.*)$" )
         if k then
-            q[ k ] = v
+            q[ query_decode( k ) ] = query_decode( v )
         else
-            q[ pair ] = ""
+            q[ query_decode( pair ) ] = ""
         end
     end
     return q
@@ -1825,6 +1835,7 @@ return {
     _user_to_json         = _user_to_json,
     _compile_path_pattern = compile_path_pattern,
     _match_path           = match_path,
+    _parse_query          = parse_query,
     _idem_lookup          = function( ... ) return idem_lookup( ... ) end,
     _idem_store           = function( ... ) return idem_store( ... ) end,
     _idem_clear           = function( ... ) return idem_clear( ... ) end,
