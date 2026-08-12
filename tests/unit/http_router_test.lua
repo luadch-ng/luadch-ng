@@ -123,13 +123,36 @@ local _mock_ratelimit = {
     http_authverify        = function( ) return _authverify_allow end,
 }
 
+-- Faithful ADC unescape stub for the _user_to_json decode test: \s -> space,
+-- \n -> newline, \\ -> backslash, single left-to-right pass (so "\\s" decodes to
+-- a literal backslash + s, not a space). The real adclib.unescape (C) is covered
+-- by the adclib_* suite + smoke; here we only need it to prove _user_to_json
+-- WIRES the decode onto the free-text fields.
+local function _stub_unescape( s )
+    if type( s ) ~= "string" then return s end
+    local out, i, n = { }, 1, #s
+    while i <= n do
+        local c = s:sub( i, i )
+        if c == "\\" and i < n then
+            local nx = s:sub( i + 1, i + 1 )
+            if nx == "s" then out[ #out + 1 ] = " "; i = i + 2
+            elseif nx == "n" then out[ #out + 1 ] = "\n"; i = i + 2
+            elseif nx == "\\" then out[ #out + 1 ] = "\\"; i = i + 2
+            else out[ #out + 1 ] = c; i = i + 1 end
+        else
+            out[ #out + 1 ] = c; i = i + 1
+        end
+    end
+    return table.concat( out )
+end
+
 local _real = {
     string = string, table = table, os = os, io = io, math = math,
     pairs = pairs, ipairs = ipairs, tostring = tostring, tonumber = tonumber,
     type = type, pcall = pcall, xpcall = xpcall, select = select, error = error,
     getmetatable = getmetatable, debug = debug,
     cfg = _mock_cfg, out = _mock_out, dkjson = _mock_dkjson,
-    socket = _mock_socket, adclib = { hashpas = _stub_hashpas },
+    socket = _mock_socket, adclib = { hashpas = _stub_hashpas, unescape = _stub_unescape },
     ratelimit = _mock_ratelimit, hub = _mock_hub,
 }
 _G.use = function( name )
@@ -780,6 +803,49 @@ do
         ( router._match_path( route, "/v1/x/a%2Fb" ) or { } ).nick, "a/b" )
     eq( "path-decode: lone % left as-is",
         ( router._match_path( route, "/v1/x/50%off" ) or { } ).nick, "50%off" )
+end
+
+-- ============================================================
+-- _user_to_json ADC-unescapes free-text INF fields (NI/DE/EM/AP/VE) so the JSON
+-- API returns plain UTF-8, not the raw wire form. getnp() hands back the escaped
+-- bytes (a nick "John Doe" arrives as "John\sDoe", a description "[ ADMIN ]" as
+-- "[\sADMIN\s]"); a WebUI/table consumer must see the decoded text. Structured
+-- fields (cid = base32, features = SU codes) carry no escapable chars and pass
+-- through untouched. RED pre-fix: the serializer returned the getters verbatim,
+-- so any nick/description with a space rendered "\s".
+-- ============================================================
+do
+    local esc = {
+        sid = "AAAA", nick = "John\\sDoe", cid = "BASE32CID",
+        description = "[\\sADMIN\\s]", email = "a\\sb@x",
+        level = 60, share = 1024, files = 3, slots = 2,
+        features = "ADC0,TCP4", hn = 1, hr = 0, ho = 0,
+        version = "Fancy\\sClient",
+    }
+    local u = {
+        sid = function( ) return esc.sid end,
+        nick = function( ) return esc.nick end,
+        cid = function( ) return esc.cid end,
+        description = function( ) return esc.description end,
+        email = function( ) return esc.email end,
+        level = function( ) return esc.level end,
+        share = function( ) return esc.share end,
+        files = function( ) return esc.files end,
+        slots = function( ) return esc.slots end,
+        features = function( ) return esc.features end,
+        hubs = function( ) return esc.hn, esc.hr, esc.ho end,
+        version = function( ) return esc.version end,
+    }
+    local j = router._user_to_json( u )
+    eq( "user_to_json: nick unescaped",        j.nick,        "John Doe" )
+    eq( "user_to_json: description unescaped",  j.description, "[ ADMIN ]" )
+    eq( "user_to_json: email unescaped",        j.email,       "a b@x" )
+    eq( "user_to_json: version unescaped",      j.version,     "Fancy Client" )
+    eq( "user_to_json: cid untouched",          j.cid,         "BASE32CID" )
+    eq( "user_to_json: features untouched",     j.features,    "ADC0,TCP4" )
+    eq( "user_to_json: level intact",           j.level,       60 )
+    eq( "user_to_json: share_bytes intact",     j.share_bytes, 1024 )
+    eq( "user_to_json: hubs_normal intact",     j.hubs_normal, 1 )
 end
 
 ----------------------------------------------------------------------
