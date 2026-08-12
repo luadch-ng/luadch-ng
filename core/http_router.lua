@@ -61,6 +61,7 @@ local string_match = string.match
 local string_gmatch = string.gmatch
 local string_lower = string.lower
 local string_byte = string.byte
+local string_char = string.char
 local table_concat = table.concat
 local table_insert = table.insert
 local table_remove = table.remove
@@ -288,12 +289,24 @@ local function compile_path_pattern( template )
     return pattern, vars
 end
 
+-- Percent-decode a captured path-variable value (RFC 3986 §2.1). Applied to
+-- the {var} captures ONLY, and AFTER route matching, so a %2F inside a value
+-- can never split a segment or re-route - it just yields a literal '/' in the
+-- value. Standard clients percent-encode path values (Go's net/http does), and
+-- reg nicks can carry non-ASCII / escaped chars, so without this the stored
+-- (un-encoded) key never matches. A lone/invalid '%' is left as-is.
+local function percent_decode( s )
+    return ( s:gsub( "%%(%x%x)", function( h )
+        return string_char( tonumber( h, 16 ) )
+    end ) )
+end
+
 match_path = function( route, path )
     local matches = { string_match( path, route.pattern ) }
     if matches[ 1 ] == nil then return nil end
     local path_vars = { }
     for i, name in ipairs( route.vars ) do
-        path_vars[ name ] = matches[ i ]
+        path_vars[ name ] = percent_decode( matches[ i ] )
     end
     return path_vars
 end
@@ -1794,6 +1807,8 @@ return {
     _resolve_token        = resolve_token,
     _generate_request_id  = generate_request_id,
     _auth_verify_handler  = auth_verify_handler,
+    _compile_path_pattern = compile_path_pattern,
+    _match_path           = match_path,
     _idem_lookup          = function( ... ) return idem_lookup( ... ) end,
     _idem_store           = function( ... ) return idem_store( ... ) end,
     _idem_clear           = function( ... ) return idem_clear( ... ) end,

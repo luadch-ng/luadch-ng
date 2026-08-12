@@ -586,7 +586,9 @@ struct passed to the handler:
 req = {
     method      = "POST",                      -- uppercase
     path        = "/v1/bans",                  -- with version prefix
-    path_vars   = { id = "abc" },              -- {} if no {name} segments
+    path_vars   = { id = "abc" },              -- {} if no {name} segments; values ARE
+                                               -- percent-decoded (a {name} nick may carry
+                                               -- non-ASCII / escaped chars)
     query       = { lines = "100" },           -- query-string parsed; values are RAW URL-encoded strings
                                                -- (the router does NOT %-decode; handlers do so per-endpoint)
     headers     = { ["content-type"] = "..." },-- lowercased keys
