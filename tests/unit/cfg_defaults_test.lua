@@ -48,12 +48,17 @@ local _real = {
     ipairs = ipairs,
     -- const.CONFIG_PATH is read into an upvalue at load; any string is fine.
     const  = { CONFIG_PATH = "cfg/" },
-    -- types.utf8 + types.get "<name>" are captured into upvalues at load;
-    -- the returned validators are never called here, so identity stubs work.
+    -- types.utf8 + types.get "<name>" are captured into upvalues at load.
+    -- The identity stub (always true) is exercised by the http_api_tokens
+    -- validator test below (it calls types_table(value)); returning true
+    -- lets that test drive the per-entry filter path.
     types  = {
         utf8 = function() return true end,
         get  = function() return function() return true end end,
     },
+    -- http_api_tokens validator resolves `use "out"` lazily to log dropped
+    -- entries; a no-op error sink keeps that path silent under test.
+    out    = { error = function() end },
 }
 
 _G.use = function( name )
@@ -130,6 +135,54 @@ for _, key in ipairs( {
     local sok, sval = pcall( cfg_get, key )
     assert_true( key .. ": registered + resolves without crash", sok )
     assert_true( key .. ": default is a boolean", type( sval ) == "boolean" )
+end
+
+----------------------------------------------------------------------
+-- http_api_tokens validator: per-entry (NOT whole-table) validation.
+-- A single malformed entry must not invalidate the whole map - that
+-- path returned false, the cfg loader reset the key to {}, and the HTTP
+-- listener then refused to bind: one scope typo locked the operator out.
+-- The validator now drops only the bad entries, keeps the valid tokens,
+-- and returns true.
+-- RED pre-fix: a mixed good/bad map returned false (whole-table reject)
+-- and left the map unmutated.
+----------------------------------------------------------------------
+
+do
+    local validator = settings.http_api_tokens[ 2 ]
+
+    -- mixed: one valid admin token + one bad-scope typo.
+    local mixed = {
+        [ "goodtoken-long-enough-000001" ] = { scope = "admin", comment = "ops" },
+        [ "typoscope-long-enough-000002" ] = { scope = "administrator" },   -- bad
+    }
+    assert_eq( "http_api_tokens: mixed map validates true (per-entry)",
+        validator( mixed ), true )
+    assert_true( "http_api_tokens: valid token survives",
+        mixed[ "goodtoken-long-enough-000001" ] ~= nil )
+    assert_eq( "http_api_tokens: valid token scope intact",
+        mixed[ "goodtoken-long-enough-000001" ]
+            and mixed[ "goodtoken-long-enough-000001" ].scope, "admin" )
+    assert_true( "http_api_tokens: bad-scope entry dropped",
+        mixed[ "typoscope-long-enough-000002" ] == nil )
+
+    -- all-valid: unchanged, true.
+    local allgood = {
+        [ "aaaa-long-enough-token-0001" ] = { scope = "read" },
+        [ "bbbb-long-enough-token-0002" ] = { scope = "admin", comment = "x" },
+    }
+    assert_eq( "http_api_tokens: all-valid validates true",
+        validator( allgood ), true )
+    assert_true( "http_api_tokens: all-valid keeps both",
+        allgood[ "aaaa-long-enough-token-0001" ] ~= nil
+        and allgood[ "bbbb-long-enough-token-0002" ] ~= nil )
+
+    -- all-bad: everything dropped, still true (empty map -> listener
+    -- simply won't bind, same as no tokens; NOT a hard reject).
+    local allbad = { [ "onlytoken-long-enough-0003" ] = { scope = "nope" } }
+    assert_eq( "http_api_tokens: all-bad validates true",
+        validator( allbad ), true )
+    assert_true( "http_api_tokens: all-bad map emptied", next( allbad ) == nil )
 end
 
 ----------------------------------------------------------------------
