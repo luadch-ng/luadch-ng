@@ -758,6 +758,30 @@ do
     _stub_cfg_tokens = { }
 end
 
+-- ============================================================
+-- match_path percent-decodes captured path variables. The hub compares the raw
+-- path bytes against ADC-escaped reg keys, so a non-ASCII / escaped nick sent
+-- percent-encoded by a standard client (Go's net/http always encodes) must be
+-- decoded before lookup. Decoding is post-routing, so a %2F cannot split a
+-- segment - it just yields a literal '/' in the value.
+-- ============================================================
+do
+    local pat, vars = router._compile_path_pattern( "/v1/x/{nick}" )
+    local route = { pattern = pat, vars = vars }
+    local umlaut = "M" .. string.char( 0xC3, 0xBC ) .. "ller"   -- UTF-8 "Mueller" with u-umlaut
+
+    eq( "path-decode: plain value unchanged",
+        ( router._match_path( route, "/v1/x/dummy" ) or { } ).nick, "dummy" )
+    eq( "path-decode: non-ASCII %C3%BC -> UTF-8",
+        ( router._match_path( route, "/v1/x/M%C3%BCller" ) or { } ).nick, umlaut )
+    eq( "path-decode: %5C -> backslash (ADC \\s nick)",
+        ( router._match_path( route, "/v1/x/Bob%5CsSmith" ) or { } ).nick, "Bob\\sSmith" )
+    eq( "path-decode: %2F -> literal slash in value (no segment split)",
+        ( router._match_path( route, "/v1/x/a%2Fb" ) or { } ).nick, "a/b" )
+    eq( "path-decode: lone % left as-is",
+        ( router._match_path( route, "/v1/x/50%off" ) or { } ).nick, "50%off" )
+end
+
 ----------------------------------------------------------------------
 
 io.write( string.format( "\n%d checks, %d failures\n", checks, failures ) )
