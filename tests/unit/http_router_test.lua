@@ -4,8 +4,10 @@
 
     Unit tests for the pure-Lua-bit functions of core/http_router.lua
     (constant_time_eq, validate_schema, envelope helpers, token
-    resolution, schema validator, request-id shape). Dispatch is
-    smoke-tested end-to-end against a real hub.
+    resolution, schema validator, request-id shape) plus targeted
+    dispatch() coverage (OPTIONS introspection, the top-level body-shape
+    guard, handler-crash traceback logging). Full end-to-end request
+    paths are smoke-tested against a real hub.
 
     The router uses `use "cfg"` and `use "out"` and `use "dkjson"`
     at file scope; we stub them here so the module can load in a
@@ -26,6 +28,7 @@
 local _stub_cfg_tokens = { }
 local _stub_cfg_idem_cap = nil    -- nil = use default; integer overrides
 local _last_audit_args = nil
+local _last_error_args = nil
 local _mock_cfg = {
     get = function( key )
         if key == "http_api_tokens" then return _stub_cfg_tokens end
@@ -37,7 +40,11 @@ local _mock_cfg = {
 }
 local _mock_out = {
     put       = function() end,
-    error     = function() end,
+    -- capture so the Fix-B handler-crash test can assert the logged
+    -- text carries a Lua traceback (xpcall + debug.traceback), not just
+    -- the bare error message. out_error is snapshotted to a local at
+    -- module load, so this capturing closure must exist BEFORE loadfile.
+    error     = function( ... ) _last_error_args = { ... } end,
     api_audit = function( ... ) _last_audit_args = { ... } end,
 }
 local _mock_dkjson = {
@@ -60,7 +67,17 @@ local _mock_dkjson = {
             if not ok then return nil, nil, t end
             return t
         end
-        return nil, nil, "stub: only OBJ:{...} accepted"
+        -- "ARR:" mirrors real dkjson tagging a decoded JSON array with the
+        -- metatable {__jsontype="array"} - the body-shape guard's signal.
+        if s:sub( 1, 4 ) == "ARR:" then
+            local fn = loadstring and loadstring( "return " .. s:sub( 5 ) )
+                or load( "return " .. s:sub( 5 ) )
+            if not fn then return nil, nil, "stub: bad ARR body" end
+            local ok, t = pcall( fn )
+            if not ok then return nil, nil, t end
+            return setmetatable( t, { __jsontype = "array" } )
+        end
+        return nil, nil, "stub: only OBJ:{...} / ARR:{...} accepted"
     end,
 }
 
@@ -73,12 +90,22 @@ local _mock_dkjson = {
 -- a real build.
 local _mock_socket = { gettime = function( ) return os.time( ) end }
 
+-- dispatch() resolves `use "ratelimit"` at request time for any non-
+-- X-Confirm route; a permissive stub lets the body-shape + handler-crash
+-- dispatch tests run without a real token bucket. (Bucket behaviour is
+-- covered by ratelimit_test.lua + smoke.)
+local _mock_ratelimit = {
+    http_token             = function( ) return true end,
+    http_token_retry_after = function( ) return 60 end,
+}
+
 local _real = {
     string = string, table = table, os = os, io = io, math = math,
     pairs = pairs, ipairs = ipairs, tostring = tostring, tonumber = tonumber,
-    type = type, pcall = pcall, select = select, error = error,
+    type = type, pcall = pcall, xpcall = xpcall, select = select, error = error,
+    getmetatable = getmetatable, debug = debug,
     cfg = _mock_cfg, out = _mock_out, dkjson = _mock_dkjson,
-    socket = _mock_socket, adclib = false,
+    socket = _mock_socket, adclib = false, ratelimit = _mock_ratelimit,
 }
 _G.use = function( name )
     local v = _real[ name ]
@@ -408,6 +435,101 @@ do
     -- anonymous OPTIONS on an unknown path: 401 (unchanged).
     eq( "OPTIONS anon unknown path -> 401", ( opt( "/v1/unknown", nil ) ), 401 )
 
+    router.unregister_all( )
+    _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
+-- dispatch body-shape guard (§6.1): a top-level JSON *array* must be
+-- rejected, not silently accepted as a body whose named fields all read
+-- nil. Real dkjson tags a decoded array with metatable
+-- {__jsontype="array"}; the router rejects on that tag (the mock mirrors
+-- the tag via its "ARR:" prefix; the real tag is pinned below).
+-- RED pre-fix: the array body reached the handler and returned 200.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    local seen_body
+    local h = function( req )
+        seen_body = req.body
+        return { status = 200, data = { got = "ok" } }
+    end
+    router.register( "POST", "/v1/body", "admin", h )
+    _stub_cfg_tokens = { [ "ADMINTOKEN00000001" ] = { scope = "admin" } }
+
+    local function post( raw )
+        return router.dispatch( {
+            method  = "POST",
+            target  = "/v1/body",
+            headers = {
+                [ "authorization" ] = "Bearer ADMINTOKEN00000001",
+                [ "content-type" ]  = "application/json; charset=utf-8",
+            },
+            body = raw,
+        }, "127.0.0.1" )
+    end
+
+    -- object body: accepted, handler runs, body reaches it.
+    seen_body = nil
+    local st_ok = post( "OBJ:{ topic = 'hello' }" )
+    eq( "body-guard: object body -> 200", st_ok, 200 )
+    eq( "body-guard: object body reaches handler", seen_body and seen_body.topic, "hello" )
+
+    -- array body: rejected 400 BEFORE the handler; distinct message.
+    seen_body = nil
+    local st_arr, body_arr = post( "ARR:{ 1, 2, 3 }" )
+    eq( "body-guard: array body -> 400", st_arr, 400 )
+    local arr_err = body_arr and body_arr._encoded and body_arr._encoded.error
+    eq( "body-guard: array body code E_BAD_JSON", arr_err and arr_err.code, "E_BAD_JSON" )
+    eq( "body-guard: array body message names array",
+        arr_err and arr_err.message, "body must be a JSON object, not a JSON array" )
+    eq( "body-guard: array body never reached handler", seen_body, nil )
+
+    router.unregister_all( )
+    _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
+-- Pin the external assumption Fix A relies on: the BUNDLED dkjson tags a
+-- decoded top-level array with __jsontype="array" and an object with
+-- "object". If a future dkjson bump drops the tag, the body-shape guard
+-- above silently stops rejecting arrays; catch that here, not in prod.
+----------------------------------------------------------------------
+
+do
+    local realdk = assert( loadfile( "dkjson/dkjson.lua" ) )( )
+    local arr = realdk.decode( "[1,2,3]" )
+    local obj = realdk.decode( "{\"a\":1}" )
+    eq( "dkjson: decoded array tagged __jsontype=array",
+        getmetatable( arr ) and getmetatable( arr ).__jsontype, "array" )
+    eq( "dkjson: decoded object tagged __jsontype=object",
+        getmetatable( obj ) and getmetatable( obj ).__jsontype, "object" )
+end
+
+----------------------------------------------------------------------
+-- dispatch handler-crash logging (Fix B): an uncaught handler error is
+-- caught (500 E_INTERNAL) AND logged WITH its Lua traceback (xpcall +
+-- debug.traceback), not just the bare message (pcall).
+-- RED pre-fix (pcall): the logged text carried the message but no
+-- "stack traceback:" section.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    router.register( "GET", "/v1/boom", "read", function( ) error( "kaboom" ) end )
+    _stub_cfg_tokens = { [ "READTOKEN000000001" ] = { scope = "read" } }
+    _last_error_args = nil
+    local st = router.dispatch( {
+        method  = "GET",
+        target  = "/v1/boom",
+        headers = { [ "authorization" ] = "Bearer READTOKEN000000001" },
+        body    = nil,
+    }, "127.0.0.1" )
+    eq( "handler-crash: 500 E_INTERNAL", st, 500 )
+    local logged = _last_error_args and table.concat( _last_error_args, "" ) or ""
+    eq( "handler-crash: message logged", logged:find( "kaboom", 1, true ) ~= nil, true )
+    eq( "handler-crash: traceback logged", logged:find( "stack traceback", 1, true ) ~= nil, true )
     router.unregister_all( )
     _stub_cfg_tokens = { }
 end

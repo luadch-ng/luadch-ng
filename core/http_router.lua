@@ -43,8 +43,10 @@ local ipairs = use "ipairs"
 local tostring = use "tostring"
 local tonumber = use "tonumber"
 local type = use "type"
-local pcall = use "pcall"
+local xpcall = use "xpcall"
 local error = use "error"
+local getmetatable = use "getmetatable"
+local debug = use "debug"
 
 local string = use "string"
 local table = use "table"
@@ -852,6 +854,18 @@ dispatch = function( framer_unit, source_ip )
             audit_log( req, 400 )
             return 400, envelope_error( "E_BAD_JSON", "body must be a JSON object" ), resp_headers
         end
+        -- Top-level MUST be a JSON object, never an array (§6.1). dkjson
+        -- tags a decoded array with a metatable {__jsontype="array"} and
+        -- an object with {__jsontype="object"}. Without this check a bare
+        -- array passes the type()=="table" test above and reaches the
+        -- handler as a body whose every named-field lookup silently reads
+        -- nil - so a client sending `[...]` gets misleading validation
+        -- errors instead of "not an object". Reject it explicitly.
+        local pmeta = getmetatable( parsed )
+        if pmeta and pmeta.__jsontype == "array" then
+            audit_log( req, 400 )
+            return 400, envelope_error( "E_BAD_JSON", "body must be a JSON object, not a JSON array" ), resp_headers
+        end
         req.body = parsed
 
         -- Schema validation, if the route declared one.
@@ -864,8 +878,14 @@ dispatch = function( framer_unit, source_ip )
         end
     end
 
-    -- Dispatch.
-    local ok, result_or_err = pcall( matched_route.handler, req )
+    -- Dispatch. xpcall (not pcall) so an uncaught handler error carries
+    -- its Lua traceback into error.log - a bare pcall discards the stack,
+    -- leaving only the message with no line to look at. `debug` is a core
+    -- import (never handed to the plugin sandbox); the message handler
+    -- runs at the point of the error, so the traceback is meaningful.
+    local ok, result_or_err = xpcall( matched_route.handler, function( err )
+        return debug.traceback( tostring( err ), 2 )
+    end, req )
     if not ok then
         out_error( "http_router.dispatch: handler raised on ",
             method, " ", path, ": ", tostring( result_or_err ) )
