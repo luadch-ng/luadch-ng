@@ -494,6 +494,28 @@ local function logsafe_body( raw_body )
     return ( s:gsub( "%c", "?" ) )
 end
 
+-- X-Actor is a CLIENT-ASSERTED correlation hint (#82 WebUI): the BFF
+-- holds one hub token and sets X-Actor to the operator nick behind
+-- each call, so api_audit can show WHO acted, not just which token.
+-- It is audit-only and NEVER an authorization input - the bearer
+-- token stays the authenticated principal. Sanitised like any other
+-- attacker-supplied header value: control bytes AND whitespace AND `=`
+-- all become `?` (so the value can never introduce an audit-line field
+-- boundary - a `src=`/`body=` forged ahead of the real one), then
+-- capped at 64 (the auth-verify nick contract). A reguser nick that
+-- legitimately contains a space therefore renders `foo?bar` in the
+-- hint - acceptable: `token=` remains the authoritative identity, and
+-- a space-free field keeps the log machine-parseable. Returns nil for
+-- absent/empty so the caller renders `-`.
+local function logsafe_actor( raw_actor )
+    if not raw_actor or raw_actor == "" then return nil end
+    local s = raw_actor
+    if string_len( s ) > 64 then
+        s = string_sub( s, 1, 64 )
+    end
+    return ( s:gsub( "[%c%s=]", "?" ) )
+end
+
 -- Per-route audit-body redaction (§6.8). Routes that ingest secrets
 -- (password rotation, reguser POST) declare `audit_redact_body =
 -- true` in their meta; dispatch sets req._audit_redact_body after
@@ -511,9 +533,19 @@ audit_log = function( req, status )
     else
         body_field = logsafe_body( req.raw_body )
     end
+    -- actor is recorded ONLY for a request that carries a real
+    -- authenticated bearer principal (req.token_label set by the auth
+    -- block) and is not a rejected probe (_audit_skip_body). Both
+    -- guards are needed: the 429-prefix brute-force path sets a
+    -- SYNTHETIC token_label yet is unauthenticated (skip_body set), and
+    -- an anonymous call to a scope="none" route (the webhook receiver)
+    -- has no token_label yet does not set skip_body. Either alone would
+    -- let an anonymous caller spoof a chosen actor= string in the file.
+    local actor_field = ( not req._audit_skip_body and req.token_label and req.actor ) or "-"
     out_api_audit(
         req.method, " ", req.path, " ", tostring( status ),
         " token=", ( req.token_label or "-" ),
+        " actor=", actor_field,
         " src=", ( req.source_ip or "-" ),
         " idem=", ( req.idempotency_key or "-" ),
         " req_id=", ( req.request_id or "-" ),
@@ -624,6 +656,7 @@ dispatch = function( framer_unit, source_ip )
                      or generate_request_id( ),
         idempotency_key = framer_unit.headers[ "x-idempotency-key" ],
         confirm    = ( framer_unit.headers[ "x-confirm" ] == "yes" ),
+        actor      = logsafe_actor( framer_unit.headers[ "x-actor" ] ),
     }
 
     -- Headers we always echo regardless of outcome.

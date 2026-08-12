@@ -626,6 +626,130 @@ do
 end
 
 ----------------------------------------------------------------------
+-- X-Actor audit field (#82 WebUI unified audit): the BFF holds one hub
+-- token and sets X-Actor to the operator nick behind each call so
+-- api_audit shows WHO acted, not just which token. actor is a client-
+-- asserted correlation hint, sanitised (control -> ?, capped 64) and
+-- suppressed on unauth/probe paths (never an authz input). Assertions
+-- run through the real dispatch() and inspect the variadic passed to
+-- out.api_audit (_last_audit_args). RED pre-feature: no actor= field
+-- exists at all, so every find below returns nil.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    router.register( "POST", "/v1/actortest", "admin",
+        function( ) return { status = 200, data = { ok = true } } end )
+    _stub_cfg_tokens = { [ "ADMINTOKEN00000001" ] = { scope = "admin" } }
+    local TOK = "ADMINTOKEN00000001"
+
+    local function audit_line_for( actor_hdr, tok )
+        _last_audit_args = nil
+        local headers = { [ "content-type" ] = "application/json; charset=utf-8" }
+        if tok then headers[ "authorization" ] = "Bearer " .. tok end
+        if actor_hdr ~= nil then headers[ "x-actor" ] = actor_hdr end
+        local st = router.dispatch( {
+            method  = "POST",
+            target  = "/v1/actortest",
+            headers = headers,
+            body    = "OBJ:{ }",
+        }, "127.0.0.1" )
+        local line = _last_audit_args and table.concat( _last_audit_args, "" ) or ""
+        return st, line
+    end
+
+    -- 1. present + authenticated: nick recorded, token still present,
+    --    actor sits between token= and src=.
+    local st1, l1 = audit_line_for( "alice", TOK )
+    eq( "actor: authenticated write -> 200", st1, 200 )
+    eq( "actor: nick recorded", l1:find( "actor=alice", 1, true ) ~= nil, true )
+    eq( "actor: token still present", l1:find( "token=", 1, true ) ~= nil, true )
+    local it, ia, is = l1:find( "token=", 1, true ),
+                       l1:find( "actor=", 1, true ),
+                       l1:find( " src=", 1, true )
+    eq( "actor: sits between token and src",
+        ( it and ia and is and it < ia and ia < is ) and true or false, true )
+
+    -- 2. absent -> actor=-
+    local _, l2 = audit_line_for( nil, TOK )
+    eq( "actor: absent -> dash", l2:find( "actor=-", 1, true ) ~= nil, true )
+
+    -- 3. control bytes sanitised to ?
+    local _, l3 = audit_line_for( "al\tice\n", TOK )
+    eq( "actor: control bytes -> ?", l3:find( "actor=al?ice?", 1, true ) ~= nil, true )
+
+    -- 3b. space and `=` neutralised too, so the value cannot forge an
+    --     audit-line field boundary (e.g. a spurious src=) ahead of the
+    --     real one. RED against a control-bytes-only sanitiser.
+    local _, l3b = audit_line_for( "a b=c src=9.9.9.9", TOK )
+    eq( "actor: space+= -> ?", l3b:find( "actor=a?b?c?src?9.9.9.9 src=", 1, true ) ~= nil, true )
+    eq( "actor: no forged src= survives in actor value",
+        l3b:find( "actor=a b=c src=9.9.9.9", 1, true ) == nil, true )
+
+    -- 3c. CONTRAST: logsafe_body (the body= field) must NOT be broadened
+    --     the way logsafe_actor is - a JSON body legitimately contains
+    --     spaces and `=`, and mangling them would corrupt the audit
+    --     record. Guards the two sanitisers against being unified.
+    _last_audit_args = nil
+    router.dispatch( {
+        method  = "POST",
+        target  = "/v1/actortest",
+        headers = {
+            [ "content-type" ] = "application/json; charset=utf-8",
+            [ "authorization" ] = "Bearer " .. TOK,
+        },
+        body = "OBJ:{ a = 'b c' }",
+    }, "127.0.0.1" )
+    local lbody = _last_audit_args and table.concat( _last_audit_args, "" ) or ""
+    eq( "body: spaces and = preserved (logsafe_body stays %c-only)",
+        lbody:find( "body=OBJ:{ a = 'b c' }", 1, true ) ~= nil, true )
+
+    -- 4. over 64 chars truncated to exactly 64 (no 65th)
+    local _, l4 = audit_line_for( string.rep( "x", 100 ), TOK )
+    eq( "actor: capped at 64",
+        l4:find( "actor=" .. string.rep( "x", 64 ) .. " src=", 1, true ) ~= nil, true )
+    eq( "actor: not 65",
+        l4:find( "actor=" .. string.rep( "x", 65 ), 1, true ) == nil, true )
+
+    -- 5. unauth probe (401): actor suppressed even though header present,
+    --    so an attacker cannot inject an actor string via 401/404 probes.
+    local st5, l5 = audit_line_for( "evil", nil )
+    eq( "actor: unauth probe -> 401", st5, 401 )
+    eq( "actor: probe suppresses actor", l5:find( "actor=-", 1, true ) ~= nil, true )
+    eq( "actor: probe drops attacker actor",
+        l5:find( "actor=evil", 1, true ) == nil, true )
+    eq( "actor: probe skips body", l5:find( "body=[skipped]", 1, true ) ~= nil, true )
+
+    -- 6. anonymous call to a scope="none" route (the webhook-receiver
+    --    class): auth is skipped so the handler runs (200) and the body
+    --    is NOT skipped, yet there is no authenticated principal - actor
+    --    MUST render `-`, never the caller-supplied string. This is the
+    --    path _audit_skip_body does NOT cover, so the gate keys on
+    --    token_label too.
+    router.register( "POST", "/v1/nonetest", "none",
+        function( ) return { status = 200, data = { ok = true } } end )
+    _last_audit_args = nil
+    local st6 = router.dispatch( {
+        method  = "POST",
+        target  = "/v1/nonetest",
+        headers = {
+            [ "content-type" ] = "application/json; charset=utf-8",
+            [ "x-actor" ]      = "evil",
+        },
+        body = "OBJ:{ }",
+    }, "127.0.0.1" )
+    local l6 = _last_audit_args and table.concat( _last_audit_args, "" ) or ""
+    eq( "actor: scope=none anon -> 200 (auth skipped)", st6, 200 )
+    eq( "actor: scope=none anon renders dash",
+        l6:find( "actor=-", 1, true ) ~= nil, true )
+    eq( "actor: scope=none anon drops attacker actor",
+        l6:find( "actor=evil", 1, true ) == nil, true )
+
+    router.unregister_all( )
+    _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
 
 io.write( string.format( "\n%d checks, %d failures\n", checks, failures ) )
 os.exit( failures == 0 and 0 or 1 )

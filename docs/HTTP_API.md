@@ -602,6 +602,8 @@ req = {
     request_id  = "01HKE7...",                 -- client-sent X-Request-ID, or an auto-generated
                                                -- UUIDv4-SHAPED id (NOT a real UUIDv4 - see §6.5)
     confirm     = false,                       -- true iff client sent X-Confirm: yes
+    actor       = "alice",                     -- client-sent X-Actor (§6.7), sanitised; nil if
+                                               -- absent. Audit-only correlation hint, NOT authz.
 }
 ```
 
@@ -805,6 +807,40 @@ through it. Cap `max_lines = 1000`; clamping rules follow §6.4.
   at all". Anonymous callers do NOT see 405 - they get 401 first
   (no path-existence leak to unauthenticated callers).
 
+### 6.7 X-Actor (audit attribution)
+
+Some deployments front the API with a service that holds ONE hub
+token and acts on behalf of many operators - the WebUI BFF (#82) is
+the reference case: it authenticates the operator itself, then calls
+the hub with its single admin token. Without extra information the
+audit log would attribute every such call to that one token, losing
+"who actually did this".
+
+- If the caller sends `X-Actor: <nick>`, the router records it in the
+  audit log as an `actor=` field (§8), alongside the authenticated
+  `token=` field. The token remains the authenticated principal; the
+  actor is the caller's CLAIM about who is behind the call.
+- **X-Actor is never an authorization input.** It does not affect
+  routing, scope, rate-limit buckets, or any handler decision - it is
+  purely an audit-correlation hint. A token holder can set it to any
+  string, so treat `actor=` as "the token holder asserted this nick",
+  not as a verified identity. The trust boundary is the token; the
+  actor is only as trustworthy as whoever holds it (for the WebUI,
+  the BFF, which verified the operator via `POST /v1/auth/verify`).
+- The value is sanitised exactly like any attacker-supplied header:
+  control bytes, whitespace, and `=` all become `?` (so the value can
+  never introduce an audit-line field boundary - e.g. forge a `src=`
+  ahead of the real one), then it is capped at 64 chars (the
+  auth-verify nick contract). A reguser nick that legitimately contains
+  a space therefore appears as `foo?bar` in the hint; `token=` remains
+  the authoritative identity. Absent/empty renders as `-`.
+- It is recorded ONLY when the request carried a valid bearer token
+  (an authenticated principal). Every request without one renders
+  `actor=-`: the rejected probes (`401 / 404 / 405 / 429-prefix`) AND
+  anonymous calls to `scope="none"` routes such as the webhook
+  receiver. So an anonymous caller can never put a chosen `actor=`
+  string in the file - the authenticated `token=` is the gate.
+
 ---
 
 ## 7. Response shape
@@ -948,13 +984,21 @@ New cfg key `log_api_audit` (default `true`) gates the stream;
 operators can disable via cfg + reload. One line per non-GET request:
 
 ```
-[2026-05-22 | 14:32:11] POST /v1/bans 200 token=ops cli (oper...3kd2) src=127.0.0.1 idem=- req_id=8f14a2c0-1b3d-4e5a-9c7f-2a6b1d0e4f88 body={"target_type":"nick","target":"baduser","duration_minutes":60}
+[2026-05-22 | 14:32:11] POST /v1/bans 200 token=ops cli (oper...3kd2) actor=alice src=127.0.0.1 idem=- req_id=8f14a2c0-1b3d-4e5a-9c7f-2a6b1d0e4f88 body={"target_type":"nick","target":"baduser","duration_minutes":60}
 ```
 
 - Token field shows first + last 4 chars (full token never in logs).
 - `comment` field from cfg (when set) appears BEFORE the parens; the
-  parens hold the `first4...last4` token fragment. A `req_id=` field
-  always sits between `idem=` and `body=`.
+  parens hold the `first4...last4` token fragment. An `actor=` field
+  always sits between `token=` and `src=`; a `req_id=` field always
+  sits between `idem=` and `body=`.
+- `actor=` is the client-asserted operator nick from `X-Actor` (§6.7),
+  a correlation hint for services that front the API with one token
+  (the WebUI BFF). It is NEVER an authorization input - the `token=`
+  field remains the authenticated principal. It is `-` whenever there
+  is no authenticated bearer principal (rejected probes AND anonymous
+  `scope="none"` calls) or when no `X-Actor` header was sent, so an
+  anonymous caller cannot inject a chosen actor.
 - Body is JSON-serialised, max 512 bytes (truncated to 509 plus `...`
   if longer), control-bytes replaced with `?` (see
   `core/http_router.lua:logsafe_body`). **The 512-byte truncation is a log-
