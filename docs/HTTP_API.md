@@ -35,8 +35,9 @@ the authoritative spec; it is kept in lockstep with the implementation.
 - **Plugin-extensible** - bundled and third-party plugins register
   their own endpoints via a hub-side API. Core only ships the router
   + a handful of hub-intrinsic endpoints; everything else is plugin-
-  owned. If a plugin is not loaded, its endpoints return
-  `404 E_NOT_CONFIGURED`.
+  owned. If a plugin is not loaded, its path is not registered and
+  the router answers `404 E_NOT_FOUND` ("no such endpoint") - there
+  is no code that distinguishes "not configured" from "unknown".
 - Designed to underpin a future WebUI (live monitoring + plugin
   management) - discoverable, versioned, machine-readable error shape.
 - Inherits the Phase-8 S3 hardened HTTP framer (`core/iostream.lua:
@@ -105,10 +106,9 @@ shape. The state machine becomes:
                  ╲── any smuggling-defence trigger (TE, multi-CL, ...) ─►  emit{reject = 400}; done
 
 [collecting-body]  ── enough bytes received ─►  emit{method, target, version, headers, body=<CL bytes>}; done
-                ╲
-                 ╲── socket EOF before CL bytes ─►  emit{reject = 400}; done
-                ╲
-                 ╲── per-push limit / overflow guard tripped ─►  emit{reject = 413}; done
+                (mid-body socket EOF emits NOTHING: no close-hook, the connection is torn
+                 down and the framer state is GC'd - there is no per-push 413 guard here,
+                 413 fires only on the declared Content-Length during header parse)
 
 [done]  any further push  ─►  returns nil, false  (trailing bytes discarded)
 ```
@@ -192,7 +192,11 @@ the core router does everything else.
 
 ## 4. Auth model
 
-Token-based bearer auth with two scopes: `read` and `admin`.
+Token-based bearer auth with three scopes: `none`, `read`, and
+`admin`. `none` marks routes that skip the router's bearer gate -
+unauthenticated routes like `/health` and plugin-self-auth routes
+like the webhook receiver (the handler does its own auth); `read`
+and `admin` are token-gated. §4.4 details each.
 
 ### 4.1 cfg shape
 
@@ -206,9 +210,12 @@ http_api_tokens = {
 - Map key = token (opaque string, operator-generated). Any non-empty
   string works syntactically; recommended ≥32 bytes from
   `/dev/urandom` base64-encoded for adequate entropy.
-- `scope`: required, exactly one of `"read"` or `"admin"`. Any other
-  value rejects the entry at startup with a logged error and the
-  token does not become active.
+- `scope`: required, exactly one of `"read"` or `"admin"`. A
+  malformed entry (bad scope or wrong shape) is dropped per-entry at
+  startup: only the offending entry is removed, the remaining valid
+  tokens stay active, and a warning is logged. (An earlier version
+  invalidated the WHOLE table on a single bad entry and left the
+  listener unbound; that is fixed.)
 - `comment`: optional, free-form; surfaced in `api_audit.log` for
   attribution.
 - Empty table or missing key = API is reachable but answers `401`
@@ -230,20 +237,21 @@ http_api_tokens = {
 - No query-string fallback (tokens in URLs leak into proxy logs).
 - Constant-time comparison required: Lua's `==` on strings short-
   circuits at first mismatch byte, leaking length and prefix-match
-  timing. Phase 1 ships a small `adclib.constant_time_eq( a, b )`
-  in C (XOR-accumulate over equal-length strings, single branch on
-  final accumulator). Interim Lua fallback while the C function is
-  in review: same algorithm in pure Lua with Lua 5.4 native bitwise
-  (`~`/`|`) / `string.byte` (timing-leak-free at the Lua level; the JIT may
-  still optimize, but our hub uses plain Lua 5.4 interpreter, not
-  LuaJIT, so the constant-time property holds).
+  timing. The hub ships `adclib.constant_time_eq( a, b )` in C
+  (XOR-accumulate over equal-length strings, single branch on the
+  final accumulator); it is the active path whenever `adclib` is
+  loaded - the normal case. A pure-Lua fallback (same algorithm with
+  Lua 5.4 native bitwise `~`/`|` / `string.byte`) runs ONLY in
+  stripped builds without `adclib`. Both are timing-leak-free at the
+  Lua level; our hub uses the plain Lua 5.4 interpreter, not LuaJIT,
+  so the constant-time property holds.
 
 ### 4.4 Scope semantics
 
 | Scope | Can | Cannot |
 |---|---|---|
 | `none` | Reached without a bearer token; the route is part of the route table and listed by `/v1/endpoints`. Used by `/health` and by plugins that do their OWN authentication (e.g. `etc_webhook`'s HMAC-signed webhook routes - the handler verifies the signature over `req.raw_body`). | n/a (no router auth gate; the handler authenticates) |
-| `read` | GET endpoints + `GET /v1/endpoints` filtered to {`none`, `read`} routes | Any non-GET; admin-scoped GETs (none planned but reserved) |
+| `read` | GET endpoints + `GET /v1/endpoints` filtered to {`none`, `read`} routes | Any non-GET; admin-scoped GETs (these DO ship - e.g. `GET /v1/log/api`, `/v1/log/error`, `/v1/log/cmd`, `/v1/log/audit`) |
 | `admin` | Everything `read` + all writes (POST/PUT/PATCH/DELETE) + admin-scoped GETs | n/a |
 
 The dispatcher checks scope BEFORE invoking the handler. A scope
@@ -474,9 +482,11 @@ symmetric:
   at registration time and the second plugin's `onStart` returns
   false. Operator sees a startup error in `error.log`; hub continues
   with the first registration.
-- Registration is single-shot per plugin per route; idempotent re-
-  registration in the same `onStart` (same method + path + handler)
-  is a no-op.
+- Registration is single-shot per plugin per route: a duplicate
+  method + path always raises "duplicate route" at registration
+  time, regardless of handler identity. There is no same-handler
+  no-op - a second `register` for an already-claimed method + path
+  is an error.
 
 ### 5.3 Naming convention
 
@@ -536,9 +546,12 @@ Supported field-spec keys: `type` (`"string"` / `"integer"` /
 (strings), `pattern` (Lua pattern - NOT PCRE; `%d` is digit, `.`
 matches any char, no `\d` / `\w`; WebUI builders MUST be told this).
 
-For `type = "array"` and `"object"` the router validates ONLY the
-top-level shape (is-array vs is-object, is-present). Nested item
-or property validation is the handler's job. Rationale: phase 1
+For `type = "array"` and `"object"` the router validates ONLY that
+the value is a table and is present - it does NOT distinguish array
+from object (both collapse to a `type == "table"` check), so
+`type = "array"` accepts an object and vice-versa. Array-vs-object,
+plus nested item or property validation, is the handler's job.
+Rationale: phase 1
 endpoints (see catalog §10) all have flat request bodies; a full
 recursive validator is bloat we don't pay for until a real
 nested-body endpoint shows up. The schema mini-spec is
@@ -586,7 +599,8 @@ req = {
     token_scope = "admin",
     source_ip   = "127.0.0.1",                 -- for audit log
     idempotency_key = nil,                     -- string if client sent X-Idempotency-Key
-    request_id  = "01HKE7...",                 -- client-sent X-Request-ID, or auto-generated UUIDv4
+    request_id  = "01HKE7...",                 -- client-sent X-Request-ID, or an auto-generated
+                                               -- UUIDv4-SHAPED id (NOT a real UUIDv4 - see §6.5)
     confirm     = false,                       -- true iff client sent X-Confirm: yes
 }
 ```
@@ -651,10 +665,11 @@ req = {
   the WebUI polls.
 - Exceeded ⇒ `429 E_RATE_LIMITED` with `Retry-After: <seconds>` header.
 - Buckets share `core/ratelimit.lua` infrastructure with the ADC
-  side. Per-token buckets are keyed on the resolved token *label*
-  (non-secret comment + first4...last4); the full token never
-  enters the bucket map, so the rate-limit state cannot leak
-  secrets even if dumped.
+  side. Per-token buckets are keyed on an internal `bucket_id`
+  (first 8 + last 8 chars of the token = 16 chars, or the whole
+  token when it is shorter than 16); no comment is included. The
+  full token never enters the bucket map, so the rate-limit state
+  cannot leak secrets even if dumped.
 - The failed-auth bucket (§4.8) is checked BEFORE the token bucket:
   an attacker grinding tokens hits the failed-auth defences first.
 - `/health` is NOT rate-limited (probes are noisy by design;
@@ -699,7 +714,10 @@ GET /v1/users?limit=100&offset=0
 }
 ```
 
-- `next_offset` is `null` when the page is the last one.
+- `next_offset` is OMITTED (the JSON key is absent, not `null`) on
+  the last page - dkjson does not serialise a nil field. Clients
+  MUST treat a MISSING `next_offset` as "no more pages" rather than
+  testing for `null`.
 
 ### Filtering and sorting (#264)
 
@@ -752,9 +770,13 @@ through it. Cap `max_lines = 1000`; clamping rules follow §6.4.
 
 - If the client sends `X-Request-ID: <opaque>`, the router echoes it
   in the response header and in the audit log.
-- If the client does NOT send one, the router generates a UUIDv4 and
-  echoes it back. The client can then correlate its log line with
-  the audit log entry without having to invent IDs.
+- If the client does NOT send one, the router generates a
+  UUIDv4-shaped id (8-4-4-4-12 hex with the version nibble pinned to
+  4) and echoes it back. It is NOT a real UUIDv4 - the variant nibble
+  is unconstrained and `math.random` is not a CSPRNG - so it is a
+  log-correlation handle, not a cryptographic uniqueness guarantee.
+  The client can then correlate its log line with the audit log entry
+  without having to invent IDs.
 
 ### 6.6 OPTIONS + HEAD auto-support
 
@@ -870,11 +892,10 @@ discriminator. WebUI / clients pattern-match on `code`, surface
 | `E_CONFIRMATION_REQUIRED` | 400 | Endpoint requires `X-Confirm: yes` header (§4.6) |
 | `E_UNAUTHENTICATED` | 401 | No / bad bearer token |
 | `E_FORBIDDEN` | 403 | Token scope insufficient for endpoint |
-| `E_NOT_FOUND` | 404 | Resource does not exist (e.g. sid not online) |
-| `E_NOT_CONFIGURED` | 404 | Endpoint path exists in spec but plugin is not loaded |
+| `E_NOT_FOUND` | 404 | Resource does not exist (e.g. sid not online), or the path is not registered at all ("no such endpoint" - e.g. the plugin that would own it is not loaded) |
 | `E_METHOD_NOT_ALLOWED` | 405 | Method not implemented for path; `Allow` header lists what is |
 | `E_CONFLICT` | 409 | State conflict (e.g. user already banned) |
-| `E_PAYLOAD_TOO_LARGE` | 413 | Body exceeds `MAXBODY` (64 KiB) |
+| `E_PAYLOAD_TOO_LARGE` | 413 | Reserved only. A 413 is emitted by the framer as transport-level `text/plain` ("413 Payload Too Large") with NO JSON envelope, so it carries no machine-readable `error.code` - unlike every routed error above |
 | `E_UNSUPPORTED_MEDIA_TYPE` | 415 | Request body present but Content-Type is not JSON |
 | `E_RATE_LIMITED` | 429 | Token bucket or failed-auth bucket empty; check `Retry-After` |
 | `E_INTERNAL` | 500 | Handler raised; details in `error.log` only |
@@ -927,11 +948,13 @@ New cfg key `log_api_audit` (default `true`) gates the stream;
 operators can disable via cfg + reload. One line per non-GET request:
 
 ```
-[2026-05-22 | 14:32:11] POST /v1/bans 200 token=operator-3k...kd2 (ops cli) src=127.0.0.1 idem=- body={"target_type":"nick","target":"baduser","duration_minutes":60}
+[2026-05-22 | 14:32:11] POST /v1/bans 200 token=ops cli (oper...3kd2) src=127.0.0.1 idem=- req_id=8f14a2c0-1b3d-4e5a-9c7f-2a6b1d0e4f88 body={"target_type":"nick","target":"baduser","duration_minutes":60}
 ```
 
 - Token field shows first + last 4 chars (full token never in logs).
-- `comment` field from cfg appears in parens.
+- `comment` field from cfg (when set) appears BEFORE the parens; the
+  parens hold the `first4...last4` token fragment. A `req_id=` field
+  always sits between `idem=` and `body=`.
 - Body is JSON-serialised, max 512 bytes (truncated to 509 plus `...`
   if longer), control-bytes replaced with `?` (see
   `core/http_router.lua:logsafe_body`). **The 512-byte truncation is a log-
@@ -1009,8 +1032,9 @@ scope-filtered to what the calling token can reach:
 }
 ```
 
-- A `read` token sees only `read`-scoped endpoints.
-- An `admin` token sees both.
+- A `read` token sees `none`- and `read`-scoped endpoints (e.g.
+  `/health`).
+- An `admin` token sees all scopes.
 - The `/v1/endpoints` route is itself listed in its own output (the
   registry is self-describing).
 - Plugin authors who omit `meta` get `description=null`, schemas
@@ -1022,7 +1046,8 @@ scope-filtered to what the calling token can reach:
 
 Distinguishes **core endpoints** (hub-intrinsic, always available
 when the listener is bound) from **plugin endpoints** (registered
-when the named plugin is loaded; 404 `E_NOT_CONFIGURED` otherwise).
+when the named plugin is loaded; a disabled plugin has no registered
+route, so it answers 404 `E_NOT_FOUND` like any unknown path).
 
 > **Authorisation on the HTTP path.** Across every endpoint below, the
 > ADC-side level / permission guards (an operator's `permission[level]`
@@ -1063,7 +1088,8 @@ when the named plugin is loaded; 404 `E_NOT_CONFIGURED` otherwise).
 Mapped from existing `+cmd` operations. Each row's `plugin` column
 names the bundled plugin that registers the endpoint; if that plugin
 is disabled in `cfg.scripts`, the endpoint returns 404
-`E_NOT_CONFIGURED`.
+`E_NOT_FOUND` (the router does not distinguish a disabled plugin from
+an unknown path).
 
 #### User control
 
@@ -1221,7 +1247,7 @@ is disabled in `cfg.scripts`, the endpoint returns 404
 | GET | `/v1/log/cmd?lines=N` | admin | `etc_cmdlog` [^http-log-cmd-1] |
 | GET | `/v1/log/audit?lines=N` | admin | `etc_auditlog` (#84) [^http-log-audit-1] |
 
-[^http-log-audit-1]: Registered by the `etc_auditlog` plugin, NOT hub-intrinsic - returns 404 `E_NOT_CONFIGURED` when that plugin is disabled. Tail of today's staff-action audit log (`log/audit-YYYY-MM-DD.jsonl`); query `?lines=N` (default 200, max 1000); response `{lines, returned, total_lines}` matches sibling tail endpoints; multi-day reads are filesystem-side (`jq` / `cat`) by design.
+[^http-log-audit-1]: Registered by the `etc_auditlog` plugin, NOT hub-intrinsic - returns 404 `E_NOT_FOUND` when that plugin is disabled. Tail of today's staff-action audit log (`log/audit-YYYY-MM-DD.jsonl`); query `?lines=N` (default 200, max 1000); response `{lines, returned, total_lines}` matches sibling tail endpoints; multi-day reads are filesystem-side (`jq` / `cat`) by design.
 
 [^http-log-error-1]: Query `?lines=N` (default 200, max 1000 per §6.4 tail-style cap). Non-numeric or out-of-range values are clamped to the default, not rejected. Returns 200 with `data: {lines:[...], returned, total_lines}`. `total_lines` is the file's full line count (operators can spot "the last 200 of 1500" at a glance). Missing log file returns 200 with `lines: []` and `total_lines: 0` (matches the ADC path's "No errors." semantic without surfacing a 404 for a file that has not been written yet).
 | DELETE | `/v1/log/{name}` | admin | `etc_log_cleaner` - `{name}` ∈ `error`, `cmd` [^http-log-clean-1] |
@@ -1363,7 +1389,7 @@ reviewable and shippable.
   header for method mismatch (§6.6).
 - New module `core/http_router.lua` (or extend `core/http.lua`):
   route table, dispatch, auth, scope, envelope, JSON marshalling,
-  error mapping, rate-limit (token + per-IP failed-auth), idempotency-
+  error mapping, rate-limit (token + per-prefix failed-auth), idempotency-
   key cache, audit log, X-Request-ID generation, schema validation.
 - New plugin API global `hub.http_register(...)` with optional `meta`
   (description + request_schema + response_schema).
@@ -1476,8 +1502,9 @@ closed; details in their respective PRs / docs.
   current; a `/v2` rollout overlaps with `/v1` for one full minor
   version before `/v1` is removed.
 - **Schema validation depth.** Phase 1 ships the minimal type +
-  required + enum + min/max validator. Full JSON-Schema is out of
-  scope unless a real client demand surfaces.
+  required + enum + min/max + min_length/max_length/pattern
+  validator. Full JSON-Schema is out of scope unless a real client
+  demand surfaces.
 
 ---
 
