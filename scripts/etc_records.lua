@@ -51,7 +51,7 @@
 --------------
 
 local scriptname = "etc_records"
-local scriptversion = "0.9"
+local scriptversion = "0.10"
 
 local cmd = "records"
 local prm1 = "show"
@@ -164,7 +164,7 @@ local records = util_loadtable( records_path ) or { }  -- load the left ones
 -- "none"`) but are defaulted here too so the table is always well-formed.
 records[ 1 ] = records[ 1 ] or os_date( "%Y-%m-%d" )  -- share record date
 records[ 2 ] = records[ 2 ] or os_date( "%H:%M:%S" )  -- share record time
-records[ 3 ] = tonumber( records[ 3 ] ) or 1          -- max total hubshare (bytes)
+records[ 3 ] = tonumber( records[ 3 ] ) or 0          -- max total hubshare (bytes); #618 seed 0, not 1
 records[ 4 ] = records[ 4 ] or os_date( "%Y-%m-%d" )  -- user-count record date
 records[ 5 ] = records[ 5 ] or os_date( "%H:%M:%S" )  -- user-count record time
 records[ 6 ] = tonumber( records[ 6 ] ) or 0          -- max online users
@@ -231,11 +231,12 @@ end
 -- `recorded_at` strings are `YYYY-MM-DD / HH:MM:SS` (hub local
 -- time, matches `cmd_reg`'s persistence format), collapsed to
 -- `""` when both halves are missing. On a fresh hub before any
--- sample has been taken: `max_users.count` = 0,
--- `top_sharer.share_bytes` = 0, `top_sharer.nick` = "none".
--- `hub_share.total_bytes` = 1 (legacy `reset()` seed; kept stable
--- so the `> records[3]` max-tracking comparison in `hubshare()`
--- still increments correctly). Spec footnote documents this.
+-- sample has been taken all three seed to 0: `hub_share.total_bytes`
+-- = 0, `max_users.count` = 0, `top_sharer.share_bytes` = 0
+-- (`top_sharer.nick` = "none"). #618 normalised the hub_share seed
+-- from a vestigial `1` to `0` so a value of 0 unambiguously means
+-- "no record yet"; the `> records[3]` max-tracker in `hubshare()`
+-- increments identically from a 0 seed (no real hub totals 1 byte).
 --
 -- The ADC-side `etc_records_min_level` gate does NOT apply on
 -- the HTTP path: the bearer token's `read` scope IS the
@@ -461,17 +462,17 @@ function buildrecords( )  -- builds msg for command show
 
     -- getting all informations of table --
     --sharestats--
-    local s = records[3] or 1  -- total-share-amount
+    local s = records[3] or 0  -- total-share-amount (#618: 0 = no record; never fires post-init)
     local share, shareunit = shareoptimize( s )
     local sharedate = records[1] or os_date( "%Y-%m-%d" )  -- date
     local sharetime = records[2] or os_date( "%H:%M:%S" )  -- time
     --userstats--
-    local users = records[6] or 1  -- user-amount
+    local users = records[6] or 0  -- user-amount (never fires post-init)
     local usersdate = records[4] or os_date( "%Y-%m-%d" )  -- date
     local userstime = records[5] or os_date( "%H:%M:%S" )  -- time
     --topuser--
     local topuser = records[7] or "none"  -- nick
-    local tus = records[8] or 1  -- share-amount
+    local tus = records[8] or 0  -- share-amount (never fires post-init)
     local topuser_share, topuser_shareunit = shareoptimize( tus )
 
     local rmsg = utf_format( msg_rmsg,
@@ -530,7 +531,7 @@ function reset( )
         -- sharestats --
         [1] = os_date( "%Y-%m-%d" ),  -- date
         [2] = os_date( "%H:%M:%S" ),  -- time
-        [3] = 1,  -- total-share-amount
+        [3] = 0,  -- total-share-amount (#618: 0 = no record yet, matches [6]/[8])
         -- userstats --
         [4] = os_date( "%Y-%m-%d" ),  -- date
         [5] = os_date( "%H:%M:%S" ),  -- time

@@ -280,6 +280,30 @@ do
 end
 
 ----------------------------------------------------------------------
+-- 5c. POST reject: bad_pattern (dot-segment "." / "..", #617)
+--     A bare "." or ".." is collapsed by URL path normalization so
+--     DELETE /v1/clientblocker/{pattern} can never reach the route -
+--     the entry would be un-removable via HTTP. Reject at POST time.
+--     Regression per CLAUDE.md 1a.7: on the unpatched validate_pattern
+--     these POSTs returned 201 (accepted); they now return 400. The
+--     "a.b" case guards that we reject ONLY the exact dot-segments,
+--     not every pattern containing a dot (real VE tags carry dots).
+----------------------------------------------------------------------
+
+do
+    for _, seg in ipairs( { ".", ".." } ) do
+        local r = POST{ body = { pattern = seg }, token_label = "alice" }
+        eq( "dot-segment " .. seg .. ": status", r.status,     400 )
+        eq( "dot-segment " .. seg .. ": code",   r.error.code, "bad_pattern" )
+    end
+    -- a dot elsewhere is still a legitimate pattern (must be accepted)
+    local ok = POST{ body = { pattern = "a.b", reason = "x" }, token_label = "alice" }
+    eq( "dotted pattern a.b: accepted", ok.status, 201 )
+    -- cleanup so later count-based assertions are unaffected
+    DELETE{ path_vars = { pattern = "a.b" }, token_label = "alice" }
+end
+
+----------------------------------------------------------------------
 -- 6. POST reject: exists
 ----------------------------------------------------------------------
 
