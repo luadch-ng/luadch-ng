@@ -5775,14 +5775,17 @@ def test_http_phase4_etc_records(staging_dir: Path, proc=None):
         )
 
     # 5. Post-DELETE GET -> 200, valid envelope, AND must actually
-    # be reading from the rebound table. `reset()` reseeds
-    # records[3] = 1 (legacy quirk - the spec footnote documents
-    # it), then immediately calls hubshare() + onliners(). If the
-    # GET handler closed over the OLD records table by-reference
-    # rather than the upvalue, total_bytes would still reflect
-    # whatever pre-reset value was set. Asserting >= 1 hits the
-    # rebind-survival path concretely (the
-    # reference_lua_plugin_exports regression-guard).
+    # be reading from the rebound table. `reset()` reseeds the
+    # counters to 0 (#618 normalised the hub_share seed from a
+    # vestigial 1 to 0), then immediately calls hubshare() +
+    # onliners(). If the GET handler closed over the OLD records
+    # table by-reference rather than the upvalue, the post-reset
+    # read would crash or return a non-int - so a valid int
+    # total_bytes from a 200 envelope proves the rebind survived
+    # (the reference_lua_plugin_exports regression-guard). The
+    # value is >= 0 (0 when the connected smoke clients advertise
+    # no share, which they do not; max_users.count still rises via
+    # onliners()).
     r = _http_roundtrip(b"GET /v1/records HTTP/1.1\r\n" + auth + b"\r\n")
     if "200 OK" not in status(r):
         raise TestFailure(
@@ -5794,10 +5797,10 @@ def test_http_phase4_etc_records(staging_dir: Path, proc=None):
             f"GET /v1/records (post-reset): ok=false; body={body_of(r)!r}"
         )
     post_total = (parsed.get("data") or {}).get("hub_share", {}).get("total_bytes")
-    if not isinstance(post_total, int) or post_total < 1:
+    if not isinstance(post_total, int) or post_total < 0:
         raise TestFailure(
             f"GET /v1/records (post-reset): expected hub_share.total_bytes "
-            f">= 1 (reset() seeds 1 then re-samples); got {post_total!r}; "
+            f">= 0 (reset() seeds 0 then re-samples); got {post_total!r}; "
             f"body={body_of(r)!r}"
         )
 
