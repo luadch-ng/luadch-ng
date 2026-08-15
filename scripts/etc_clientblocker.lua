@@ -67,7 +67,7 @@
 --------------
 
 local scriptname = "etc_clientblocker"
-local scriptversion = "0.11"
+local scriptversion = "0.12"
 
 local cmd_add  = "addblocker"
 local cmd_del  = "delblocker"
@@ -181,6 +181,12 @@ local patterns_tbl = { }
 --     404). Real-world DC client AP/VE strings are alphanumeric
 --     + `+`/`.`/`-`, so disallowing these four chars rules out
 --     zero legitimate use. Fail loud at edit time instead.
+--   - not a bare `.` / `..` dot-segment: these are collapsed by URL
+--     path normalization (the browser AND a server-side path.Clean
+--     rewrite `/v1/clientblocker/..` before it reaches the route), so
+--     such a pattern is likewise undeletable via HTTP (#617). Same
+--     class as the char check above; a lone `.`/`..` also matches
+--     nearly every VE tag, so it is never a legitimate pattern.
 --   - compile-probe via pcall(string.find, "", pat) so we fail
 --     loud at edit time, never silent at onConnect kick time
 -- Returns: true | nil, err_msg.
@@ -192,6 +198,9 @@ local function validate_pattern( pat )
         return nil, msg_bad_pattern
     end
     if pat:find( "[/?#&]" ) then
+        return nil, msg_bad_pattern
+    end
+    if pat == "." or pat == ".." then    -- #617: dot-segment, undeletable via HTTP path
         return nil, msg_bad_pattern
     end
     local ok = pcall( string_find, "", pat )
