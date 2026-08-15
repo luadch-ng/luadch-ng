@@ -41,6 +41,7 @@ local _loaded          -- what util.loadtable returns for the records file
 local _online          -- what hub.getusers returns
 local _listeners       -- event -> fn
 local _saved           -- last util.savearray payload (unused by the no-record path)
+local _http            -- "METHOD path" -> handler, captured from hub.http_register in onStart
 
 local _real_os = os
 
@@ -75,11 +76,17 @@ _G.util = {
 
 _G.hub = {
     setlistener = function( ev, _opts, fn ) _listeners[ ev ] = fn end,
-    import      = function( ) return nil end,
+    -- onStart asserts etc_hubcommands is present; return a minimal stub so
+    -- onStart can run (and register the HTTP handlers) in the #618 case below.
+    import      = function( name )
+        if name == "etc_hubcommands" then return { add = function( ) return true end } end
+        return nil
+    end,
     getbot      = function( ) return { } end,
     getusers    = function( ) return _online end,
     debug       = function( ) end,
     broadcast   = function( ) end,
+    http_register = function( method, path, _scope, handler ) _http[ method .. " " .. path ] = handler end,
 }
 
 ----------------------------------------------------------------------
@@ -99,6 +106,7 @@ end
 local function load_plugin( )
     _listeners = { }
     _saved = nil
+    _http = { }
     assert( loadfile( "scripts/etc_records.lua" ) )( )
 end
 
@@ -175,6 +183,29 @@ ok( "well-formed file: onLogin does not crash", okrun, err )
 ok( "well-formed file: a bigger share was recorded (savearray fired)", _saved ~= nil )
 if _saved then
     ok( "recorded share slot is numeric and grew", type( _saved[3] ) == "number" and _saved[3] >= 100, _saved[3] )
+end
+
+----------------------------------------------------------------------
+-- Case 5: #618 - a fresh (never-recorded) hub reports hub_share.total_bytes
+-- = 0, not the legacy vestigial 1. Fire onStart to register the HTTP
+-- handlers, then call GET /v1/records and assert all three counters are 0.
+-- Regression per CLAUDE.md 1a.7: on the pre-fix init guard (`records[3]
+-- ... or 1`) this GET returned total_bytes = 1 and this assertion FAILED;
+-- post-fix (`or 0`) it returns 0.
+----------------------------------------------------------------------
+_loaded = { }                          -- fresh hub: empty records file
+_online = { }                          -- no online users -> onStart samples nothing
+load_plugin( )
+assert( _listeners[ "onStart" ], "onStart not registered" )
+_listeners[ "onStart" ]( )
+local GET = _http[ "GET /v1/records" ]
+ok( "records: GET /v1/records registered in onStart", GET ~= nil )
+if GET then
+    local r = GET( { } )
+    ok( "records: fresh hub_share.total_bytes is 0 (#618)", r.data.hub_share.total_bytes == 0, r.data.hub_share.total_bytes )
+    ok( "records: fresh max_users.count is 0",             r.data.max_users.count == 0,        r.data.max_users.count )
+    ok( "records: fresh top_sharer.share_bytes is 0",      r.data.top_sharer.share_bytes == 0, r.data.top_sharer.share_bytes )
+    ok( "records: fresh top_sharer.nick is 'none'",        r.data.top_sharer.nick == "none",   r.data.top_sharer.nick )
 end
 
 ----------------------------------------------------------------------
