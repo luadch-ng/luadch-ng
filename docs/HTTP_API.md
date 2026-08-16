@@ -1148,12 +1148,15 @@ an unknown path).
 | POST | `/v1/users/{sid}/redirect` | admin | `cmd_redirect` [^http-redirect-1] |
 | POST | `/v1/users/{sid}/gag` | admin | `cmd_gag` [^http-gag-1] |
 | DELETE | `/v1/users/{sid}/gag` | admin | `cmd_gag` [^http-gag-2] |
+| GET | `/v1/gags` | read | `cmd_gag` - list active gags (= ADC `+gag show`) [^http-gag-list] |
 
 [^http-redirect-1]: Body `{url: string?}`, URL scheme locked to `adc://` / `adcs://`. If the body has no `url` field, the cfg key `cmd_redirect_url` is used as the default. Body URL strings undergo control-byte sanitisation before reaching the `RD` field of the outbound IQUI; an admin operator with a leaked token can still redirect any user, by design - issue admin tokens accordingly.
 
 [^http-gag-1]: Body `{mode: "mute"|"kennylize"|"shadowmute" required, duration_minutes: integer optional}`. `mode` is enum-validated, `duration_minutes` is range-clamped at the schema layer to `1..5256000` (~10 years cap matching the ADC-side `MAX_DURATION` in `parse_duration`). Missing/omitted duration = permanent gag (no `expires_at`). Returns 200 with `data: {action:"gag", sid, nick, mode, duration_minutes?, expires_at?}` (ISO 8601 UTC). Returns **409 E_CONFLICT** if the user is already gagged - the operator must `DELETE` first to change mode (matches the ADC-side `msg_error_in` semantic; mode-change-in-place is intentionally NOT supported to keep the audit trail clean). The HTTP path is **online-only**: the helper rejects offline SIDs with 404 before the handler runs. Offline registered users can still be ungagged via the ADC `+gag ungag` cmd.
 
 [^http-gag-2]: No body. Returns 200 with `data: {action:"ungag", sid, nick, previous_mode}` so the caller learns which mode was lifted. Returns **404 E_NOT_FOUND** if the user is not currently gagged - chosen over an idempotent 200-no-op so admin tools can distinguish "I just ungagged" from "user was already free" (matches REST-orthodox DELETE-of-missing semantics). The ADC `+gag ungag` cmd uses the verbose `msg_error_out` "user has no restriction set" message for the same intent.
+
+[^http-gag-list]: `cmd_gag` v0.15. Returns 200 with `data: {gags: [...]}` (no pagination - the active-gag set is small). Each entry: `{firstnick, mode, added_by, added_at, expires_at, sid}`. `firstnick` is the gag store's key - the user's ORIGINAL login nick, stable across a `usr_nick_prefix` decoration or a `+nickchange`. `mode` is `"mute"|"kennylize"|"shadowmute"`. `added_by` is the operator/token that set the gag; `added_at` / `expires_at` are ISO 8601 UTC (§7.4, matching the `POST` sibling and `/v1/bans`), `expires_at` `null` for a permanent gag. `sid` is the gagged user's live session id if they are currently online (resolved per firstnick via the same `find_online_by_firstnick` the ADC command uses), `null` if the gag is on an offline registered user - so a client can join a gag onto `/v1/users[].sid` even when `usr_nick_prefix` has re-keyed the *displayed* nick that `/v1/users` returns. The list mirrors the ADC `+gag show` surface: it reports **every** gag the hub is enforcing, INCLUDING one already past its `expires_at` that the 60s cleanup timer has not yet swept - `check_user_input` does not consult `expires_at`, so such a user is still muted until the sweep, and reporting the gag as active is what matches enforcement (a consumer that wants to hide an expiring gag has `expires_at` to compare). **Read-scoped, never mutates** - it is the read counterpart to the write-only `POST` / `DELETE /v1/users/{sid}/gag` pair, added for the WebUI's status-aware Gag/Ungag toggle. Registered via raw `hub.http_register` (like `/v1/bans`), not the `util_http` per-`{sid}` helper, because it is a hub-wide collection rather than a single-user action.
 
 #### Registered users
 
@@ -1483,7 +1486,7 @@ the same code path the `+cmd` listener uses.
 - `cmd_topic` → `POST /v1/topic`
 - `cmd_ban` → `GET/POST /v1/bans`, `DELETE /v1/bans/{id}`
 - `cmd_disconnect` → `DELETE /v1/users/{sid}`
-- `cmd_gag` → `POST/DELETE /v1/users/{sid}/gag`
+- `cmd_gag` → `POST/DELETE /v1/users/{sid}/gag`, `GET /v1/gags`
 - `cmd_redirect` → `POST /v1/users/{sid}/redirect`
 - `cmd_reg`, `cmd_delreg`, `cmd_setpass`, `cmd_nickchange`,
   `cmd_upgrade`, `cmd_accinfo` → `/v1/registered/*` family
