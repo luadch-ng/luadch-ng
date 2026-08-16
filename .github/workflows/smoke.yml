@@ -180,6 +180,12 @@ jobs:
       - name: Run cmd_gag gags-endpoint unit test
         run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
 
+      # cmd_ban periodic sweep: an expired non-permanent ban is pruned on
+      # a 60s onTimer (not just lazily on the banned user's reconnect);
+      # permanent bans are never swept, and a no-op sweep does not save.
+      - name: Run cmd_ban sweep unit test
+        run: lua5.4 tests/unit/cmd_ban_sweep_test.lua
+
       # #571 cmd_botflag: the +botflag on|off handler toggles the
       # show_as_bot profile flag (permission gate, on/off parse,
       # mutate+saveusers, is_bot guard, unknown-nick reject).
@@ -635,6 +641,10 @@ jobs:
       - name: Run cmd_gag gags-endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
+
+      - name: Run cmd_ban sweep unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_ban_sweep_test.lua
 
       - name: Run cmd_botflag unit test
         shell: msys2 {0}
