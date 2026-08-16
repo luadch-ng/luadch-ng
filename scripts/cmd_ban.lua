@@ -11,6 +11,19 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.48:
+            - feat: periodic onTimer sweep prunes expired non-permanent
+              bans. Before this, an expired tempban was only removed
+              lazily on the banned user's next onConnect, so a ban on
+              someone who never returns lingered in `bans` (and in
+              `+ban show` / GET /v1/bans / the WebUI) forever. The sweep
+              removes exactly what onConnect would - an expired
+              non-permanent ban, identical `remaining < 0` test -
+              throttled to once per 60s, in place (preserves the exported
+              ban.bans reference, #239), skipping permanent bans (their
+              placeholder time 0 reads as expired, the same guard as
+              onConnect). Silent, like the onConnect prune it mirrors.
+
         v0.47:
             - carry a ban over to the new nick on +nickchange / HTTP
               rename. A by-nick ban record carries .nick = firstnick (cid /
@@ -287,7 +300,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.47"
+local scriptversion = "0.48"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -684,9 +697,9 @@ end
 -- 1-based index into the `bans` array - operators use it as the
 -- {id} in DELETE /v1/bans/{id}. `remaining_seconds` reflects
 -- live remaining time (negative = expired but not yet pruned;
--- pruning happens on `onConnect` of the banned user, not by a
--- timer). `expires_at` is ISO 8601 UTC, omitted when remaining is
--- negative.
+-- pruning happens on the banned user's `onConnect` OR the 60s
+-- onTimer sweep, whichever comes first). `expires_at` is ISO 8601
+-- UTC, omitted when remaining is negative.
 local format_ban_entry = function( idx, ban )
     local entry = {
         id              = idx,
@@ -1310,6 +1323,55 @@ hub.setlistener( "onConnect", {},
                 return PROCESSED
             end
         end
+        return nil
+    end
+)
+
+-- Periodic sweep: prune bans that have expired but whose banned user has
+-- not reconnected. The onConnect handler above only prunes on the banned
+-- user's NEXT connect attempt, so a tempban on someone who never returns
+-- lingers in `bans` - and in `+ban show` / GET /v1/bans / the WebUI -
+-- forever. This timer removes exactly what onConnect would: an expired
+-- NON-permanent ban, using the identical `remaining < 0` test (for the
+-- integer remaining here that is `string.find( remaining, "-" )` without
+-- the string coercion). It only changes WHEN an expired ban disappears
+-- (on a timer vs. on the banned user's reconnect), never whether an active
+-- ban is enforced.
+--
+-- Permanent bans are skipped: their placeholder time 0 makes remaining go
+-- negative, so an unguarded sweep would delete them - the same trap the
+-- onConnect handler guards at its `if ban.permanent` line.
+--
+-- Silent by design (no report / no audit): the onConnect prune this
+-- mirrors is also silent, and a busy hub can expire many tempbans at once
+-- - a per-expiry opchat line would be spam.
+--
+-- In-place table.remove, never a `bans = {}` rebind: importers capture the
+-- exported ban.bans reference at load (cmd_accinfo), so a rebind leaves
+-- them stale - the #239 lesson that also governs cleanbans(). Backward
+-- iteration keeps the indices valid across removals. Throttled to once per
+-- 60s because onTimer fires every second.
+local _last_sweep = os.time()
+local _sweep_interval = 60
+local sweep_expired_bans = function()
+    if os.time() - _last_sweep < _sweep_interval then return end
+    _last_sweep = os.time()
+    if #bans == 0 then return end
+    local now = os.time()
+    local changed = false
+    for i = #bans, 1, -1 do
+        local ban = bans[ i ]
+        if not ban.permanent and ( ban.time - os.difftime( now, ban.start ) ) < 0 then
+            table.remove( bans, i )
+            changed = true
+        end
+    end
+    if changed then util.savearray( bans, bans_path ) end
+end
+
+hub.setlistener( "onTimer", {},
+    function( )
+        sweep_expired_bans()
         return nil
     end
 )
