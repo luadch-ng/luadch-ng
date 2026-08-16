@@ -174,6 +174,12 @@ jobs:
       - name: Run cmd_gag bot-guard unit test
         run: lua5.4 tests/unit/cmd_gag_bot_test.lua
 
+      # cmd_gag GET /v1/gags: the read endpoint lists active gags for
+      # the WebUI toggle (expiry-skip, future-expiry-kept, sid
+      # online/offline resolution).
+      - name: Run cmd_gag gags-endpoint unit test
+        run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
+
       # #571 cmd_botflag: the +botflag on|off handler toggles the
       # show_as_bot profile flag (permission gate, on/off parse,
       # mutate+saveusers, is_bot guard, unknown-nick reject).
@@ -625,6 +631,10 @@ jobs:
       - name: Run cmd_gag bot-guard unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_gag_bot_test.lua
+
+      - name: Run cmd_gag gags-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
 
       - name: Run cmd_botflag unit test
         shell: msys2 {0}

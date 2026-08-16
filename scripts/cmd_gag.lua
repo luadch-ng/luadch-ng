@@ -5,6 +5,28 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.15: by Aybo
+                - new GET /v1/gags read endpoint (feeds the WebUI's
+                  status-aware Gag/Ungag toggle). Lists every gag the
+                  hub is currently enforcing (= the ADC `+gag show`
+                  surface); per entry: firstnick, mode, added_by,
+                  added_at / expires_at (ISO 8601 UTC per HTTP_API
+                  §7.4, matching the POST sibling and /v1/bans; nil =
+                  permanent/unknown) and the live sid (nil if the
+                  gagged user is offline). Registered via raw
+                  hub.http_register (like cmd_ban's /v1/bans), NOT
+                  util_http.http_register_user_action - it is a
+                  hub-wide collection, not a single-{sid} action. A gag
+                  already past expires_at but not yet swept by the 60s
+                  onTimer is STILL listed: check_user_input does not
+                  consult expires_at, so the hub keeps muting until the
+                  sweep - reporting it as active is what matches
+                  enforcement. The sid is resolved per firstnick so the
+                  WebUI can match a gag onto /v1/users[].sid even under
+                  usr_nick_prefix (which re-keys the DISPLAY nick but
+                  not the firstnick the gag store uses). Read-scoped,
+                  no mutation.
+
             v0.14:
                 - carry a gag over to the new nick on +nickchange / HTTP
                   rename. gag_tbl records key on .user_nick (= firstnick);
@@ -131,7 +153,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.14"
+local scriptversion = "0.15"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -251,6 +273,7 @@ local resolve_target_for_ungag
 local cleanup_expired
 local http_handler_gag
 local http_handler_ungag
+local http_handler_list_gags
 
 
 local minlevel = util.getlowestlevel(permission)
@@ -577,6 +600,20 @@ hub.setlistener("onStart", {},
                 description = "remove an existing gag from an online user by SID",
             }
         )
+        -- GET /v1/gags (read): hub-wide list of active gags for the
+        -- WebUI's status-aware Gag/Ungag toggle. Raw hub.http_register
+        -- (like cmd_ban's /v1/bans) - a collection, not a per-{sid}
+        -- action, so the util_http helper does not fit. Read-scoped;
+        -- never mutates.
+        if hub.http_register then
+            hub.http_register("GET", "/v1/gags", "read", http_handler_list_gags, {
+                plugin = scriptname,
+                description = "list active gags (= ADC `+gag show`); each entry carries firstnick, mode, added_by, added_at, expires_at (ISO 8601 UTC; expires_at null = permanent), and the live sid (null if the gagged user is offline)",
+                response_schema = {
+                    gags = { type = "array", required = true },
+                },
+            })
+        end
         return nil
     end
 )
@@ -743,6 +780,47 @@ http_handler_ungag = function(req, target)
     return { previous_mode = previous_mode }
 end
 
+-- HTTP handler body: GET /v1/gags (v0.15). Read-scoped, hub-wide list
+-- of the gags the hub is currently enforcing, for the WebUI's
+-- status-aware Gag/Ungag toggle. Registered via raw hub.http_register
+-- (like cmd_ban's /v1/bans), NOT util_http.http_register_user_action -
+-- that helper is for single-{sid} actions; this is a collection.
+--
+-- Lists EVERY entry present in gag_tbl (= the ADC `+gag show` surface),
+-- including one already past its expires_at that the 60s cleanup timer
+-- has not yet swept: check_user_input does not consult expires_at, so
+-- the hub keeps muting such a user until the sweep removes the entry -
+-- reporting it as active is what matches enforcement (the consumer sees
+-- expires_at and can tell a gag is expiring).
+--
+-- Each entry carries the firstnick (the gag store's key), mode,
+-- added_by, added_at / expires_at (ISO 8601 UTC per HTTP_API §7.4,
+-- matching the POST sibling + /v1/bans; nil = permanent / unknown), and
+-- the live sid. The sid is resolved per firstnick via
+-- find_online_by_firstnick so the WebUI can join a gag onto
+-- /v1/users[].sid even when usr_nick_prefix has re-keyed the display
+-- nick (the prefix decorates the DISPLAY nick /v1/users returns; the
+-- gag store keeps the original firstnick). sid is nil for an offline
+-- gagged reguser - still listed, just not currently connected.
+http_handler_list_gags = function(req)
+    local list = {}
+    for _, e in ipairs(gag_tbl) do
+        local online = find_online_by_firstnick(e.user_nick)
+        list[#list + 1] = {
+            firstnick  = e.user_nick,
+            mode       = e.mode,
+            added_by   = e.added_by,
+            -- ISO 8601 UTC (§7.4); nil-guarded because os.date(fmt, nil)
+            -- would silently stamp the current time (pre-v0.09 entries
+            -- lack added_at; a permanent gag lacks expires_at).
+            added_at   = e.added_at   and os.date("!%Y-%m-%dT%H:%M:%SZ", e.added_at)   or nil,
+            expires_at = e.expires_at and os.date("!%Y-%m-%dT%H:%M:%SZ", e.expires_at) or nil,
+            sid        = online and online:sid() or nil,
+        }
+    end
+    return { status = 200, data = { gags = list } }
+end
+
 check_user_input = function(target, msg)
     local nick = target:firstnick()
     local idx, entry = find_entry(nick)
@@ -828,4 +906,5 @@ return {
     _onbmsg                   = onbmsg,
     _gag_tbl                  = gag_tbl,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_list_gags   = http_handler_list_gags,
 }
