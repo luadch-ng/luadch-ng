@@ -67,6 +67,7 @@ local table_insert = table.insert
 local table_remove = table.remove
 local table_sort = table.sort
 local math_floor = math.floor
+local math_tointeger = math.tointeger
 
 local cfg = use "cfg"
 local out = use "out"
@@ -1546,6 +1547,38 @@ local function config_get_handler( req )
     return { status = 200, data = { config = snapshot } }
 end
 
+-- A JSON object always decodes (dkjson) to a Lua table with STRING
+-- keys, but a level-keyed cfg map (e.g. cmd_ban_permission =
+-- { [ 0 ] = 0, ... , [ 100 ] = 100 }) is validated with INTEGER keys
+-- (cfg_defaults validators call types_number( k ), which is
+-- type( k ) == "number"). So a PUT of such a map arrives as
+-- { [ "0" ] = 0, ... } and the validator rejects it - level-maps were
+-- effectively read-only over the HTTP API. When (and ONLY when) EVERY
+-- key of a table is an integer-looking string, rebuild it with integer
+-- keys so the level-map validators accept it. A table with any
+-- non-numeric-string key (e.g. a token map keyed by the token string)
+-- or a mixed table returns nil -> the caller keeps the value as-is and
+-- does not retry, so this can never corrupt a legitimately
+-- string-keyed map. Values are copied verbatim; only top-level keys are
+-- converted (cfg level-maps are flat). Returns the coerced table, or
+-- nil when nothing should be coerced.
+local function coerce_numeric_string_keys( value )
+    if type( value ) ~= "table" then return nil end
+    -- not named `out` - that local is the logging module at file scope.
+    local result, n = { }, 0
+    for k, v in pairs( value ) do
+        if type( k ) ~= "string" or not string_match( k, "^%-?%d+$" ) then
+            return nil  -- a non-integer-string key -> not a level-map
+        end
+        local ik = math_tointeger( tonumber( k ) )
+        if not ik then return nil end  -- out of 64-bit integer range -> bail
+        result[ ik ] = v
+        n = n + 1
+    end
+    if n == 0 then return nil end  -- empty table: nothing to coerce
+    return result
+end
+
 -- #262 PUT /v1/config/{key}: admin-scoped. Body `{ "value": <any
 -- JSON type> }`. Denylisted keys -> 403. Unknown keys -> 404.
 -- Validator-rejected values -> 400 with the validator's err_msg.
@@ -1574,6 +1607,17 @@ local function config_put_handler( req )
             message = "missing required body field: value" } }
     end
     local ok, err = cfg_mod.set( key, body.value )
+    if not ok then
+        -- A level-keyed map (cmd_ban_permission etc.) arrives from JSON with
+        -- string keys that the integer-key validator rejects; retry once with
+        -- the keys coerced to integers. Only an all-integer-string-keyed table
+        -- is coerced, so a legitimately string-keyed map still surfaces its
+        -- original validator error rather than being silently rewritten.
+        local coerced = coerce_numeric_string_keys( body.value )
+        if coerced then
+            ok, err = cfg_mod.set( key, coerced )
+        end
+    end
     if not ok then
         return { status = 400, error = { code = "E_BAD_INPUT",
             message = err or "cfg.set rejected the value" } }
