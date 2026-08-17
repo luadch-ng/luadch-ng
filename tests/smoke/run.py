@@ -10205,6 +10205,10 @@ def test_http_plugins_api(staging_dir: Path, proc=None):
         raise TestFailure(f"baseline: etc_motd.enabled expected true, got {motd!r}")
     if not motd.get("loaded"):
         raise TestFailure(f"baseline: etc_motd.loaded expected true, got {motd!r}")
+    # #635: capture the version reported for the ENABLED plugin (a real version).
+    motd_version = motd.get("version")
+    if not motd_version or motd_version == "unknown":
+        raise TestFailure(f"baseline: etc_motd.version should be a real version, got {motd_version!r}")
     cmd_help = plugins.get("cmd_help")
     if not cmd_help:
         raise TestFailure(f"baseline: cmd_help not in listing")
@@ -10240,6 +10244,10 @@ def test_http_plugins_api(staging_dir: Path, proc=None):
         raise TestFailure(f"after reload: enabled expected false, got {motd!r}")
     if motd.get("loaded"):
         raise TestFailure(f"after reload: loaded expected false, got {motd!r}")
+    # #635: a disabled plugin still reports its real version - the loader source-greps
+    # the version even for an entry it does not load (pre-fix it hardcoded "unknown").
+    if motd.get("version") != motd_version:
+        raise TestFailure(f"after reload (disabled): version should stay {motd_version!r}, got {motd.get('version')!r}")
 
     # 6. PUT enable (restore path)
     r = put_enabled("etc_motd", True)

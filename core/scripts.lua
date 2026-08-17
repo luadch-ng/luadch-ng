@@ -393,10 +393,17 @@ startscripts = function( hub )
         if not scriptname then
             out_error( "scripts.lua: invalid entry in cfg.scripts at index ", cfg_index )
         elseif not enabled then
+            -- #635: read the source so a disabled plugin still reports its real
+            -- version (registry / +scripts / WebUI) instead of a bare "unknown".
+            -- checkfile is path-guarded + UTF-8-checked + READ-ONLY - the plugin is
+            -- NOT loaded or executed (that only happens in the enabled branch below).
+            -- A genuinely missing / unreadable file falls back to "unknown"
+            -- (_extract_version returns "unknown" on a nil source).
+            local src = checkfile( cfg_get( "script_path" ) .. scriptname )
             _plugin_meta[ scriptname ] = {
                 name          = scriptname:gsub( "%.lua$", "" ),
                 filename      = scriptname,
-                version       = "unknown",
+                version       = _extract_version( src ),
                 manageable    = manageable,
                 enabled       = false,
                 loaded        = false,
