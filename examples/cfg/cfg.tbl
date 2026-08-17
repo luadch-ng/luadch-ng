@@ -360,7 +360,7 @@ return { -- the settings are a lua table, do not tough this!
         [ 100 ] = true,  -- hubowner
     },
 
-    usr_hubs_block_time = 360,  -- ban time in minutes (integer)
+    usr_hubs_block_time = 360,  -- ban time in minutes (integer); 0 or less = kick only (disconnect, no ban). Ignored when usr_hubs_redirect is set (redirect wins).
 
     usr_hubs_report = true,  -- send status report? (boolean)
     usr_hubs_report_hubbot = false,  -- send report as hubbot msg? (boolean)
