@@ -1,6 +1,6 @@
 {
-    "help_desc": "Skickar accinfo om en registrerad användare via SID eller NICK; utan argument -> om dig själv",
-    "help_desc2": "Visar accinfo (utökad) om en registrerad användare efter SID eller ANVÄNDARNAMN; inget argument -> om dig själv",
+    "help_desc": "Verstuurt accinfo over een geregistreerde gebruiker op basis van SID of NICK; zonder argumenten -> over jezelf",
+    "help_desc2": "",
     "help_title": "",
     "help_title2": "",
     "help_usage": "",

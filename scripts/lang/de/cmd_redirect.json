@@ -1,5 +1,5 @@
 {
-    "help_desc": "Leitet einen User zu einer anderen Hubadresse um",
+    "help_desc": "Weiterleitung des Benutzers zur URL",
     "help_title": "usr_redirect.lua",
     "help_usage": "[+!#]redirect <NICK> <URL>",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
@@ -18,5 +18,5 @@
         "Weiterleitung",
         "benutzerdefinierte URL"
     ],
-    "ucmd_url": "Redirect Url:"
+    "ucmd_url": "Redirect-URL:"
 }

@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar denna hjälp för hubbkommandon",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]help",
     "msg_out": "",
     "ucmd_menu": [
         "",

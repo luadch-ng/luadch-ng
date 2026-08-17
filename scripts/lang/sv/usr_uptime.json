@@ -1,0 +1,45 @@
+{
+    "help_desc": "Visar din anslutningstid",
+    "help_desc_op": "Visar statistik över en användares anslutningstid",
+    "help_title": "",
+    "help_title_op": "",
+    "help_usage": "",
+    "help_usage_op": "",
+    "month_name": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "msg_days": "",
+    "msg_denied": "",
+    "msg_err": "",
+    "msg_hours": "",
+    "msg_label": "",
+    "msg_minutes": "",
+    "msg_notfound": "",
+    "msg_seconds": "",
+    "msg_uptime": "",
+    "msg_usage": "",
+    "ucmd_desc": "",
+    "ucmd_menu_ct1": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_2": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2": [
+        "",
+        ""
+    ]
+}

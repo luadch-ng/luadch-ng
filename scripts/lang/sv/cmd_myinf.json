@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar klient-INF från en användare eller dig själv",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]myinf [<ANVÄNDARNAMN>]",
     "msg_denied": "",
     "msg_inf": "",
     "ucmd_menu_ct1": [

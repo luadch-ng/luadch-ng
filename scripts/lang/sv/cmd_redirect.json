@@ -1,7 +1,7 @@
 {
     "help_desc": "Omdirigera användare till webbadressen",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]redirect <ANVÄNDARNAMN> <HUBBADRESS>",
     "msg_denied": "",
     "msg_god": "",
     "msg_isbot": "",

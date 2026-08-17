@@ -1,7 +1,7 @@
 {
     "help_desc": "Startar om hubben",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]restart [<MEDDELANDE>]",
     "msg_countdown": "",
     "msg_denied": "",
     "msg_hub_disabled": "",

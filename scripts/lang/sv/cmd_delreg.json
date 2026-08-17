@@ -1,7 +1,7 @@
 {
     "help_desc": "Avregistrerar en användare",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]delreg nick <ANVÄNDARNAMN>  /  eller ta bort med svartlistspost:  [+!#]delreg nick <ANVÄNDARNAMN> <BESKRIVNING>",
     "msg_bot": "",
     "msg_deblacklist": "",
     "msg_del": "",

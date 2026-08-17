@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar IP-adressen från en användare eller dig själv",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]myip [<ANVÄNDARNAMN>]",
     "msg_denied": "",
     "msg_ip": "",
     "msg_targetip": "",

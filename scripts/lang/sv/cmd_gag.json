@@ -1,7 +1,7 @@
 {
     "help_desc": "Tysta, kennylisera, smygtysta eller återställa en användare (med valfri varaktighet); eller visa begränsade användare",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]gag mute|kennylize|shadowmute|ungag|show <ANVÄNDARNAMN> [<VARAKTIGHET>]",
     "msg_add_user": "",
     "msg_add_user_with_duration": "",
     "msg_denied": "",
