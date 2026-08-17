@@ -10700,6 +10700,9 @@ def test_http_config_api(staging_dir: Path, proc=None):
       7.  PUT missing body field -> 400 E_BAD_INPUT.
       8.  PUT validator-rejected value (max_users = "notanumber")
           -> 400 E_BAD_INPUT with validator hint.
+      9.  PUT a level-keyed map (cmd_ban_permission) - JSON string keys
+          are coerced to integer keys so the level-map validator accepts
+          it and it round-trips; a mixed-key map is NOT coerced (400).
 
     Restores the bare-key cfg.tbl format at the end (matches the #261
     plugins-api test pattern) so downstream regex-based cfg flips
@@ -10808,6 +10811,35 @@ def test_http_config_api(staging_dir: Path, proc=None):
             raise TestFailure(f"PUT invalid: expected 400, got {status(r)!r}")
         if "validator rejected" not in body_of(r):
             raise TestFailure(f"PUT invalid: missing 'validator rejected' hint; body={body_of(r)!r}")
+
+        # 9. PUT a level-keyed permission map. A JSON object always carries
+        #    STRING keys ({"0":0,...}), but the cfg validator requires INTEGER
+        #    keys (types_number(k) == type(k)=="number"); pre-fix the PUT 400s
+        #    ("validator rejected") and level-maps were read-only over the API.
+        #    config_put_handler now retries once with the keys coerced to
+        #    integers. The DEFAULT values are re-sent (no semantic change): a
+        #    200 proves the integer-key validator accepted the coerced map (it
+        #    rejects string keys), and the readback confirms the round-trip.
+        r = put_value(
+            "cmd_ban_permission",
+            '{"value": {"0":0,"10":0,"20":0,"30":0,"40":0,"50":0,'
+            '"55":0,"60":50,"70":60,"80":70,"100":100}}',
+        )
+        if "200 OK" not in status(r):
+            raise TestFailure(f"PUT level-map: expected 200 (int-key coercion), got {status(r)!r} / body={body_of(r)!r}")
+        j = json.loads(body_of(r))
+        if j["data"].get("apply_status") not in ("live", "reload_required", "restart_required"):
+            raise TestFailure(f"PUT level-map: missing apply_status; got {j['data']!r}")
+        got = get_json("/v1/config")["data"]["config"].get("cmd_ban_permission")
+        if not isinstance(got, dict) or str(got.get("60")) != "50" or str(got.get("100")) != "100":
+            raise TestFailure(f"PUT level-map: readback wrong; cmd_ban_permission={got!r}")
+
+        # 9b. A table with any non-integer key is NOT a level-map: coercion
+        #     bails and the original 400 stands - never silently rewrite a
+        #     legitimately string-keyed map.
+        r = put_value("cmd_ban_permission", '{"value": {"0":0,"nope":1}}')
+        if "400 Bad Request" not in status(r):
+            raise TestFailure(f"PUT mixed-key map: expected 400, got {status(r)!r} / body={body_of(r)!r}")
     finally:
         # Restore cfg.tbl to bare-key format so downstream
         # BLOM/ZLIF/hub_listen regex flips keep working.
