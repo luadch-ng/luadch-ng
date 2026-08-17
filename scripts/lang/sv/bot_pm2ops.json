@@ -1,5 +1,5 @@
 {
     "msg_denied": "Du har inte tillåtelse att använda den här chatten.",
-    "msg_send": "",
-    "msg_toops": ""
+    "msg_send": "Ditt meddelande har skickats till alla operatörer.",
+    "msg_toops": "Nytt  %s  meddelande från:  %s  |  Meddelande: %s"
 }

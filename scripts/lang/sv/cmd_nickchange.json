@@ -1,7 +1,7 @@
 {
     "help_desc": "Ändra användarens smeknamn",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]nickchange mynick <NYTT_ANVÄNDARNAMN>  /  [+!#]nickchange othernick <GAMMALT_ANVÄNDARNAMN> <NYTT_ANVÄNDARNAMN>",
     "msg_bot": "",
     "msg_denied": "",
     "msg_denied2": "",

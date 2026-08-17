@@ -1,7 +1,7 @@
 {
     "help_desc": "Kopplar från en användare",
     "help_title": "",
-    "help_usage": "",
+    "help_usage": "[+!#]disconnect <ANVÄNDARNAMN> <ANLEDNING>",
     "msg_bot": "",
     "msg_denied1": "",
     "msg_denied2": "",

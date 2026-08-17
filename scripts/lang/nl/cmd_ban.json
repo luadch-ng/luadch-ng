@@ -1,0 +1,173 @@
+{
+    "help_desc": "Verbant een gebruiker; <TIME> zijn minuten van de ban en moeten 1 of groter zijn, of gebruik het trefwoord 'permanent' voor een ban die nooit verloopt",
+    "help_desc2": "",
+    "help_title": "",
+    "help_title2": "",
+    "help_usage": "",
+    "help_usage2": "",
+    "lblBy": "",
+    "lblCid": "",
+    "lblIp": "",
+    "lblNick": "",
+    "lblReason": "",
+    "lblTime": "",
+    "msg_badtime": "",
+    "msg_ban": "",
+    "msg_ban_attempt": "",
+    "msg_bot": "",
+    "msg_clean_banhistory": "",
+    "msg_clean_bans": "",
+    "msg_days": "",
+    "msg_denied": "",
+    "msg_god": "",
+    "msg_god2": "",
+    "msg_his_active": "",
+    "msg_his_ban": "",
+    "msg_his_bantime": "",
+    "msg_his_by": "",
+    "msg_his_date": "",
+    "msg_his_expired": "",
+    "msg_his_nick": "",
+    "msg_his_reason": "",
+    "msg_his_state": "",
+    "msg_hours": "",
+    "msg_minutes": "",
+    "msg_notint": "",
+    "msg_off": "",
+    "msg_ok": "",
+    "msg_ok2": "",
+    "msg_out": "",
+    "msg_out2": "",
+    "msg_permanent": "",
+    "msg_reason": "",
+    "msg_seconds": "",
+    "msg_usage": "",
+    "msg_usage2": "",
+    "msg_years": "",
+    "ucmd_cid": "",
+    "ucmd_ip": "",
+    "ucmd_menu1": [
+        "",
+        ""
+    ],
+    "ucmd_menu10": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu11": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu12": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu13": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu14": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu15": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu16": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu2": [
+        "",
+        ""
+    ],
+    "ucmd_menu3": [
+        "",
+        ""
+    ],
+    "ucmd_menu4": [
+        "",
+        ""
+    ],
+    "ucmd_menu5": [
+        "",
+        ""
+    ],
+    "ucmd_menu6": [
+        "",
+        ""
+    ],
+    "ucmd_menu7": [
+        "",
+        ""
+    ],
+    "ucmd_menu7_1": [
+        "",
+        ""
+    ],
+    "ucmd_menu7_2": [
+        "",
+        ""
+    ],
+    "ucmd_menu7_3": [
+        "",
+        ""
+    ],
+    "ucmd_menu8": [
+        "",
+        ""
+    ],
+    "ucmd_menu9": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_1": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_2": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_3": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_perm": [
+        "",
+        ""
+    ],
+    "ucmd_nick": "",
+    "ucmd_reason": "",
+    "ucmd_time": ""
+}

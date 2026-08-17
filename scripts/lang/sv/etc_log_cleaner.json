@@ -1,0 +1,23 @@
+{
+    "activate_cmd_msg": "Rensning av 'cmd.log' är inaktiverad",
+    "activate_error_msg": "Rensning av 'error.log' är inaktiverat",
+    "failmsg": "",
+    "help_desc": "",
+    "help_title": "",
+    "help_usage": "",
+    "logfile_cmd_msg": "",
+    "logfile_error_msg": "",
+    "msg_usage": "",
+    "ucmd_menu_cmd": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_error": [
+        "",
+        "",
+        "",
+        ""
+    ]
+}
