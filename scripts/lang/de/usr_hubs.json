@@ -9,5 +9,6 @@
   "msg_seconds":" Sekunden",
   "msg_years":" Jahre, ",
   "report_msg":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde gebannt für:  %s  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)",
+  "report_msg_kick":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde getrennt  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)",
   "report_msg_redirect":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde redirected  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)"
 }

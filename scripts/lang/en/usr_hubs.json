@@ -9,5 +9,6 @@
   "msg_seconds":" seconds",
   "msg_years":" years, ",
   "report_msg":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was banned for:  %s  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
+  "report_msg_kick":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was disconnected  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
   "report_msg_redirect":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was redirected  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)"
 }
