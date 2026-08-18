@@ -1544,7 +1544,12 @@ local function config_get_handler( req )
             snapshot[ key ] = cfg_mod.get( key )
         end
     end
-    return { status = 200, data = { config = snapshot } }
+    return { status = 200, data = {
+        config = snapshot,
+        -- The redacted keys the WebUI may offer a masked editor for (#178); every other
+        -- redacted key stays read-only.
+        secret_writable = secrets_mod.list_api_writable( ),
+    } }
 end
 
 -- A JSON object always decodes (dkjson) to a Lua table with STRING
@@ -1591,9 +1596,12 @@ local function config_put_handler( req )
             message = "missing {key} path variable" } }
     end
     local secrets_mod = use "secrets"
-    if secrets_mod.is_secret_key( key ) then
+    local is_secret = secrets_mod.is_secret_key( key )
+    -- A secret is write-protected UNLESS it opted into api_writable (#178). The hub's own
+    -- auth/crypto secrets (http_api_tokens, master_key_path) never opt in, so they stay 403.
+    if is_secret and not secrets_mod.is_api_writable( key ) then
         return { status = 403, error = { code = "E_FORBIDDEN",
-            message = "cfg key '" .. key .. "' is sensitive (in secrets registry); " ..
+            message = "cfg key '" .. key .. "' is a protected secret; " ..
                 "rotate / relocate via direct cfg.tbl edit + hub restart" } }
     end
     local cfg_mod = use "cfg"
@@ -1605,6 +1613,19 @@ local function config_put_handler( req )
     if type( body ) ~= "table" or body.value == nil then
         return { status = 400, error = { code = "E_BAD_INPUT",
             message = "missing required body field: value" } }
+    end
+    -- Extra guards on a masked secret write (#178): reject the redaction sentinel so a
+    -- naive GET("<redacted>")->PUT round-trip cannot overwrite the real secret with the
+    -- mask string, and bound the length of the opaque value.
+    if is_secret and type( body.value ) == "string" then
+        if body.value == "<redacted>" then
+            return { status = 400, error = { code = "E_BAD_INPUT",
+                message = "refusing to set the value to the redaction mask '<redacted>'" } }
+        end
+        if #body.value > 4096 then
+            return { status = 400, error = { code = "E_BAD_INPUT",
+                message = "secret value too long (max 4096 bytes)" } }
+        end
     end
     local ok, err = cfg_mod.set( key, body.value )
     if not ok then
@@ -1622,10 +1643,16 @@ local function config_put_handler( req )
         return { status = 400, error = { code = "E_BAD_INPUT",
             message = err or "cfg.set rejected the value" } }
     end
+    -- A secret is cached by its consumer at plugin load, so a hot set() reads "live"
+    -- misleadingly - report reload_required. Also flag when an env var currently shadows
+    -- this key so the operator knows the cfg write won't take effect until it is cleared.
+    local apply = _classify_apply_status( key )
+    if is_secret and apply == "live" then apply = "reload_required" end
     return { status = 200, data = {
         action       = "config-set",
         key          = key,
-        apply_status = _classify_apply_status( key ),
+        apply_status = apply,
+        env_override = is_secret and secrets_mod.env_is_set( key ) or false,
     } }
 end
 
@@ -1824,6 +1851,9 @@ register_core_endpoints = function( )
     register( "PUT", "/v1/config/{key}", "admin", config_put_handler, {
         plugin = "core",
         description = "update one cfg key; response carries apply_status (live / reload_required / restart_required)",
+        -- The body carries the cfg value, which for a masked secret write (#178) is a
+        -- plaintext credential - keep it out of the audit trail.
+        audit_redact_body = true,
     } )
     -- #263 PR-A event stream (immediate-return polling).
     register( "GET", "/v1/events", "read", events_get_handler, {
