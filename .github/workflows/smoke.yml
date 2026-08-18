@@ -89,6 +89,11 @@ jobs:
       - name: Run util_makedir unit test
         run: lua5.4 tests/unit/util_makedir_test.lua
 
+      # core/cfg_write.lua (#644): surgical comment/layout-preserving
+      # single-key cfg.tbl writer - lexer/scanner + round-trip safety gate.
+      - name: Run cfg_write unit test
+        run: lua5.4 tests/unit/cfg_write_test.lua
+
       # core/ensuredirs.lua (#78 follow-up): boot-time runtime-directory
       # self-heal (log/, cfg/, certs/, scripts/data/, cfg/geoip/).
       - name: Run ensuredirs unit test
@@ -593,6 +598,10 @@ jobs:
       - name: Run util_makedir unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/util_makedir_test.lua
+
+      - name: Run cfg_write unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cfg_write_test.lua
 
       - name: Run ensuredirs unit test
         shell: msys2 {0}
