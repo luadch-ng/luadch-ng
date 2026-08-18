@@ -472,6 +472,11 @@ local out
 local util = use "util"
 local const = use "const"
 local secret = use "cfg_secret"
+-- #644 surgical, comment-preserving single-key cfg.tbl writer. Like
+-- cfg_secret it is loaded here (not via _core) - this file-scope `use`
+-- pulls it in when cfg loads, and it is passive at load. cfg.set tries it
+-- first and falls back to the wholesale util.savetable.
+local cfg_write = use "cfg_write"
 
 --// core methods //--
 
@@ -479,6 +484,7 @@ local out_error
 
 local util_savetable = util.savetable
 local util_loadtable = util.loadtable
+local cfg_write_save_key = cfg_write.save_key
 
 local CONFIG_PATH = const.CONFIG_PATH
 
@@ -566,10 +572,18 @@ set = function( target, newvalue, nosave )
     if nosave then
         return true
     end
-    local _, err = util_savetable( _settings, "settings", _cfgfile )
-    if err then
-        out_error( "cfg.lua: function 'set': error while saving hub settings: ", err )
-        return false, "save failed: " .. tostring( err )
+    -- #644: try a comment/layout-preserving surgical rewrite of just this
+    -- key; fall back to the wholesale savetable on any failure. The surgical
+    -- path self-verifies (it re-parses its own output and requires it to
+    -- deep-equal _settings) BEFORE writing, so a nil return means "could not
+    -- preserve", never "wrote garbage" - the fallback is the same wholesale
+    -- save every cfg.set used to do.
+    if not cfg_write_save_key( _cfgfile, _settings, target ) then
+        local _, err = util_savetable( _settings, "settings", _cfgfile )
+        if err then
+            out_error( "cfg.lua: function 'set': error while saving hub settings: ", err )
+            return false, "save failed: " .. tostring( err )
+        end
     end
     return true
 end

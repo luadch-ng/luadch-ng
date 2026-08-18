@@ -81,6 +81,10 @@ _core = {    -- luadch core, order is important
     -- (master_key_path). cfg.lua does `use "cfg_secret"` and calls
     -- secret.init() from cfg.init() after _settings is loaded so
     -- the cfg-side path override works on first boot.
+    -- cfg_write (#644, comment-preserving cfg.tbl writer) is likewise NOT
+    -- in _core: cfg.lua's file-scope `use "cfg_write"` pulls it in when cfg
+    -- loads (so a restricted-env fault still surfaces at boot), it is
+    -- passive at load, and it has no init() to order.
     "cfg",
     -- core/secrets.lua (Precursor 0c of #78 arc): sensitive-key
     -- registry + env-var-first cfg lookup. Loaded AFTER cfg so the
