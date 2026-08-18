@@ -312,17 +312,40 @@ do
 end
 
 ----------------------------------------------------------------------
--- 6. SAFETY GATE: a change the single-key splice cannot reproduce is
---    rejected (deep-equal fails) -> nil, nothing written
+-- 6. DIVERGENCE: the in-memory `settings` may differ from the on-disk file
+--    in OTHER keys (e.g. a checkcfg correction the hub applied in memory
+--    but never wrote back). A single-key save persists ONLY the target key
+--    and leaves every other key at its on-disk value - it does NOT flush
+--    the unrelated in-memory divergence (that is the wholesale behaviour we
+--    avoid, and it never silently persists a value the operator did not
+--    change). Surgical SUCCEEDS. Provably RED before the on-disk gate: the
+--    old strict `== settings` gate saw language "en" != "de" and fell back
+--    to the wholesale, comment-stripping save.
 ----------------------------------------------------------------------
 
 do
     local s = fresh( )
     s.hub_name = "New Name"
-    s.language = "de"                 -- a SECOND divergence the splice of hub_name won't reflect
+    s.language = "de"     -- diverges from the file's "en"; NOT the key we save
     local ret, out = run( CFG, s, "hub_name" )
-    eq( "gate-mismatch: save_key returned nil", ret, nil )
-    eq( "gate-mismatch: nothing written",       out, nil )
+    eq( "divergence: save_key returned true", ret, true )
+    has( "divergence: target changed",                    out or "", 'hub_name = "New Name"' )
+    has( "divergence: unrelated key stays at file value", out or "", 'language = "en"' )
+    hasnot( "divergence: in-memory-only change NOT flushed", out or "", 'language = "de"' )
+end
+
+----------------------------------------------------------------------
+-- 6b. a nil target value (key removal) is not spliced - fall back to the
+--     wholesale save (which omits the key) rather than write a literal
+--     `key = nil,` with an orphaned comment.
+----------------------------------------------------------------------
+
+do
+    local s = fresh( )
+    s.hub_name = nil          -- remove the key from settings
+    local ret, out = run( CFG, s, "hub_name" )
+    eq( "nil-value: save_key returned nil (fallback)", ret, nil )
+    eq( "nil-value: nothing written surgically",       out, nil )
 end
 
 ----------------------------------------------------------------------
