@@ -149,6 +149,7 @@ local makedir
 
 local serialize
 local sortserialize
+local serialize_value
 
 local loadtable
 local loadtable_string
@@ -379,6 +380,40 @@ sortserialize = function( tbl, name, file, tab, r )
         end
     end
     file:write( "\n", tab, "}" )
+end
+
+-- Serialize a single Lua VALUE to its cfg.tbl textual form, reusing the
+-- exact escaping/sorting of the wholesale savetable path (sortserialize)
+-- so a surgical single-key rewrite (core/cfg_write.lua, #644) round-trips
+-- through loadtable identically to a full savetable. There is deliberately
+-- ONE serializer: a second, divergent value-formatter would be a defect
+-- (CLAUDE.md 1a.1).
+--
+-- `indent` is the run of spaces the CLOSING brace of a TABLE value sits at
+-- (= the column of the key being written); nested entries indent one
+-- 4-space level deeper. Scalars ignore it. The returned text carries NO
+-- leading indent on the opening brace (it follows `<key> = ` inline) and
+-- NO trailing comma.
+serialize_value = function( value, indent )
+    if type( value ) ~= "table" then
+        return ( type( value ) == "string" ) and utf_format( "%q", value ) or tostring( value )
+    end
+    indent = indent or ""
+    local sb = { buf = { }, n = 0 }
+    function sb:write( ... )
+        local n = select( "#", ... )
+        for i = 1, n do
+            self.n = self.n + 1
+            self.buf[ self.n ] = tostring( ( select( i, ... ) ) or "" )
+        end
+    end
+    -- r = true makes sortserialize emit `<indent>{ ... }` (a bare value, no
+    -- `name = ` prefix), inner entries at indent + 4, closing brace at indent.
+    sortserialize( value, "", sb, indent, true )
+    local s = table_concat( sb.buf, "", 1, sb.n )
+    -- Strip the leading indent sortserialize wrote before the opening brace
+    -- so the brace follows `= ` inline; the inner indentation is untouched.
+    return ( s:gsub( "^%s+", "" ) )
 end
 
 --// loads a local table from file
@@ -650,6 +685,17 @@ end
 -- of an encrypted user.tbl, and we want the same empty-_ENV protection
 -- as loadtable). Same return-shape as loadtable.
 loadtable_string = function( content, name )
+    -- Lua's load() on a STRING does not skip a leading UTF-8 BOM, unlike
+    -- loadfile()/luaL_loadfilex (which loadtable uses). Strip it so this
+    -- string-loader interprets bytes exactly as the file-loader does. This
+    -- is load-bearing for core/cfg_write.lua's safety gate (#644): the gate
+    -- re-parses the surgically rewritten cfg text with this function and
+    -- must read it EXACTLY as the runtime loadfile will - the shipped
+    -- cfg.tbl carries a BOM, so without this a BOM'd file would fail the
+    -- gate and silently fall back to the comment-stripping wholesale save.
+    if type( content ) == "string" then
+        content = content:gsub( "^\239\187\191", "" )
+    end
     local fn, err = load( content, name or "tbl_string", "t", { } )
     if not fn then return nil, err end
     local ok, ret = pcall( fn )
@@ -1033,6 +1079,7 @@ return {
     loadtable_string = loadtable_string,
     loadjsontable = loadjsontable,
     serialize = serialize,
+    serialize_value = serialize_value,
     savearray = savearray,
     arraytostring = arraytostring,
     tabletostring = tabletostring,
