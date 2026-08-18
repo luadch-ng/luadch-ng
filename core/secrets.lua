@@ -56,6 +56,22 @@ local pcall       = use "pcall"
 
 local _registry = { }
 
+-- Subset of _registry opted into API-writability (masked write via PUT /v1/config, #178).
+-- Default-deny: a secret is NOT here unless its register() call passed api_writable=true,
+-- so the hub's own auth/crypto secrets (http_api_tokens, master_key_path) and any future
+-- or un-opted plugin secret stay write-protected without having to be named.
+local _api_writable = { }
+
+-- Structurally NEVER API-writable, regardless of any api_writable opt-in: the hub's own
+-- auth-token store and the at-rest crypto master-key path. Belt-and-suspenders over
+-- default-deny - even a future internal bug that passed api_writable=true for one of these
+-- is ignored at BOTH register() and is_api_writable(), so the guarantee is structural, not
+-- merely "nothing happens to opt them in".
+local _never_api_writable = {
+    http_api_tokens = true,
+    master_key_path = true,
+}
+
 local _env_prefix = "LUADCH_"
 
 local _derive_env_name = function( cfg_key )
@@ -70,14 +86,28 @@ local _derive_env_name = function( cfg_key )
     return _env_prefix .. string.upper( cfg_key )
 end
 
-local register = function( cfg_key )
+-- register( cfg_key [, opts ] ) - mark cfg_key as a secret (redacted on GET, rejected on
+-- PUT). opts.api_writable = true additionally opts the key into a masked write via
+-- PUT /v1/config (#178) - use it only for third-party plugin credentials (license / API
+-- keys, outbound tokens), never the hub's own auth/crypto material. Idempotent; a later
+-- plain register() never DOWNGRADES a key already opted writable.
+local register = function( cfg_key, opts )
     if type( cfg_key ) ~= "string" or cfg_key == "" then return false end
     _registry[ cfg_key ] = true
+    if type( opts ) == "table" and opts.api_writable == true and not _never_api_writable[ cfg_key ] then
+        _api_writable[ cfg_key ] = true
+    end
     return true
 end
 
 local is_secret_key = function( cfg_key )
     return _registry[ cfg_key ] == true
+end
+
+-- True only for a secret explicitly opted into API-writability (default-deny) that is not
+-- on the structural never-writable list.
+local is_api_writable = function( cfg_key )
+    return _api_writable[ cfg_key ] == true and not _never_api_writable[ cfg_key ]
 end
 
 local lookup = function( cfg_key )
@@ -123,6 +153,27 @@ local list_secret_keys = function( )
     return out
 end
 
+-- The api-writable secret keys, sorted. GET /v1/config returns this so the WebUI can
+-- offer a masked editor for exactly those redacted keys and keep the rest read-only (#178).
+local list_api_writable = function( )
+    local out = { }
+    for k in pairs( _api_writable ) do
+        out[ #out + 1 ] = k
+    end
+    table.sort( out )
+    return out
+end
+
+-- True if an env var (LUADCH_<KEY>) currently holds a non-empty value for this key: then
+-- lookup() takes the env value and a cfg.tbl write is shadowed until the env is cleared.
+-- The PUT /v1/config handler surfaces this so a masked write does not silently no-op (#178).
+local env_is_set = function( cfg_key )
+    local env_name = _derive_env_name( cfg_key )
+    if not env_name then return false end
+    local v = os.getenv( env_name )
+    return type( v ) == "string" and v ~= ""
+end
+
 local init = function( )
     -- Baseline registry - sensitive keys that existed before this
     -- module landed. Migrated from the hardcoded denylist at
@@ -132,10 +183,13 @@ local init = function( )
 end
 
 return {
-    register         = register,
-    is_secret_key    = is_secret_key,
-    lookup           = lookup,
-    list_secret_keys = list_secret_keys,
-    _derive_env_name = _derive_env_name,    -- exposed for tests
-    init             = init,
+    register          = register,
+    is_secret_key     = is_secret_key,
+    is_api_writable   = is_api_writable,
+    lookup            = lookup,
+    list_secret_keys  = list_secret_keys,
+    list_api_writable = list_api_writable,
+    env_is_set        = env_is_set,
+    _derive_env_name  = _derive_env_name,    -- exposed for tests
+    init              = init,
 }

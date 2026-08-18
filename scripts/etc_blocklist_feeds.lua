@@ -522,7 +522,9 @@ hub.setlistener( "onStart", { },
         -- redacts it (idempotent). Redaction is active only once this
         -- plugin is loaded; the LUADCH_* env var is never dumped either
         -- way, so it is the safer place for the key.
-        if secrets.register then secrets.register( "etc_blocklist_feeds_abuseipdb_key" ) end
+        -- api_writable: a third-party AbuseIPDB credential the operator may set from the
+        -- WebUI (masked write, #178) - not the hub's own auth/crypto material.
+        if secrets.register then secrets.register( "etc_blocklist_feeds_abuseipdb_key", { api_writable = true } ) end
 
         -- Seed each enabled feed's next refresh. Honour the PERSISTED last
         -- fetch across +reload: a feed pulled less than its interval ago is

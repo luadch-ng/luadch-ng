@@ -865,7 +865,9 @@ hub.setlistener( "onStart", { },
         -- Register the API-key cfg key as secret so GET /v1/config
         -- redacts it + PUT /v1/config/{key} refuses it. Then resolve
         -- it env-var-first (Docker) / cfg.tbl (bare-metal).
-        if secrets.register then secrets.register( "etc_proxydetect_api_key" ) end
+        -- api_writable: a third-party proxy-detection provider key the operator may set
+        -- from the WebUI (masked write, #178) - not the hub's own auth/crypto material.
+        if secrets.register then secrets.register( "etc_proxydetect_api_key", { api_writable = true } ) end
         api_key = secrets.lookup( "etc_proxydetect_api_key" )
 
         -- Operator guidance at load: unknown provider / missing key /
