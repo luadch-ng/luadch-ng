@@ -131,7 +131,7 @@ order (its inline comments explain each ordering constraint).
 
 | Subsystem | Modules | Responsibility |
 |---|---|---|
-| Boot + config | `init`, `const`, `cfg`, `cfg_defaults`, `cfg_users`, `cfg_lang`, `cfg_secret`, `secrets` | Restricted env + module loader; program constants; settings/user.tbl/language handling; AES-256-GCM at-rest crypto; env-var-first secret lookup |
+| Boot + config | `init`, `const`, `cfg`, `cfg_defaults`, `cfg_users`, `cfg_lang`, `cfg_secret`, `secrets`, `cfg_write` | Restricted env + module loader; program constants; settings/user.tbl/language handling; AES-256-GCM at-rest crypto; env-var-first secret lookup; comment/layout-preserving single-key cfg.tbl writer (#644) |
 | Network + ADC | `server`, `iostream`, `adc`, `hub`, `hub_dispatch`, `hub_user_object`, `hub_bot_object`, `hbri`, `ratelimit`, `blocklist`, `whitelist`, `ipmatch` | event loop + SSL (poll on POSIX / select on Windows, #310); framing pipeline; ADC parse/escape/format; main loop + login; command dispatch; user/bot objects; dual-stack secondary-IP verification; DoS limits; pre-handshake IP/CIDR blocklist; global allowlist (whitelist beats automated blocks, not manual pins); IP/CIDR primitives |
 | HTTP API | `http`, `http_router`, `http_client`, `http_filter`, `http_events`, `util_http` | Inbound HTTP/JSON API + router + auth; non-blocking OUTBOUND client; filter/sort/paginate helper; deferred-event endpoints; plugin endpoint helper |
 | Crypto + boot trust | `sha256`, `hmac`, `cert_bootstrap`, `cacert_bootstrap`, `backup_archive` | Pure-Lua SHA-256; HMAC-SHA256 (RFC 2104, sandbox-exposed for signed-webhook auth, #398); first-boot TLS-cert auto-gen (#77); CA-bundle reconciliation; LDBK1 encrypted backup archive format (tar + AES-256-GCM, PBKDF2, #480) |

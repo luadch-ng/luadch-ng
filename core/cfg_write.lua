@@ -23,16 +23,26 @@
          identically) into that span; when the key is absent, append
          `    key = value,` before the table's closing brace,
       4. SAFETY GATE: re-parse the spliced text sandboxed (util.loadtable_
-         string, env = {}, non-executing) and accept it ONLY if it
-         deep-equals the authoritative _settings table,
+         string, env = {}, non-executing) and accept it ONLY if it equals
+         the ON-DISK file with the single target key set to its new value
+         (proving the splice changed that ONE key and nothing else),
       5. atomic_write.
+
+    The gate compares against the on-disk file (+ the one changed key), NOT
+    against the whole in-memory _settings, because cfg.set persists a single
+    key and _settings can legitimately differ from disk in OTHER keys
+    (checkcfg replaces an invalid value with its default in memory without
+    writing it; a nosave set). Preserving the operator's file except for the
+    key they set is the point; flushing an unrelated in-memory divergence to
+    disk is the wholesale behaviour we avoid (and never silently persists a
+    value the operator did not change).
 
     Any failure (unreadable file, lexer bail, key ambiguous, parse
     mismatch, write error) returns nil so the caller (cfg.set) falls back
     to the proven wholesale util.savetable. The accept-gate is what makes
     this safe: a mis-scan can only ever produce text that fails to parse or
-    parses to a DIFFERENT table, both of which are rejected. The worst case
-    is the current behaviour (comments lost), never a corrupted config.
+    changes some other key, both of which are rejected. The worst case is
+    the current behaviour (comments lost), never a corrupted config.
 
     Scope: only the cfg.set save path. Other util.savetable users (plugin
     state, user.tbl) are untouched.
@@ -474,14 +484,36 @@ local function save_key( path, settings, key )
         f:close( )
         if not old_text or old_text == "" then return nil end
 
+        -- Parse the CURRENT on-disk file. The surgical rewrite is validated
+        -- against THIS, not against the whole in-memory `settings`: cfg.set
+        -- persists a SINGLE key, and `settings` can legitimately differ from
+        -- the on-disk file in OTHER keys (checkcfg replaces an invalid value
+        -- with its default in memory WITHOUT writing it; a nosave set). We
+        -- must preserve the operator's file exactly as it is except for the
+        -- one key being set - flushing an unrelated in-memory divergence to
+        -- disk is precisely the wholesale behaviour this module avoids, and
+        -- it would silently persist a value the operator never asked to
+        -- change. If the file cannot be parsed we cannot verify -> fall back.
+        local old_tbl = util_loadtable_string( old_text, "cfg_write_old" )
+        if type( old_tbl ) ~= "table" then return nil end
+
+        -- A nil target value (key removal) is not representable as a clean
+        -- in-place splice - serialising nil would leave a literal `key = nil,`
+        -- and an orphaned inline comment on a now-absent key. Fall back to the
+        -- wholesale save, which simply omits the key. (The HTTP API rejects a
+        -- null value up front; this only guards a plugin cfg.set(k, nil) that
+        -- got past a nil-tolerant validator.)
+        if settings[ key ] == nil then return nil end
+
         local new_text = build_new_text( old_text, settings, key )
         if not new_text then return nil end
 
-        -- SAFETY GATE: the surgically rewritten text must parse (sandboxed,
-        -- non-executing) to a table deep-equal to the authoritative
-        -- settings. This is what makes a scanner bug non-catastrophic - a
-        -- bad splice can only fail to parse or parse to a different table,
-        -- both rejected here.
+        -- SAFETY GATE: the rewritten text must parse (sandboxed, non-
+        -- executing) to EXACTLY the old file with the single target key set
+        -- to its intended value - proving the splice changed that one key and
+        -- nothing else. A mis-scan can only fail to parse or change some
+        -- other key/value, both rejected here (-> wholesale fallback, never a
+        -- corrupt or partial write).
         --
         -- INVARIANT: the gate's loader (util.loadtable_string) must read the
         -- written bytes EXACTLY as the runtime loader (util.loadtable ->
@@ -489,9 +521,10 @@ local function save_key( path, settings, key )
         -- loadfile skips a leading UTF-8 BOM, load() does not - is closed in
         -- util.loadtable_string (the shipped cfg.tbl is BOM-headed). Any new
         -- divergence would be a real corruption channel: keep the two in sync.
-        local parsed = util_loadtable_string( new_text, "cfg_write_verify" )
-        if type( parsed ) ~= "table" then return nil end
-        if not deep_equal( parsed, settings ) then return nil end
+        local new_tbl = util_loadtable_string( new_text, "cfg_write_verify" )
+        if type( new_tbl ) ~= "table" then return nil end
+        old_tbl[ key ] = settings[ key ]    -- expected = old file + this one key
+        if not deep_equal( new_tbl, old_tbl ) then return nil end
 
         local wok = util_atomic_write( path, new_text )
         if not wok then return nil end

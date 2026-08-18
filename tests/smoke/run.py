@@ -10711,10 +10711,14 @@ def test_http_config_api(staging_dir: Path, proc=None):
       9.  PUT a level-keyed map (cmd_ban_permission) - JSON string keys
           are coerced to integer keys so the level-map validator accepts
           it and it round-trips; a mixed-key map is NOT coerced (400).
+      2b. #644 surgical save: a successful PUT preserves the operator's
+          bare-key format + inline comments in cfg.tbl instead of the
+          wholesale quoted-key comment-stripped rewrite.
 
-    Restores the bare-key cfg.tbl format at the end (matches the #261
-    plugins-api test pattern) so downstream regex-based cfg flips
-    (BLOM / ZLIF / hub_listen) keep working.
+    Restores the pristine cfg.tbl at the end (byte-for-byte) so downstream
+    regex-based cfg flips (BLOM / ZLIF / hub_listen) keep working. Since the
+    surgical save (#644) now preserves the bare-key format, that restore is
+    belt-and-suspenders rather than load-bearing.
     """
     token_path = staging_dir / "cfg" / "api_token.first"
     bootstrap_token = None
@@ -10775,6 +10779,26 @@ def test_http_config_api(staging_dir: Path, proc=None):
             raise TestFailure(f"PUT live: apply_status != 'live'; got {j['data']!r}")
         if j["data"].get("key") != "max_users":
             raise TestFailure(f"PUT live: key echo wrong; got {j['data']!r}")
+
+        # 2b. #644 surgical save: the PUT must rewrite ONLY the changed value
+        #     in place, preserving the operator's bare-key format and inline
+        #     comments - NOT wholesale-rewrite to the canonical quoted-key,
+        #     comment-stripped form. Proven RED before core/cfg_write.lua was
+        #     wired into cfg.set (the wholesale save emits `[ "max_users" ] =
+        #     3000` and drops every comment).
+        cfg_after = cfg_path.read_text(encoding="utf-8")
+        if "max_users = 3000" not in cfg_after:
+            raise TestFailure(
+                "surgical save: 'max_users = 3000' not written bare to cfg.tbl "
+                f"(wholesale rewrite?); head={cfg_after[:160]!r}")
+        if "-- max users (integer)" not in cfg_after:
+            raise TestFailure(
+                "surgical save: the 'max users (integer)' inline comment was "
+                "stripped (comment-preserving save not active)")
+        if '[ "max_users" ]' in cfg_after or '["max_users"]' in cfg_after:
+            raise TestFailure(
+                "surgical save: cfg.tbl was wholesale-rewritten to the "
+                "canonical quoted-key form")
 
         # 3. PUT reload-required key
         r = put_value("language", '{"value": "en"}')
