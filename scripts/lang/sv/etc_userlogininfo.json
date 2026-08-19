@@ -1,8 +1,8 @@
 {
-    "client_mode_a": "",
-    "client_mode_p": "",
-    "client_ssl_n": "",
-    "client_ssl_y": "",
+    "client_mode_a": "aktiv",
+    "client_mode_p": "passiv",
+    "client_ssl_n": "nej ( aktivera det! )",
+    "client_ssl_y": "ja",
     "msg_days": "",
     "msg_hours": "",
     "msg_info": "",
