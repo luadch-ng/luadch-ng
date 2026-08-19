@@ -2,7 +2,7 @@
     "help_desc": "Skickar info om en registrerad användare via SID eller NICK; utan argument -> om dig själv",
     "help_usage": "[+!#]userinfo sid|nick <SID>|<ANVÄNDARNAMN>",
     "msg_days": " dagar, ",
-    "msg_god": "",
+    "msg_god": "Du har inte behörighet att visa användarinformation från denna användare",
     "msg_hours": "",
     "msg_minutes": "",
     "msg_off": "",
