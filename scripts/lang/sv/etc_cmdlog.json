@@ -1,7 +1,7 @@
 {
-    "help_desc": "",
+    "help_desc": "Visar kommandologgen",
     "help_usage": "",
-    "msg1": "",
+    "msg1": "   |   Kommando: [+!#]",
     "msg2": "",
     "msg_denied": "",
     "msg_nofile": "",
