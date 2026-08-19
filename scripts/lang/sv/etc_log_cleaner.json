@@ -1,8 +1,8 @@
 {
-    "activate_cmd_msg": "",
-    "activate_error_msg": "",
-    "failmsg": "",
-    "help_desc": "",
+    "activate_cmd_msg": "Rensning av 'cmd.log' är inaktiverad",
+    "activate_error_msg": "Rensning av 'error.log' är inaktiverat",
+    "failmsg": "Du har inte behörighet att använda detta kommando.",
+    "help_desc": "Rensar loggfiler",
     "help_usage": "",
     "logfile_cmd_msg": "",
     "logfile_error_msg": "",
