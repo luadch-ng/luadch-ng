@@ -1,7 +1,7 @@
 {
     "help_desc": "",
     "help_usage": "",
-    "msg_denied": "",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_fail_alert": "",
     "msg_key_missing": "",
     "msg_provider_bad": "",
