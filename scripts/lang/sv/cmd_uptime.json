@@ -1,7 +1,7 @@
 {
-    "help_desc": "Visar drifttid för dig och för hubben",
+    "help_desc": "Visar anslutningstid för dig och för hubben",
     "help_usage": "",
-    "msg_days": "",
+    "msg_days": " dagar, ",
     "msg_denied": "",
     "msg_hours": "",
     "msg_minutes": "",
