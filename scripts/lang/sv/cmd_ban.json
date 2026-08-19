@@ -1,7 +1,7 @@
 {
-    "help_desc": "",
-    "help_desc2": "",
-    "help_usage": "",
+    "help_desc": "Bannar en användare; <TID> är avstängningsminuterna och måste vara 1 eller högre eller använd ordet 'permanent' för en permanent avstängning som aldrig upphör",
+    "help_desc2": "Unbannar användare efter NICK/CID/IP",
+    "help_usage": "[+!#]ban nick|cid|ip <ANVÄNDARNAMN>|<CID>|<IP-ADRESS> [<TID>|permanent <ANLEDNING>] / [+!#]ban show|showhis [<ANVÄNDARNAMN>]|clear|clearhis",
     "help_usage2": "",
     "lblBy": "",
     "lblCid": "",
