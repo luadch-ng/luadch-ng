@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar SSL-information om klient till hubb-anslutningen för dig eller andra användare",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_usage": "[+!#]sslinfo [<ANVÄNDARNAMN>]",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_isbot": "",
     "msg_notfound": "",
     "msg_out": "",
