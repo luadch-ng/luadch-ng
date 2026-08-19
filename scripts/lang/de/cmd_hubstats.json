@@ -1,9 +1,26 @@
 {
-  "help_desc":"Zeigt statistiken über den Hub",
-  "help_usage":"[+!#]hubstats",
-  "month_name":["Januar\t","Februar\t","März\t","April\t","Mai\t","Juni\t","Juli\t","August\t","September","Oktober\t","November","Dezember"],
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_label":"\tJAHR\t\tMONAT\t\tØ USERS\tØ SHARE\tREG's\t\tDELREG's\tBAN's\t\tUNBAN's",
-  "msg_stats":"\n\n=== HUBSTATS ========================================================================================================================\n\n%s\n%s\n%s\n======================================================================================================================== HUBSTATS ===\n  ",
-  "ucmd_menu_ct1":["Hub","etc","Hubstats"]
+    "help_desc": "Zeigt statistiken über den Hub",
+    "help_usage": "[+!#]hubstats",
+    "month_name": [
+        "Januar\t",
+        "Februar\t",
+        "März\t",
+        "April\t",
+        "Mai\t",
+        "Juni\t",
+        "Juli\t",
+        "August\t",
+        "September",
+        "Oktober\t",
+        "November",
+        "Dezember"
+    ],
+    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
+    "msg_label": "\tJAHR\t\tMONAT\t\tØ USERS\tØ SHARE\tREG's\t\tDELREG's\tBAN's\t\tUNBAN's",
+    "msg_stats": "\n\n=== HUBSTATS ========================================================================================================================\n\n%s\n%s\n%s\n======================================================================================================================== HUBSTATS ===\n  ",
+    "ucmd_menu_ct1": [
+        "Hub",
+        "etc",
+        "Hubstats"
+    ]
 }
