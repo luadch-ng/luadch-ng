@@ -1,7 +1,7 @@
 {
     "help_desc": "",
     "help_usage": "",
-    "msg_bytes": "",
+    "msg_bytes": " byte",
     "msg_denied": "",
     "msg_files": "",
     "msg_iss_dir": "",
