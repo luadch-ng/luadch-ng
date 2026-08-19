@@ -53,7 +53,7 @@ The trust boundary is between "operator-installed plugin" and
 "untrusted ADC client", **not** between "plugin" and "core".
 
 [`core/scripts.lua`](../core/scripts.lua) builds each plugin's
-`_ENV` from an explicit `SANDBOX_GLOBALS` allowlist (added in
+`_ENV` from an explicit `SANDBOX_GLOBALS` whitelist (added in
 [#206](https://github.com/luadch-ng/luadch-ng/issues/206)). `os` and
 `io` are curated shims: `os` exposes only `time` / `date` /
 `difftime`; `io` exposes only a path-restricted `open` (relative

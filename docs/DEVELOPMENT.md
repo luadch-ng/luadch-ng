@@ -204,7 +204,7 @@ The conventions below are either not in it or are easy to get wrong:
   the cfg key (`local r = lang.x or cfg.get("x")` makes the cfg lever dead), and
   the operator's edit has no effect. Lang files are for the hub-language UI; a
   per-hub policy message is cfg (matches `etc_clientblocker`'s `default_reason`).
-- **A plugin that needs a core module must allowlist it.** Plugins have no
+- **A plugin that needs a core module must whitelist it.** Plugins have no
   `use`; a core module (e.g. `mmdb`, `blocklist`) is only reachable if its name
   is in `SANDBOX_GLOBALS` in [`core/scripts.lua`](../core/scripts.lua). Forgetting
   this loads fine in a unit test (which sets `_G`) but the plugin cannot see the
@@ -242,24 +242,24 @@ The conventions below are either not in it or are easy to get wrong:
   `_RATELIMIT_TIER_FIELDS` precedents) so an operator typo becomes a clear
   cfg-load error and default-fallback, not silent misbehaviour. Use
   `types_utf8` (not `types_string`) for text keys.
-- **Activation gate:** a plugin only runs if it is allowlisted in `cfg.scripts`
+- **Activation gate:** a plugin only runs if it is whitelisted in `cfg.scripts`
   (drop-in is not enough), and `examples/cfg/cfg.tbl` should list it (enabled or
   disabled per its default policy). Array order in `cfg.scripts` = listener-chain
   order; structural plugins (e.g. `hub_inf_manager`) must precede plugins that
   depend on their effect.
-- **Auto-kick plugins consult the allowlist first (#78 allowlist).** Any plugin that
+- **Auto-kick plugins consult the whitelist first (#78 allowlist).** Any plugin that
   would auto-kick / ban / block trusted infrastructure - whether it decides on the
   connecting IP (GeoIP, proxy detection, feed blocklists) or on a signal that trusted
   infra legitimately trips (a hublist pinger's high hub count) - should call
   `whitelist.is_whitelisted(user:ip())` at the top of its per-connection decision and
   skip on a match, so operator-trusted infrastructure (hublist pingers etc.) is
   exempt. `whitelist` is a sandbox global (mirrors `blocklist`). Precedence is
-  deliberate: the allowlist overrides AUTOMATED blocks only - a manual `+ban` /
+  deliberate: the whitelist overrides AUTOMATED blocks only - a manual `+ban` /
   `+blocklist` still applies (enforced in `core/blocklist.check_ip`). Put the guard
   BEFORE any cache / quota / network step so a trusted IP costs nothing. Precedents:
   the one-line guard in `etc_geoip`, `etc_proxydetect`, `usr_hubs`. Not yet extended
   to the share / slots / nick-policy plugins (`usr_share` / `usr_slots` /
-  `usr_nick_*`) - an allowlisted IP still faces those unless a follow-up adds the guard.
+  `usr_nick_*`) - a whitelisted IP still faces those unless a follow-up adds the guard.
 - **Audit fire-sites:** state-changing actions emit `audit.build` / `audit.fire`
   with the firstnick-canonical actor. See [`SECURITY.md`](SECURITY.md) and the
   `#84` audit-log conventions.

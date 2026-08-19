@@ -46,7 +46,7 @@ consistent by construction - no file is being written while it runs.
 passphrase is set** (it nags the hub owner until then). To turn it on:
 
 1. Set a passphrase (see [The passphrase](#the-passphrase)).
-2. Confirm the plugin is allowlisted in `cfg.scripts` (the default `cfg.tbl`
+2. Confirm the plugin is whitelisted in `cfg.scripts` (the default `cfg.tbl`
    already lists `{ "etc_backup.lua", enabled = true }`).
 3. `+reload`.
 

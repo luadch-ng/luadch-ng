@@ -77,9 +77,9 @@ Each plugin loads into its own restricted environment. Properties of
 that environment:
 
 - **Lua 5.4** runtime (since Phase 3).
-- **The plugin env is an explicit allowlist** (since #206, 2026-05-23).
+- **The plugin env is an explicit whitelist** (since #206, 2026-05-23).
   See [`core/scripts.lua` `SANDBOX_GLOBALS`](../core/scripts.lua) for
-  the live source of truth. The allowlist contains:
+  the live source of truth. The whitelist contains:
   - Standard Lua basics: `assert`, `error`, `pairs`, `ipairs`, `next`,
     `pcall`, `xpcall`, `select`, `setmetatable`, `getmetatable`,
     `tonumber`, `tostring`, `type`, `print`, `collectgarbage`
@@ -110,7 +110,7 @@ that environment:
   every API.
 - **The `use` keyword is core-only.** Plugins cannot `use "X"` to
   import core modules. Instead, plugins access core functionality via
-  the allowlisted globals listed above.
+  the whitelisted globals listed above.
 - **Type checking is mostly the script's responsibility.** Core
   modules validate inputs rarely; the public `hub.*` API performs
   some checks but most failures surface as nil-with-error or
@@ -188,7 +188,7 @@ mine.helper( "foo" )
 
 Plugins that have no public surface still `return {}` at the end.
 
-### 3.4 cfg.tbl allowlist
+### 3.4 cfg.tbl whitelist
 
 A plugin file is loaded only if its filename (without `.lua`) appears
 in the `cfg.scripts` array in [`cfg/cfg.tbl`](../examples/cfg/cfg.tbl).
