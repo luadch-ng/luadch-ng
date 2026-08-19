@@ -1,0 +1,33 @@
+{
+    "help_desc": "",
+    "help_desc_op": "",
+    "help_usage": "",
+    "help_usage_op": "",
+    "msg_allowed_levels": "",
+    "msg_denied": "",
+    "msg_lvl_exists": "",
+    "msg_ok": "",
+    "msg_out": "",
+    "msg_out_hub": "",
+    "msg_out_lvl": "",
+    "msg_usage": "",
+    "msg_usage_hub": "",
+    "msg_usage_lvl": "",
+    "ucmd_menu": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_1": "",
+    "ucmd_menu_2": "",
+    "ucmd_menu_3": "",
+    "ucmd_menu_4": "",
+    "ucmd_menu_hub": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_what": ""
+}
