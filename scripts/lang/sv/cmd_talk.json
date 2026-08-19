@@ -2,9 +2,9 @@
     "help_desc": "Prata utan smeknamn",
     "help_usage": "[+!#]talk <MEDDELANDE>",
     "msg_denied": "Du har inte behörighet att använda detta kommando.",
-    "msg_usage": "",
+    "msg_usage": "Användning: [+!#]talk <MEDDELANDE>",
     "ucmd_menu": [
-        "",
+        "Användare",
         "",
         ""
     ],
