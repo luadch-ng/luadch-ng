@@ -1,7 +1,7 @@
 {
     "help_desc": "",
     "help_usage": "",
-    "msg_added": "",
+    "msg_added": "%s lade till vitlistpost #%d (%s, source=%s).",
     "msg_bad_cidr": "",
     "msg_bad_expires": "",
     "msg_count": "",
