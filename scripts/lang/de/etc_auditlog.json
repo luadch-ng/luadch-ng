@@ -1,9 +1,14 @@
 {
-  "help_desc":"Zeigt das Audit-Log (heutige Datei).",
-  "help_usage":"[+!#]auditlog show",
-  "msg_denied":"Du darfst diesen Befehl nicht benutzen.",
-  "msg_nofile":"Heute liegen noch keine Audit-Log-Eintraege vor.",
-  "msg_out":"\n\n=== AUDIT LOG (heute) ====================================================================================\n\n%s\n==================================================================================== AUDIT LOG (heute) ===\n\n      ",
-  "msg_usage":"Benutzung: [+!#]auditlog show",
-  "ucmd_menu":["Hub","Logs","anzeigen","audit.log (heute)"]
+    "help_desc": "Zeigt das Audit-Log (heutige Datei).",
+    "help_usage": "[+!#]auditlog show",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_nofile": "Heute liegen noch keine Audit-Log-Eintraege vor.",
+    "msg_out": "\n\n=== AUDIT LOG (heute) ====================================================================================\n\n%s\n==================================================================================== AUDIT LOG (heute) ===\n\n      ",
+    "msg_usage": "Benutzung: [+!#]auditlog show",
+    "ucmd_menu": [
+        "Hub",
+        "Logs",
+        "anzeigen",
+        "audit.log (heute)"
+    ]
 }
