@@ -1,8 +1,8 @@
 {
-    "help_desc": "",
-    "help_desco": "",
-    "help_err": "",
-    "help_err_wrong_id_o": "",
+    "help_desc": "Visar hubbrekord för användaren",
+    "help_desco": "Visar hubbens rekord för användaren|återställer databasen över rekord",
+    "help_err": "Du har inte behörighet att använda detta kommando.",
+    "help_err_wrong_id_o": "\n\t\t Fel inmatning, försök igen med: \n\n\t\t %s \n\t\t %s \n\n\t\t %s \n\t\t %s ",
     "help_err_wrong_id_reg": "",
     "help_usage": "",
     "help_usageo": "",
