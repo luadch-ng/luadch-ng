@@ -1,0 +1,41 @@
+{
+    "help_desc_add": "",
+    "help_desc_del": "",
+    "help_desc_list": "",
+    "help_usage_add": "",
+    "help_usage_del": "",
+    "help_usage_list": "",
+    "msg_added": "",
+    "msg_alias_exists": "",
+    "msg_alias_is_command": "",
+    "msg_bad_alias": "",
+    "msg_deleted": "",
+    "msg_denied": "",
+    "msg_err": "",
+    "msg_list_empty": "",
+    "msg_list_footer": "",
+    "msg_list_header": "",
+    "msg_list_section_a": "",
+    "msg_list_section_b": "",
+    "msg_no_such_alias": "",
+    "msg_target_missing": "",
+    "msg_usage_add": "",
+    "msg_usage_del": "",
+    "ucmd_menu_add": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_del": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_list": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup_alias": "",
+    "ucmd_popup_target": ""
+}
