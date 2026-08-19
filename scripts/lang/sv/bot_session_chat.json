@@ -1,8 +1,8 @@
 {
     "chatdesc": "av: %s | medlemmar: %s",
-    "help_desc": "",
-    "help_usage": "",
-    "msg_already": "",
+    "help_desc": "Sessionschattar är tillfälliga chattar för en användarsession",
+    "help_usage": "[+!#]sessionchat <CHATTNAMN>",
+    "msg_already": "Användaren är redan medlem: ",
     "msg_chatexists": "",
     "msg_create": "",
     "msg_create2": "",
