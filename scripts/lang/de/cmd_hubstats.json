@@ -1,5 +1,5 @@
 {
-    "help_desc": "Zeigt statistiken über den Hub",
+    "help_desc": "Zeigt Statistiken über den Hub an",
     "help_usage": "[+!#]hubstats",
     "month_name": [
         "Januar\t",
