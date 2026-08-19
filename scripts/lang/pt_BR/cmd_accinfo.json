@@ -1,0 +1,51 @@
+{
+    "help_desc": "",
+    "help_desc2": "",
+    "help_usage": "",
+    "help_usage2": "",
+    "msg_accinfo": "",
+    "msg_accinfo2": "",
+    "msg_bans_no": "",
+    "msg_bans_yes": "",
+    "msg_days": "",
+    "msg_denied": "",
+    "msg_forever": "",
+    "msg_god": "",
+    "msg_hours": "",
+    "msg_keyprint": "",
+    "msg_minutes": "",
+    "msg_mode_both": "",
+    "msg_mode_main": "",
+    "msg_mode_pm": "",
+    "msg_msgmanager": "",
+    "msg_msgmanager_1": "",
+    "msg_msgmanager_2": "",
+    "msg_off": "",
+    "msg_online": "",
+    "msg_redacted": "",
+    "msg_seconds": "",
+    "msg_trafficmanager_1": "",
+    "msg_trafficmanager_2": "",
+    "msg_unknown": "",
+    "msg_usage": "",
+    "msg_years": "",
+    "ucmd_menu_ct0": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_op": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct3_op": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct4": "",
+    "ucmd_menu_ct4_op": "",
+    "ucmd_menu_ct5": "",
+    "ucmd_menu_ct5_op": "",
+    "ucmd_menu_ct6": "",
+    "ucmd_menu_ct6_op": "",
+    "ucmd_nick": ""
+}
