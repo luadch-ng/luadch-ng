@@ -67,7 +67,7 @@ local toggle_countdown = cfg.get( "cmd_restart_toggle_countdown" )
 --// msgs
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "cmd_restart.lua"
+local help_title = "cmd_restart.lua"
 local help_usage = lang.help_usage or "[+!#]restart [<MSG>]"
 local help_desc = lang.help_desc or "Restarts hub"
 

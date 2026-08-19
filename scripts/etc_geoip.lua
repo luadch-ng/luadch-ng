@@ -607,7 +607,7 @@ hub.setlistener( "onStart", { },
 
         local help = hub_import( "cmd_help" )
         if help then
-            help.reg( lang.help_title or "etc_geoip.lua - geoip",
+            help.reg( "etc_geoip.lua - geoip",
                 lang.help_usage or "[+!#]geoip",
                 lang.help_desc or "Show GeoIP status: DB load state, action mode, blocked countries / ASNs.",
                 oplevel )

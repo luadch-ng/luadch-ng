@@ -209,7 +209,7 @@ local msg_accinfo = lang.msg_accinfo or [[
 
         ]]
 
-local help_title = lang.help_title or "cmd_reg.lua"
+local help_title = "cmd_reg.lua"
 local help_usage = lang.help_usage or "[+!#]reg nick <NICK> <LEVEL> [<COMMENT>] / [+!#]reg desc <NICK> <COMMENT> (an empty comment removes an existing comment)"
 local help_desc = lang.help_desc or "Regs a new user / add a comment to an existing user"
 

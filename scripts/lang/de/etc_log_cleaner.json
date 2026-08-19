@@ -3,7 +3,6 @@
   "activate_error_msg":"Der 'error.log' Cleaner ist deaktiviert",
   "failmsg":"Du bist nicht befugt diesen Befehl zu nutzen.",
   "help_desc":"Löscht den Inhalt von Logdateien",
-  "help_title":"etc_log_cleaner.lua",
   "help_usage":"[+!#]cleanlog error|cmd",
   "logfile_cmd_msg":"Der Inhalt der 'cmd.log' wurde gelöscht",
   "logfile_error_msg":"Der Inhalt der 'error.log' wurde gelöscht",

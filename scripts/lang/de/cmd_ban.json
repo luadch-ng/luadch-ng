@@ -1,8 +1,6 @@
 {
     "help_desc": "Bannt einen User; <ZEIT> entspricht Minuten und muss mindestens 1 sein, oder das Schlüsselwort 'permanent' für einen Bann, der nie abläuft",
     "help_desc2": "Entbannt einen User via NICK/CID/IP",
-    "help_title": "cmd_ban.lua - Ban",
-    "help_title2": "cmd_ban.lua - Unban",
     "help_usage": "[+!#]ban nick|cid|ip <NICK>|<CID>|<IP> [<ZEIT>|permanent <GRUND>] / [+!#]ban show|showhis [<NICK>]|clear|clearhis",
     "help_usage2": "[+!#]unban nick|cid|ip <NICK>|<CID>|<IP>",
     "lblBy": " Gebannt von: ",

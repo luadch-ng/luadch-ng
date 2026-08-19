@@ -78,7 +78,7 @@ local path = "log/error.log"
 --// msgs
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "cmd_errors.lua"
+local help_title = "cmd_errors.lua"
 local help_usage = lang.help_usage or "[+!#]errors"
 local help_desc = lang.help_desc or "Sends error.log"
 

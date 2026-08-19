@@ -161,7 +161,7 @@ local msg_out = lang.msg_out or "%s  changed  %s  from level: %s [ %s ]  to leve
 local msg_out_2 = lang.msg_out_2 or "%s  with level:  %s [ %s ]  has tried to change  %s  to level:  %s [ %s ]"
 local msg_same = lang.msg_same or "This User still have this Level, no changes needed."
 
-local help_title = lang.help_title or "upgrade"
+local help_title = "cmd_upgrade.lua"
 local help_usage = lang.help_usage or "[+!#]upgrade sid|nick <sid>|<nick> <level>"
 local help_desc = lang.help_desc or "sets level of user"
 

@@ -1,6 +1,5 @@
 {
   "help_desc":"Show blocked users | show settings | block main chats | block pm chats | block both | unblock user",
-  "help_title":"etc_msgmanager.lua",
   "help_usage":"[+!#]msgmanager showusers|showsettings|blockmain <NICK>|blockpm <NICK>|blockboth <NICK>|unblock <NICK>",
   "msg_block":"[ MSGMANAGER ]--> Block user:  %s  |  mode:  %s",
   "msg_denied":"You are not allowed to use this command.",

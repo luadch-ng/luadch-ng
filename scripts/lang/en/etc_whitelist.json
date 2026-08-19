@@ -1,6 +1,5 @@
 {
   "help_desc":"Manage the global IP/CIDR allowlist (exempts trusted IPs from the automated blockers, not from a manual ban). Run `+whitelist show` for the active entries.",
-  "help_title":"etc_whitelist.lua - allowlist",
   "help_usage":"[+!#]whitelist show|add|del|count|export|import ...",
   "msg_added":"%s added whitelist entry #%d (%s, source=%s).",
   "msg_bad_cidr":"Invalid CIDR / IP: %s",

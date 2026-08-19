@@ -59,7 +59,7 @@ local scriptlang = cfg_get( "language" )
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub_debug( err )
 
 --// msgs
-local help_title = lang.help_title or "cmd_help.lua"
+local help_title = "cmd_help.lua"
 local help_usage = lang.help_usage or "[+!#]help"
 local help_desc = lang.help_desc or "Shows this help for hub commands"
 

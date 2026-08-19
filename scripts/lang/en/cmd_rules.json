@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows the hub rules",
-  "help_title":"cmd_rules.lua",
   "help_usage":"[+!#]rules",
   "msg_rules":"\n\n=== RULES =======================================================================================\n\n                                                                                                  no rules atm.\n\n======================================================================================= RULES ===\n    ",
   "ucmd_menu":["General","Rules"]

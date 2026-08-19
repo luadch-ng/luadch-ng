@@ -56,7 +56,7 @@ local destination_main = cfg_get( "cmd_rules_destination_main" )
 local destination_pm = cfg_get( "cmd_rules_destination_pm" )
 
 --// msgs
-local help_title = lang.help_title or "rules"
+local help_title = "cmd_rules.lua"
 local help_usage = lang.help_usage or "[+!#]rules"
 local help_desc = lang.help_desc or "sends the hub rules to user"
 

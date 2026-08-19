@@ -126,11 +126,11 @@ local scriptlang = cfg.get "language"
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub.debug( err )
 
 --// msgs
-local help_title = lang.help_title or "Chatlog for Regs"  -- for regs
+local help_title = "etc_chatlog.lua - Users"  -- for regs
 local help_usage = lang.help_usage or "[+!#]history show [<lines>] und [+!#]history toggle"
 local help_desc = lang.help_desc or "Shows the last written messages in mainchat, you can toggle it on/off."
 
-local help_titleo = lang.help_titleo or "Chatlog for Owners"  -- for owner
+local help_titleo = "etc_chatlog.lua - Owners"  -- for owner
 local help_usageo = lang.help_usageo or "[+!#]history [reset_t_logs|reset_t_exceptions]  / or: [+!#]history showexceptions"
 local help_desco = lang.help_desco or "Delete Chatlog / or: delete list of deniers."
 

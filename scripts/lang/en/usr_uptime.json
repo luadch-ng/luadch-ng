@@ -1,8 +1,6 @@
 {
   "help_desc":"Shows your uptime stats",
   "help_desc_op":"Shows the uptime stats of a user",
-  "help_title":"usr_uptime.lua",
-  "help_title_op":"usr_uptime.lua - Operators",
   "help_usage":"[+!#]useruptime",
   "help_usage_op":"[+!#]useruptime CT1 <FIRSTNICK> | CT2 <NICK>",
   "month_name":["January\t","February\t","March\t","April\t","May\t","June\t","July\t","August\t","September","October\t","November","December"],

@@ -1,6 +1,5 @@
 {
   "help_desc":"Automatic encrypted backups: run one now, list artifacts, show status.",
-  "help_title":"etc_backup.lua - backup",
   "help_usage":"+backup now|list|status",
   "msg_bytes":" bytes",
   "msg_denied":"You are not allowed to use this command.",

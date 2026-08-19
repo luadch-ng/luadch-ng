@@ -285,11 +285,11 @@ local block_tbl = util.loadtable( block_file ) or {}
 local flag_blocked = cfg.get( "etc_trafficmanager_flag_blocked" )
 
 --// msgs
-local help_title = lang.help_title or "etc_trafficmanager.lua - Operators"
+local help_title = "etc_trafficmanager.lua - Operators"
 local help_usage = lang.help_usage or "[+!#]trafficmanager show settings|blocks"
 local help_desc = lang.help_desc or "Shows current settings from 'cfg/cfg.tbl' | Shows all blocked users and their blockmodes"
 
-local help_title2 = lang.help_title2 or "etc_trafficmanager.lua - Owners"
+local help_title2 = "etc_trafficmanager.lua - Owners"
 local help_usage2 = lang.help_usage2 or "[+!#]trafficmanager block <NICK> [<REASON>] | unblock <NICK>"
 local help_desc2 = lang.help_desc2 or "Blocks downloads ( d ), uploads ( u ) and search ( s ) | Unblock user"
 

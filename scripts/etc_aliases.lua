@@ -88,15 +88,15 @@ local table_concat = table.concat
 
 
 --// lang
-local help_title_add  = lang.help_title_add  or "etc_aliases.lua - addalias"
+local help_title_add  = "etc_aliases.lua - addalias"
 local help_usage_add  = lang.help_usage_add  or "[+!#]addalias <alias> <target>"
 local help_desc_add   = lang.help_desc_add   or "Add a command alias (alias -> target)"
 
-local help_title_del  = lang.help_title_del  or "etc_aliases.lua - delalias"
+local help_title_del  = "etc_aliases.lua - delalias"
 local help_usage_del  = lang.help_usage_del  or "[+!#]delalias <alias>"
 local help_desc_del   = lang.help_desc_del   or "Remove a command alias"
 
-local help_title_list = lang.help_title_list or "etc_aliases.lua - aliases"
+local help_title_list = "etc_aliases.lua - aliases"
 local help_usage_list = lang.help_usage_list or "[+!#]aliases"
 local help_desc_list  = lang.help_desc_list  or "List configured aliases and built-in command names"
 

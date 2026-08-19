@@ -1,6 +1,5 @@
 {
   "help_desc":"Show GeoIP status: DB load state, action mode, blocked countries / ASNs.",
-  "help_title":"etc_geoip.lua - geoip",
   "help_usage":"[+!#]geoip",
   "msg_db_loaded":"etc_geoip.lua: loaded %s database (%s, built %s).",
   "msg_db_missing":"etc_geoip.lua: %s database not found at '%s' - GeoIP checks for it are disabled. Run geoipupdate (see docs/BLOCKLIST.md).",

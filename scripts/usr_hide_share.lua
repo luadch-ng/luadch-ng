@@ -67,7 +67,7 @@ local restrictions = cfg.get( "usr_hide_share_restrictions" )
 local path = "scripts/data/usr_hide_share.tbl"
 
 --// msgs
-local help_title = lang.help_title or "usr_hide_share.lua"
+local help_title = "usr_hide_share.lua"
 local help_usage = lang.help_usage or "[+!#]hideshare <NICK>"
 local help_desc = lang.help_desc or "Hide/unhide the share of a user"
 

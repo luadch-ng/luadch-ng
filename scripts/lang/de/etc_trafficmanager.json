@@ -1,8 +1,6 @@
 {
     "help_desc": "Zeigt die aktuellen Settings | Zeigt eine Liste aller geblockten User und den Blockmode",
     "help_desc2": "Blockt Downloads ( d ), Uploads ( u ) und Search ( s ) | Unblockt User",
-    "help_title": "etc_trafficmanager.lua - Operatoren",
-    "help_title2": "etc_trafficmanager.lua - Owners",
     "help_usage": "[+!#]trafficmanager show settings|blocks",
     "help_usage2": "[+!#]trafficmanager block <NICK> [<GRUND>] | unblock <NICK>",
     "msg_ab_level": "Geblocktes Level",

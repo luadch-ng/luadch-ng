@@ -1,8 +1,6 @@
 {
     "help_desc": "Anzeigen der Blacklist",
     "help_desc2": "Löschen eines Users von der Blacklist",
-    "help_title": "etc_blacklist.lua - Anzeigen",
-    "help_title2": "etc_blacklist.lua - Löschen",
     "help_usage": "[+!#]blacklist show",
     "help_usage2": "[+!#]blacklist del <NICK>",
     "msg_01": "\t  Benutzername: ",

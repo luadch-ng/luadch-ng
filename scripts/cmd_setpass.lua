@@ -141,7 +141,7 @@ local min_length = cfg.get( "min_password_length" )
 local max_length = cfg.get( "max_password_length" )
 
 --// msgs
-local help_title = lang.help_title or "setpas"
+local help_title = "cmd_setpass.lua"
 local help_usage = lang.help_usage or "[+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>"
 local help_desc = lang.help_desc or "Sets password of a user or yourself"
 

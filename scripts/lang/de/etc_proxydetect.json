@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt den Proxy-Erkennungs-Status: Anbieter, Aktionsmodus, geblockte Typen, Cache + Abfragezahl.",
-  "help_title":"etc_proxydetect.lua - Proxy/VPN-Erkennung",
   "help_usage":"[+!#]proxydetect",
   "msg_denied":"Du darfst diesen Befehl nicht verwenden.",
   "msg_fail_alert":"[ PROXYDETECT ]--> Anbieter '%s' Abfragen schlagen fehl: %d Fehler in %ds - Erkennung ist eingeschraenkt (fail-%s).",

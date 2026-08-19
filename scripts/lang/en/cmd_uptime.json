@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows uptime from you and from the hub",
-  "help_title":"cmd_uptime.lua",
   "help_usage":"[+!#]uptime",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",

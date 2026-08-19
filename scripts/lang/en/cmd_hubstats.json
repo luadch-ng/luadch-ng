@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows statistics about the hub",
-  "help_title":"cmd_hubstats.lua",
   "help_usage":"[+!#]hubstats",
   "month_name":["January\t","February\t","March\t","April\t","May\t","June\t","July\t","August\t","September","October\t","November","December"],
   "msg_denied":"You are not allowed to use this command.",

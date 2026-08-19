@@ -41,7 +41,7 @@ local help, ucmd, hubcmd
 local scriptlang = cfg.get( "language" )
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "Slots"
+local help_title = "cmd_slots.lua"
 local help_usage = lang.help_usage or "[+!#]slots"
 local help_desc = lang.help_desc or "shows users with free slots"
 

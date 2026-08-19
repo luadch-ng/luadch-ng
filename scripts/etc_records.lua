@@ -107,8 +107,8 @@ local tryagain
 --// msgs
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub_debug( err )
 
-local help_title = lang.help_title or "Records"  -- regs
-local help_titleo = lang.help_titleo or "Records"  -- regs
+local help_title = "etc_records.lua - Users"  -- regs
+local help_titleo = "etc_records.lua - Owners"  -- regs
 local help_usage = lang.help_usage or "[+!#]records show"
 local help_desc = lang.help_desc or "sends the hub records to user"
 local help_usageo = lang.help_usageo or "[+!#]records show|reset"

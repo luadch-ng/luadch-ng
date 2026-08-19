@@ -1,6 +1,5 @@
 {
   "help_desc":"Sends info about a user by SID or NICK; no argument -> about yourself",
-  "help_title":"cmd_userinfo.lua",
   "help_usage":"[+!#]userinfo sid|nick <SID>|<NICK>",
   "msg_days":" days, ",
   "msg_god":"You are not allowed to view the userinfo from this user",

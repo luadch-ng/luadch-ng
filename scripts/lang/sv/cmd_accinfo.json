@@ -1,8 +1,6 @@
 {
     "help_desc": "Skickar accinfo om en registrerad användare via SID eller NICK; utan argument -> om dig själv",
     "help_desc2": "",
-    "help_title": "",
-    "help_title2": "",
     "help_usage": "",
     "help_usage2": "",
     "msg_accinfo": "",

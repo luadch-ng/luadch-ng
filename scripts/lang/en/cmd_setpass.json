@@ -1,6 +1,5 @@
 {
   "help_desc":"Sets password of a user or yourself",
-  "help_title":"cmd_setpass.lua",
   "help_usage":"[+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>",
   "msg_denied":"You are not allowed to use this command.",
   "msg_god":"You are not allowed to change the password of this user.",

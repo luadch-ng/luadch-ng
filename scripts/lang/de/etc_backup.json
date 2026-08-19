@@ -1,6 +1,5 @@
 {
   "help_desc":"Automatische verschluesselte Backups: jetzt eins erstellen, Artefakte auflisten, Status anzeigen.",
-  "help_title":"etc_backup.lua - Backup",
   "help_usage":"+backup now|list|status",
   "msg_bytes":" Bytes",
   "msg_denied":"Du darfst diesen Befehl nicht benutzen.",

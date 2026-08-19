@@ -138,11 +138,11 @@ local permission = cfg.get( "usr_uptime_permission" )
 local opchat = hub.import( "bot_opchat" )
 
 --// msgs
-local help_title = lang.help_title or "usr_uptime.lua"
+local help_title = "usr_uptime.lua"
 local help_usage = lang.help_usage or "[+!#]useruptime"
 local help_desc = lang.help_desc or "Shows your uptime stats"
 
-local help_title_op = lang.help_title_op or "usr_uptime.lua - Operators"
+local help_title_op = "usr_uptime.lua - Operators"
 local help_usage_op = lang.help_usage_op or "[+!#]useruptime CT1 <FIRSTNICK> | CT2 <NICK>"
 local help_desc_op = lang.help_desc_op or "Shows the uptime stats of a user"
 

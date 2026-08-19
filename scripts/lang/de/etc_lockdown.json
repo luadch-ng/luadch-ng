@@ -1,6 +1,5 @@
 {
   "help_desc":"Laesst voruebergehend nur User ab <level> zu; kickt + weist alle darunter ab, bis du `lockdown off` ausfuehrst (oder der Timer ablaeuft).",
-  "help_title":"etc_lockdown.lua - Wartungssperre",
   "help_usage":"[+!#]lockdown <level> [minuten] [grund] | off | status",
   "msg_already_off":"[ LOCKDOWN ]--> Die Sperre ist nicht aktiv.",
   "msg_bad_level":"[ LOCKDOWN ]--> <level> muss eine ganze Zahl 0-100 sein, oder nutze: off / status",
