@@ -1,0 +1,18 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_default": "",
+    "msg_denied": "",
+    "msg_hide_target": "",
+    "msg_hide_user": "",
+    "msg_isbot": "",
+    "msg_notonline": "",
+    "msg_unhide_target": "",
+    "msg_unhide_user": "",
+    "msg_usage": "",
+    "ucmd_menu_ct2_1": [
+        "",
+        "",
+        ""
+    ]
+}
