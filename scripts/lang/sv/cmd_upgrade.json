@@ -1,7 +1,7 @@
 {
-    "help_desc": "Ställer in nivån för en användare",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_desc": "Ställer in åtkomstnivå för en användare",
+    "help_usage": "[+!#]upgrade sid|nick <SID>|<ANVÄNDARNAMN> <ÅTKOMSTNIVÅ>",
+    "msg_denied": "Du har inte behörighet att använda detta kommando eller så har användaren högre åtkomstnivå än dig.",
     "msg_off": "",
     "msg_out": "",
     "msg_out_2": "",
