@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar och tar bort använda och oanvända konton som är frånkopplade",
-    "help_usage": "",
-    "msg_delreg_exception": "",
+    "help_usage": "[+!#]usercleaner showall | showexpired | showghosts | delexpired | delghosts | addexception <ANVÄNDARNAMN> | delexception <ANVÄNDARNAMN> | delexceptionall | showexceptions | setdays <DAGAR> | cleancomment",
+    "msg_delreg_exception": "[ ANVÄNDARRENSNING ]--> Följande användare tillhör undantagslistan och kan därför inte tas bort: ",
     "msg_delreg_exception_level": "",
     "msg_delreg_expired": "",
     "msg_delreg_unused": "",
