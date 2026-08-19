@@ -1,13 +1,13 @@
 {
-  "client_mode_a":"Aktiv",
-  "client_mode_p":"Passiv",
-  "client_ssl_n":"Nein ( bitte aktivieren! )",
-  "client_ssl_y":"Ja",
-  "msg_days":" Tage, ",
-  "msg_hours":" Std, ",
-  "msg_info":"\n\n=== USER LOGIN INFO ==============================\n\n        Dein Nick:\t%s\n        Deine IP:\t%s\n        Dein Level:\t%s  [ %s ]\n\n        Client Version:\t%s\n        Client Modus:\t%s\n\n        Registriert von:\t%s\n        Registriert am:\t%s\n\n        Zuletzt online:  %s\n\n        Client SSL:\t%s\n        TLS Modus:\t%s\n        TLS Cipher:\t%s\n\n============================== USER LOGIN INFO ===\n   ",
-  "msg_minutes":" Min, ",
-  "msg_seconds":" Sek",
-  "msg_unknown":"<UNBEKANNT>",
-  "msg_years":" Jahre, "
+    "client_mode_a": "Aktiv",
+    "client_mode_p": "Passiv",
+    "client_ssl_n": "Nein ( bitte aktivieren! )",
+    "client_ssl_y": "Ja",
+    "msg_days": " Tage, ",
+    "msg_hours": " Std, ",
+    "msg_info": "\n\n=== USER LOGIN INFO ==============================\n\n        Dein Nick:\t%s\n        Deine IP:\t%s\n        Dein Level:\t%s  [ %s ]\n\n        Client Version:\t%s\n        Client Modus:\t%s\n\n        Registriert von:\t%s\n        Registriert am:\t%s\n\n        Zuletzt online:  %s\n\n        Client SSL:\t%s\n        TLS Modus:\t%s\n        TLS Cipher:\t%s\n\n============================== USER LOGIN INFO ===\n   ",
+    "msg_minutes": " Min, ",
+    "msg_seconds": " Sek",
+    "msg_unknown": "<UNBEKANNT>",
+    "msg_years": " Jahre, "
 }
