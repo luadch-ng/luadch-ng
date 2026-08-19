@@ -1,7 +1,7 @@
 {
     "help_desc": "Ställer in lösenord för en användare eller dig själv",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_usage": "[+!#]setpass nick <ANVÄNDARNAMN> <LÖSENORD>  /  [+!#]setpass nick myself <LÖSENORD>",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_god": "",
     "msg_max_length": "",
     "msg_min_length": "",
