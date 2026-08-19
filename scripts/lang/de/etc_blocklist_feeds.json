@@ -1,6 +1,5 @@
 {
     "help_desc": "Zeigt den Feed-Status: pro Feed aktiviert-Status, Intervall, Eintragszahl, letzte Aktualisierung.",
-    "help_title": "etc_blocklist_feeds.lua - externe Blocklist-Feeds",
     "help_usage": "[+!#]blfeeds",
     "msg_abuseipdb_no_key": "etc_blocklist_feeds.lua: abuseipdb-Feed ist aktiviert, aber kein API-Key gesetzt (cfg '%s' oder die LUADCH_*-Umgebungsvariable) - der Feed ist deaktiviert.",
     "msg_clamped": "etc_blocklist_feeds.lua: Feed '%s' Aktualisierungsintervall auf das Minimum von %ds angehoben (Feed-Richtlinie).",

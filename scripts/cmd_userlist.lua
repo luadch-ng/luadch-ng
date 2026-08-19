@@ -51,7 +51,7 @@ local msg_denied = lang.msg_denied or "You are not allowed to use this command."
 local msg_userlist = lang.msg_userlist or "Userlist:"
 local msg_useramount = lang.msg_useramount or "User amount in the levels:\n"
 
-local help_title = lang.help_title or "userlist"
+local help_title = "cmd_userlist.lua"
 local help_usage = lang.help_usage or "[+!#]userlist [bydate]"
 local help_desc = lang.help_desc or "get list of regged users"
 

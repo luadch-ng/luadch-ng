@@ -49,7 +49,7 @@ local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or { }
 local permission = cfg.get( "cmd_botflag_permission" ) or { }
 
 --// msgs
-local help_title = lang.help_title or "cmd_botflag.lua"
+local help_title = "cmd_botflag.lua"
 local help_usage = lang.help_usage or "[+!#]botflag <NICK> on|off"
 local help_desc = lang.help_desc or "Toggles the bot icon (ADC CT bot bit) on a registered account, no privilege change"
 

@@ -228,7 +228,7 @@ local cache_check_cpu
 local cache_check_ram_total
 
 --// msgs
-local help_title = lang.help_title or "cmd_hubinfo.lua"
+local help_title = "cmd_hubinfo.lua"
 local help_usage = lang.help_usage or "[+!#]hubinfo"
 local help_desc = lang.help_desc or "Sends a list of basic informations about the hub"
 

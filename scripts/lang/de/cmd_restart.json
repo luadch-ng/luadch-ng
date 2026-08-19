@@ -1,6 +1,5 @@
 {
     "help_desc": "Neustart des Hubs",
-    "help_title": "cmd_restart.lua",
     "help_usage": "[+!#]restart [<MSG>]",
     "msg_countdown": "*** Hub startet neu in ***",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",

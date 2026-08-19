@@ -85,7 +85,7 @@ local report_hubbot = cfg.get( "cmd_disconnect_report_hubbot" )
 local report_opchat = cfg.get( "cmd_disconnect_report_opchat" )
 
 --// msgs
-local help_title = lang.help_title or "cmd_disconnect.lua"
+local help_title = "cmd_disconnect.lua"
 local help_usage = lang.help_usage or "[+!#]disconnect <NICK> <REASON>"
 local help_desc = lang.help_desc or "Disconnects a user"
 

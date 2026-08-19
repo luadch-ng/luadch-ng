@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt die Hubregeln",
-  "help_title":"cmd_rules.lua",
   "help_usage":"[+!#]rules",
   "msg_rules":"\n\n=== RULES =======================================================================================\n\n                                                                                                  no rules atm.\n\n======================================================================================= RULES ===\n    ",
   "ucmd_menu":["Allgemein","Hubregeln"]

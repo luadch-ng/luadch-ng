@@ -1,6 +1,5 @@
 {
     "help_desc": "Tysta, kennylisera, smygtysta eller återställa en användare (med valfri varaktighet); eller visa begränsade användare",
-    "help_title": "",
     "help_usage": "",
     "msg_add_user": "",
     "msg_add_user_with_duration": "",

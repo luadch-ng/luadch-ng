@@ -1,6 +1,5 @@
 {
   "help_desc":"Sendet eine Liste von grundlegenden Hubinformationen",
-  "help_title":"cmd_hubinfo.lua",
   "help_usage":"[+!#]hubinfo",
   "msg_days":" Tage, ",
   "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",

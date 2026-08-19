@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows SSL informations about the client to hub connection by you or other users",
-  "help_title":"cmd_sslinfo.lua",
   "help_usage":"[+!#]sslinfo [<NICK>]",
   "msg_denied":"You are not allowed to use this command.",
   "msg_isbot":"User is a bot.",

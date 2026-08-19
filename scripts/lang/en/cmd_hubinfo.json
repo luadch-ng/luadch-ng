@@ -1,6 +1,5 @@
 {
   "help_desc":"Sends a list of basic informations about the hub",
-  "help_title":"cmd_hubinfo.lua",
   "help_usage":"[+!#]hubinfo",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",

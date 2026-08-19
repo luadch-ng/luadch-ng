@@ -1,6 +1,5 @@
 {
   "help_desc":"Change users nickname",
-  "help_title":"cmd_nickchange.lua",
   "help_usage":"[+!#]nickchange mynick <NEW_NICK>  /  [+!#]nickchange othernick <OLD_NICK> <NEW_NICK>",
   "msg_bot":"[ NICKCHANGE ]--> User is a bot.",
   "msg_denied":"You are not allowed to use this command.",

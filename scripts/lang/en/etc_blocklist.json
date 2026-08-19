@@ -1,6 +1,5 @@
 {
   "help_desc":"Manage the unified pre-handshake IP/CIDR blocklist. Run `+blocklist show` for the active entries.",
-  "help_title":"etc_blocklist.lua - blocklist",
   "help_usage":"[+!#]blocklist show|add|del|count|export|import ...",
   "msg_added":"%s added blocklist entry #%d (%s, source=%s, stealth=%s).",
   "msg_bad_cidr":"Invalid CIDR / IP: %s",

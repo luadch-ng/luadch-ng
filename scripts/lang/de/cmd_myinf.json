@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt client INF von einem User oder dir selbst",
-  "help_title":"cmd_myinf.lua",
   "help_usage":"[+!#]myinf [<NICK>]",
   "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
   "msg_inf":"\n\n=== USER CLIENT INF ===============================================================\n\nUser: %s\n\n%s\n=============================================================== USER CLIENT INF ===\n      ",

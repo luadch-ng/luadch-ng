@@ -57,7 +57,7 @@ local scriptlang = cfg_get( "language" )
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub_debug( err )
 
 --// msgs
-local help_title = lang.help_title or "cmd_myip.lua"
+local help_title = "cmd_myip.lua"
 local help_usage = lang.help_usage or "[+!#]myip [<NICK>]"
 local help_desc = lang.help_desc or "Shows IP from a user or yourself"
 

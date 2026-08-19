@@ -1,6 +1,5 @@
 {
   "help_desc":"Search for user in reg list",
-  "help_title":"cmd_usersearch.lua",
   "help_usage":"[+!#]usersearch <SEARCHSTRING>",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",

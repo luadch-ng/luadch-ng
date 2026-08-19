@@ -1,6 +1,5 @@
 {
   "help_desc":"Toggles the bot icon (ADC CT bot bit) on a registered account, no privilege change",
-  "help_title":"cmd_botflag.lua",
   "help_usage":"[+!#]botflag <NICK> on|off",
   "msg_denied":"You are not allowed to use this command.",
   "msg_nochange":"There are no changes needed.",

@@ -144,7 +144,7 @@ local report_opchat = cfg.get( "cmd_nickchange_report_opchat" )
 local description_file = "scripts/data/cmd_reg_descriptions.tbl"
 
 --// msgs
-local help_title = lang.help_title or "nickchange"
+local help_title = "cmd_nickchange.lua"
 local help_usage = lang.help_usage or "[+!#]nickchange mynick <new_nick>  /  [+!#]nickchange othernick <old_nick> <new_nick>"
 local help_desc = lang.help_desc or "change the nickname"
 

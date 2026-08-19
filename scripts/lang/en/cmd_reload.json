@@ -1,6 +1,5 @@
 {
   "help_desc":"Reloads complete configuration: cfg.tbl, user.tbl, all scripts",
-  "help_title":"cmd_reload.lua",
   "help_usage":"[+!#]reload",
   "msg_denied":"You are not allowed to use this command.",
   "msg_ok":"Configuration reloaded.",

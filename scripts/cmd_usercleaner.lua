@@ -114,7 +114,7 @@ local msg_denied = lang.msg_denied or "You are not allowed to use this command."
 local msg_usage = lang.msg_usage or "Usage: [+!#]usercleaner showall | showexpired | showghosts | delexpired | delghosts | addexception <NICK> | delexception <NICK> | delexceptionall | showexceptions | setdays <DAYS> | cleancomment"
 local msg_nousers = lang.msg_nousers or "[ No users found ]"
 
-local help_title = lang.help_title or "cmd_usercleaner.lua"
+local help_title = "cmd_usercleaner.lua"
 local help_usage = lang.help_usage or "[+!#]usercleaner showall | showexpired | showghosts | delexpired | delghosts | addexception <NICK> | delexception <NICK> | delexceptionall | showexceptions | setdays <DAYS> | cleancomment"
 local help_desc = lang.help_desc or "Shows and removes used and unused offline accounts"
 

@@ -1,8 +1,6 @@
 {
   "help_desc":"Shows current settings from 'cfg/cfg.tbl' | Shows all blocked users and their blockmodes",
   "help_desc2":"Blocks downloads ( d ), uploads ( u ) and search ( s ) | Unblock user",
-  "help_title":"etc_trafficmanager.lua - Operators",
-  "help_title2":"etc_trafficmanager.lua - Owners",
   "help_usage":"[+!#]trafficmanager show settings|blocks",
   "help_usage2":"[+!#]trafficmanager block <NICK> [<REASON>] | unblock <NICK>",
   "msg_ab_level":"Blocked level",

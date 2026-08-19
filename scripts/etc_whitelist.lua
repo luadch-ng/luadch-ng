@@ -128,7 +128,7 @@ local BUNDLED_SEED = {
 
 
 --// lang
-local help_title      = lang.help_title      or "etc_whitelist.lua - allowlist"
+local help_title      = "etc_whitelist.lua - allowlist"
 local help_usage      = lang.help_usage      or "[+!#]whitelist show|add|del|count|export|import ..."
 local help_desc       = lang.help_desc       or "Manage the global IP/CIDR allowlist (exempts trusted IPs from the automated blockers, not from a manual ban). Run `+whitelist show`."
 

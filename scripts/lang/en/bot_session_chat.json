@@ -1,7 +1,6 @@
 {
   "chatdesc":"by: %s | members: %s",
   "help_desc":"Session Chats are temporary chats for one user session",
-  "help_title":"bot_session_chat.lua",
   "help_usage":"[+!#]sessionchat <CHATNAME>",
   "msg_already":"User is already a member: ",
   "msg_chatexists":"Chat already exists.",

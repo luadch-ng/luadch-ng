@@ -81,7 +81,7 @@ local logfile_error = "log/error.log"
 local logfile_cmd = "log/cmd.log"
 
 --// msgs
-local help_title = lang.help_title or "etc_log_cleaner.lua"
+local help_title = "etc_log_cleaner.lua"
 local help_usage = lang.help_usage or "[+!#]cleanlog error|cmd"
 local help_desc = lang.help_desc or "Cleans logfiles"
 

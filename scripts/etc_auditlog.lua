@@ -78,7 +78,7 @@ local _refresh_cfg_snapshot = function( )
 end
 
 --// msgs
-local help_title = lang.help_title or "etc_auditlog.lua"
+local help_title = "etc_auditlog.lua"
 local help_usage = lang.help_usage or "[+!#]auditlog show"
 local help_desc  = lang.help_desc  or "Shows the audit log (today's file)."
 local msg_denied = lang.msg_denied or "You are not allowed to use this command."

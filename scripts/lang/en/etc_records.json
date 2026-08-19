@@ -4,8 +4,6 @@
   "help_err":"You are not allowed to use this command.",
   "help_err_wrong_id_o":"\n\t\t Wrong input, please try it again with: \n\n\t\t %s \n\t\t %s \n\n\t\t %s \n\t\t %s ",
   "help_err_wrong_id_reg":"\n\t\t Wrong input, please try it again with: \n\n\t\t %s \n\t\t %s ",
-  "help_title":"etc_records.lua - Users",
-  "help_titleo":"etc_records.lua - Owners",
   "help_usage":"[+!#]records show",
   "help_usageo":"[+!#]records show|reset",
   "msg_hmsg":"Hub Records: New hub share record: %s %s",

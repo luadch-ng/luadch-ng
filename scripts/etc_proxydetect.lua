@@ -889,7 +889,7 @@ hub.setlistener( "onStart", { },
 
         local help = hub_import( "cmd_help" )
         if help then
-            help.reg( lang.help_title or "etc_proxydetect.lua - proxy/VPN detection",
+            help.reg( "etc_proxydetect.lua - proxy/VPN detection",
                 lang.help_usage or "[+!#]proxydetect",
                 lang.help_desc or "Show proxy-detection status: provider, action mode, blocked types, cache + query count.",
                 oplevel )

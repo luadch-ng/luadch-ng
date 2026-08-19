@@ -245,7 +245,7 @@ local msg_unit_hour   = lang.msg_unit_hour   or "h "
 local msg_unit_minute = lang.msg_unit_minute or "m "
 local msg_unit_second = lang.msg_unit_second or "s"
 
-local help_title = lang.help_title or "gag"
+local help_title = "cmd_gag.lua"
 local help_usage = lang.help_usage or "[+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]"
 local help_desc = lang.help_desc or "mute, kennylize, shadowmute or ungag a user (with optional duration); or show restricted users"
 

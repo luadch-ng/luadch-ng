@@ -194,7 +194,7 @@ Uptime: %s
 
   ]] )
 
-local help_title = lang.help_title or "userinfo"
+local help_title = "cmd_userinfo.lua"
 local help_usage = lang.help_usage or "[+!#]userinfo sid|nick <sid>|<nick>"
 local help_desc = lang.help_desc or "Sends info about a user by SID or NICK; no argument -> about yourself"
 

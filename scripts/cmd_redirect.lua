@@ -67,7 +67,7 @@ local report_opchat = cfg.get( "cmd_redirect_report_opchat" )
 local llevel = cfg.get( "cmd_redirect_llevel" )
 
 --// msgs
-local help_title = lang.help_title or "usr_redirect.lua"
+local help_title = "usr_redirect.lua"
 local help_usage = lang.help_usage or "[+!#]redirect <NICK> <URL>"
 local help_desc = lang.help_desc or "Redirect user to url"
 

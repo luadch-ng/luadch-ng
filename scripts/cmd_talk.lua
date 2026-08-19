@@ -86,7 +86,7 @@ local opchat_nick = cfg_get( "bot_opchat_nick" )
 local opchat_permission = cfg_get( "bot_opchat_permission" )
 
 --// msgs
-local help_title = lang.help_title or "cmd_talk.lua"
+local help_title = "cmd_talk.lua"
 local help_usage = lang.help_usage or "[+!#]talk <MSG>"
 local help_desc = lang.help_desc or "Talk without nickname"
 

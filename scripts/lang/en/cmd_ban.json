@@ -1,8 +1,6 @@
 {
   "help_desc":"Bans a user; <TIME> are ban minutes and must be 1 or greater, or use the keyword 'permanent' for a ban that never expires",
   "help_desc2":"Unbans user by NICK/CID/IP",
-  "help_title":"cmd_ban.lua - Ban",
-  "help_title2":"cmd_ban.lua - Unban",
   "help_usage":"[+!#]ban nick|cid|ip <NICK>|<CID>|<IP> [<TIME>|permanent <REASON>] / [+!#]ban show|showhis [<NICK>]|clear|clearhis",
   "help_usage2":"[+!#]unban nick|cid|ip <NICK>|<CID>|<IP>",
   "lblBy":" Banned by: ",

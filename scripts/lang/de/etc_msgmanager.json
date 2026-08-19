@@ -1,6 +1,5 @@
 {
     "help_desc": "Zeige geblockte User | zeige settings | blocke main chats | blocke pm chats | blocke beides | unblocke User",
-    "help_title": "etc_msgmanager.lua",
     "help_usage": "[+!#]msgmanager showusers|showsettings|blockmain <NICK>|blockpm <NICK>|blockboth <NICK>|unblock <NICK>",
     "msg_block": "[ MSGMANAGER ]--> Block User:  %s  |  Mode:  %s",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",

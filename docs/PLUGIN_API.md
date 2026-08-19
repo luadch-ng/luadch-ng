@@ -840,7 +840,7 @@ not that the doc is behind.
 | `bot_opchat` | `opchat = hub.import( "bot_opchat" )` | `opchat.feed( msg )` - send a normal message to the opchat; `opchat.bot` - the opchat bot object |
 | `bot_regchat` | `regchat = hub.import( "bot_regchat" )` | `regchat.feed( msg )` - send a normal message to the regchat |
 | `cmd_ban` | `ban = hub.import( "cmd_ban" )` | `ban.add( user, target, bantime, reason, script )` (bantime in seconds); `ban.del( target )`; `ban.bans` - the in-memory ban table **by reference** (see note); `ban.bans_path` - the store path for load-on-demand |
-| `cmd_help` | `help = hub.import( "cmd_help" )` | `help.reg( title, usage, desc, level )` - register a `+help` entry |
+| `cmd_help` | `help = hub.import( "cmd_help" )` | `help.reg( title, usage, desc, level )` - register a `+help` entry. `title` is the section header (the script filename by convention); pass it as a plain in-code constant, never a lang-file key - filenames are not translations and must not reach Weblate (#651). |
 | `etc_aliases` | `al = hub.import( "etc_aliases" )` | `al.resolve( name )` -> alias target or nil; `al.get_aliases_tbl()` -> the alias table |
 | `etc_blocklist_feeds` | `feeds = hub.import( "etc_blocklist_feeds" )` | `feeds.get_status()` -> per-feed refresh status |
 | `etc_clientblocker` | `cb = hub.import( "etc_clientblocker" )` | `cb.resolve( version_string )` -> block reason or nil; `cb.get_patterns_tbl()` -> the pattern table |

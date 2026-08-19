@@ -1,6 +1,5 @@
 {
   "help_desc":"Sets a new hub topic or resets it to default",
-  "help_title":"etc_topic.lua",
   "help_usage":"[+!#]topic <NEW-TOPIC>|default",
   "msg_denied":"You are not allowed to use this command.",
   "msg_topic_changed":"%s  changed hub topic to: %s   |   old topic was: %s",

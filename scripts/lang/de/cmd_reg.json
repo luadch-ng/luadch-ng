@@ -1,6 +1,5 @@
 {
   "help_desc":"Einen neuen User registrieren / Zu einem bereits registrierten User ein Kommentar hinzufügen",
-  "help_title":"cmd_reg.lua",
   "help_usage":"[+!#]reg nick <NICK> <LEVEL> [<KOMMENTAR>] / [+!#]reg desc <NICK> <KOMMENTAR> (Kommentar leer lassen um einen existierenden zu löschen)",
   "msg_accinfo":"\n\n=== ACCOUNT ==================================================================================================================\n\n    Nickname: %s\n    Passwort: %s\n\n    Level: %s  [ %s ]\n\n    Hubname: %s\n    Hubmail: %s\n\n    Hubadresse: %s\n================================================================================================================== ACCOUNT ===\n\n        ",
   "msg_blacklist1":"Registrierung nicht möglich, der User steht auf der Blacklist!",

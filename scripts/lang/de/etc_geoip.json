@@ -1,6 +1,5 @@
 {
     "help_desc": "Zeigt den GeoIP-Status: DB-Ladezustand, Aktionsmodus, gesperrte Laender / ASNs.",
-    "help_title": "etc_geoip.lua - GeoIP",
     "help_usage": "[+!#]geoip",
     "msg_db_loaded": "etc_geoip.lua: %s-Datenbank geladen (%s, erstellt %s).",
     "msg_db_missing": "etc_geoip.lua: %s-Datenbank unter '%s' nicht gefunden - GeoIP-Pruefungen dafuer sind deaktiviert. geoipupdate ausfuehren (siehe docs/BLOCKLIST.md).",

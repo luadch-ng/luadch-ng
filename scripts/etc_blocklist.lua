@@ -100,7 +100,7 @@ local json = dkjson
 
 
 --// lang
-local help_title      = lang.help_title      or "etc_blocklist.lua - blocklist"
+local help_title      = "etc_blocklist.lua - blocklist"
 local help_usage      = lang.help_usage      or "[+!#]blocklist show|add|del|count|export|import ..."
 local help_desc       = lang.help_desc       or "Manage the unified pre-handshake IP/CIDR blocklist. Run `+blocklist show` for the active entries."
 

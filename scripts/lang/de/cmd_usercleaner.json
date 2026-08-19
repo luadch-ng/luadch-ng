@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt und löscht benutzte und unbenutzte offline Useraccounts",
-  "help_title":"cmd_usercleaner.lua",
   "help_usage":"[+!#]usercleaner showall | showexpired | showghosts | delexpired | delghosts | addexception <NICK> | delexception <NICK> | delexceptionall | showexceptions | setdays <DAYS> | cleancomment",
   "msg_delreg_exception":"[ Usercleaner ]--> Der folgende User steht auf der Ausnahmenliste und kann nicht gelöscht werden: ",
   "msg_delreg_exception_level":"[ Usercleaner ]--> Der folgende User hat ein geschütztes Level und kann nicht gelöscht werden: %s | geschütztes Level: %s",

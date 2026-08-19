@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt den Inhalt von Logdateien",
-  "help_title":"etc_cmdlog.lua",
   "help_usage":"[+!#]cmdlog show",
   "msg1":"   |   Befehl: [+!#]",
   "msg2":"   |   benutzt von: ",

@@ -178,7 +178,7 @@ local msg_ok2 = lang.msg_ok2 or "[ DELREG ]--> User  %s  was delregged and black
 local msg_notfound = lang.msg_notfound or "[ DELREG ]--> User is not registered."
 local msg_deblacklist = lang.msg_deblacklist or "[ DELREG ]--> User:  %s  was removed from the blacklist by:  %s"
 
-local help_title = lang.help_title or "delreg"
+local help_title = "cmd_delreg.lua"
 local help_usage = lang.help_usage or "[+!#]delreg nick <NICK>  /  or del with blacklist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>"
 local help_desc = lang.help_desc or "delregs an existing user by nick or cid"
 

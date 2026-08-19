@@ -1,6 +1,5 @@
 {
     "help_desc": "Skickar info om en registrerad användare via SID eller NICK; utan argument -> om dig själv",
-    "help_title": "",
     "help_usage": "",
     "msg_days": "",
     "msg_god": "",

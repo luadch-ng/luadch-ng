@@ -109,7 +109,7 @@ local history_tbl = util.loadtable( history_file ) or {}
 --// msgs
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "OpChat"
+local help_title = "bot_opchat.lua"
 local help_desc = lang.help_desc or "Chat for Operators"
 
 local msg_help_1 = lang.msg_help_1 or "  [+!#]help \t | List of available commands in chat"

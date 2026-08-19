@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows error.log",
-  "help_title":"cmd_errors.lua",
   "help_usage":"[+!#]errors",
   "msg_denied":"[ ERRORS ]--> You are not allowed to use this command.",
   "msg_noerrors":"[ ERRORS ]--> No errors.",
