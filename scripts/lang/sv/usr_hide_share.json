@@ -2,7 +2,7 @@
     "help_desc": "Dölj/visa utdelningen för en användare",
     "help_usage": "[+!#]hideshare <ANVÄNDARNAMN>",
     "msg_default": "Denna användares delning är dold på grund av åtkomstnivån.",
-    "msg_denied": "",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_hide_target": "",
     "msg_hide_user": "",
     "msg_isbot": "",
