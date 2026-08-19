@@ -1,0 +1,45 @@
+{
+    "help_desc": "",
+    "msg_clear": "",
+    "msg_denied": "",
+    "msg_denied_2": "",
+    "msg_help_1": "",
+    "msg_help_2": "",
+    "msg_help_3": "",
+    "msg_help_4": "",
+    "msg_help_5": "",
+    "msg_help_6": "",
+    "msg_help_7": "",
+    "msg_help_8": "",
+    "msg_help_op": "",
+    "msg_history": "",
+    "msg_intro": "",
+    "ucmd_menu_ct1_help": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_history": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_historyall": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_historyclear": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ]
+}
