@@ -1,7 +1,7 @@
 {
-    "help_desc": "",
-    "help_usage": "",
-    "msg_already_off": "",
+    "help_desc": "Tillfälligt tillåt endast användare som är på eller över <åtkomstnivå>; kick + avvisa alla under tills du kör 'lockdown off' (eller tiden löper ut).",
+    "help_usage": "[+!#]lockdown <ÅTKOMSTNIVÅ> [minutes] [reason] | off | status",
+    "msg_already_off": "[ NERSTÄNGNING ]--> Nerstängningen är inte aktiv.",
     "msg_bad_level": "",
     "msg_badtime": "",
     "msg_default_kick": "",
