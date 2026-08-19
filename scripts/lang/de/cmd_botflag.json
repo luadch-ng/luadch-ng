@@ -1,15 +1,25 @@
 {
-  "help_desc":"Schaltet das Bot-Symbol (ADC CT Bot-Bit) für ein registriertes Konto um, ohne Rechteänderung",
-  "help_usage":"[+!#]botflag <NICK> on|off",
-  "msg_denied":"Du darfst diesen Befehl nicht benutzen.",
-  "msg_nochange":"Es sind keine Änderungen nötig.",
-  "msg_notify":"Ein Operator hat dein Bot-Symbol-Flag geändert (%s). Verbinde dich neu, damit es wirksam wird.",
-  "msg_ok":"Bot-Symbol-Flag für '%s' auf %s gesetzt. Es wird beim nächsten Login des Kontos wirksam.",
-  "msg_reg":"Benutzer '%s' ist kein registriertes Konto (oder ist ein Hub-interner Bot).",
-  "msg_usage":"Benutzung: [+!#]botflag <NICK> on|off",
-  "ucmd_menu_off":["Hub","Steuerung","Bot-Symbol","deaktivieren (per Nick)"],
-  "ucmd_menu_on":["Hub","Steuerung","Bot-Symbol","aktivieren (per Nick)"],
-  "ucmd_nick":"Nickname:",
-  "word_off":"aus",
-  "word_on":"an"
+    "help_desc": "Schaltet das Bot-Symbol (ADC CT Bot-Bit) für ein registriertes Konto um, ohne Rechteänderung",
+    "help_usage": "[+!#]botflag <NICK> on|off",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_nochange": "Es sind keine Änderungen nötig.",
+    "msg_notify": "Ein Operator hat dein Bot-Symbol-Flag geändert (%s). Verbinde dich neu, damit es wirksam wird.",
+    "msg_ok": "Bot-Symbol-Flag für '%s' auf %s gesetzt. Es wird beim nächsten Login des Kontos wirksam.",
+    "msg_reg": "Benutzer '%s' ist kein registriertes Konto (oder ist ein Hub-interner Bot).",
+    "msg_usage": "Benutzung: [+!#]botflag <NICK> on|off",
+    "ucmd_menu_off": [
+        "Hub",
+        "Steuerung",
+        "Bot-Symbol",
+        "deaktivieren (per Nick)"
+    ],
+    "ucmd_menu_on": [
+        "Hub",
+        "Steuerung",
+        "Bot-Symbol",
+        "aktivieren (per Nick)"
+    ],
+    "ucmd_nick": "Nickname:",
+    "word_off": "aus",
+    "word_on": "an"
 }
