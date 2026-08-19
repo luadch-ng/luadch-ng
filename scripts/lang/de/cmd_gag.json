@@ -1,5 +1,5 @@
 {
-    "help_desc": "Mute, kennylize, shadowmute oder normalisiere einen User (mit optionaler Dauer); oder Liste anzeigen",
+    "help_desc": "Setzt einen User auf Mute, Kennylize oder Shadowmute, hebt die Sperre wieder auf (mit optionaler Dauer) oder zeigt alle gesperrten User an",
     "help_usage": "[+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DAUER>]",
     "msg_add_user": "[ GAG ]--> User:  %s  wurde gegaggt im Modus:  %s  | von:  %s",
     "msg_add_user_with_duration": "[ GAG ]--> User:  %s  wurde gegaggt im Modus:  %s  für  %s  | von:  %s",
