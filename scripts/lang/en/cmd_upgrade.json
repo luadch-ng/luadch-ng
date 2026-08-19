@@ -1,6 +1,5 @@
 {
   "help_desc":"Sets the level of a user",
-  "help_title":"cmd_upgrade.lua",
   "help_usage":"[+!#]upgrade sid|nick <SID>|<NICK> <LEVEL>",
   "msg_denied":"You are not allowed to use this command or the target user has a higher level than you.",
   "msg_off":"User not found.",

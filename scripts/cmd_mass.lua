@@ -107,11 +107,11 @@ local scriptlang = cfg_get( "language" )
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub_debug( err )
 
 --// msgs
-local help_title = lang.help_title or "cmd_mass.lua - Users"
+local help_title = "cmd_mass.lua - Users"
 local help_usage = lang.help_usage or "[+!#]mass <MSG>"
 local help_desc = lang.help_desc or "sends a pm with <MSG> to all users"
 
-local help_title_op = lang.help_title_op or "cmd_mass.lua - Ops"
+local help_title_op = "cmd_mass.lua - Ops"
 local help_usage_op = lang.help_usage_op or "[+!#]masslvl <LEVEL> <MSG> / [+!#]masshub <MSG>"
 local help_desc_op = lang.help_desc_op or "sends a pm with <MSG> to all users with specific level / sends a pm with <MSG> without sender"
 local msg_allowed_levels = lang.msg_allowed_levels or "  |  allowed levels: "

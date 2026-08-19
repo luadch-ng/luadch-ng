@@ -1,6 +1,5 @@
 {
   "help_desc":"Ändern des Passworts",
-  "help_title":"cmd_setpass.lua",
   "help_usage":"[+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>",
   "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
   "msg_god":"Du bist nicht befugt das Passwort dieses Users zu ändern.",

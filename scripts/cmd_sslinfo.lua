@@ -56,7 +56,7 @@ local minlevel = cfg.get( "cmd_sslinfo_minlevel" )
 
 --// msgs
 
-local help_title = lang.help_title or "cmd_sslinfo.lua"
+local help_title = "cmd_sslinfo.lua"
 local help_usage = lang.help_usage or "[+!#]sslinfo [<NICK>]"
 local help_desc = lang.help_desc or "Shows SSL informations about the client to hub connection by you or other users"
 

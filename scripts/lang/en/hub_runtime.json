@@ -1,6 +1,5 @@
 {
   "help_desc":"Show/reset the hub runtime",
-  "help_title":"hub_runtime.lua",
   "help_usage":"[+!#]runtime show|reset",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",

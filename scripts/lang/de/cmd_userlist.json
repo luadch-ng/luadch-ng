@@ -1,6 +1,5 @@
 {
   "help_desc":"Sendet Liste von gereggten Usern",
-  "help_title":"cmd_userlist.lua",
   "help_usage":"[+!#]userlist [bydate]",
   "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
   "msg_useramount":"Useranzahl in den Levels:\n",

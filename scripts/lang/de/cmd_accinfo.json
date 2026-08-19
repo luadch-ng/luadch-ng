@@ -1,8 +1,6 @@
 {
     "help_desc": "Zeigt Account Infos von einem Reguser nach SID oder NICK; keine Argumente -> über dich selbst",
     "help_desc2": "Zeigt Account Infos von einem Reguser (erweitert) nach SID oder NICK; keine Argumente -> über dich selbst",
-    "help_title": "cmd_accinfo.lua - Users",
-    "help_title2": "cmd_accinfo.lua - Operatoren",
     "help_usage": "[+!#]accinfo sid|nick <SID>|<NICK>",
     "help_usage2": "[+!#]accinfoop sid|nick <SID>|<NICK>",
     "msg_accinfo": "\n\n=== ACCINFO ==================================================================================================================\n\n    Nickname: %s\n    Passwort: %s\n\n    Level: %s  [ %s ]\n\n    Registriert von: %s\n    Registriert seit: %s\n    Kommentar: %s\n\n    Zuletzt online: %s\n\n    Traffic geblockt: %s\n    Messages geblockt: %s\n    Nickname gebannt: %s\n\n    Hubname: %s\n    Hubmail: %s\n\n    Hubadresse: %s\n================================================================================================================== ACCINFO ===\n\n   ",

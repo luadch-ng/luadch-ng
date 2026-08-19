@@ -67,7 +67,7 @@ local topic_tbl = util_loadtable( topic_file ) or {}
 local default_topic = cfg_get( "hub_description" )
 
 --// lang, msgs
-local help_title = lang.help_title or "etc_topic.lua"
+local help_title = "etc_topic.lua"
 local help_usage = lang.help_usage or "[+!#]topic <NEW-TOPIC>|default"
 local help_desc = lang.help_desc or "Sets a new hub topic or resets it to default"
 

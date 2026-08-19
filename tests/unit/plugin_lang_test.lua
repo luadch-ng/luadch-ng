@@ -241,6 +241,22 @@ for _, name in ipairs( names ) do
         if source and en and de then
             scanned = scanned + 1
             local seen = { }
+            -- Filenames are not translations (#651). A plugin's `+help` section
+            -- header used to live in the lang file as a `help_title*` key whose
+            -- VALUE is the script filename ("cmd_gag.lua"), so every en key
+            -- surfaced to Weblate as a translatable unit and translators saw
+            -- filenames to translate. The header is now a code constant; no
+            -- `help_title*` key may exist in a lang file. This flags the whole
+            -- `help_title*` family by design (that prefix IS the section-title
+            -- convention) - a future non-title key sharing the prefix would need
+            -- a different name. Guarding EN (the source) is sufficient: Weblate
+            -- flows en -> targets, so a title key can only reach a target
+            -- language via en. The de orphan check below backstops de directly;
+            -- nl/sv are orphan-checked in the funnel run (LANG_TEST_EXTRA_CODES).
+            for key in pairs( en ) do
+                check( name .. ": en key '" .. key .. "' is not a filename title (help_title* -> code constant, #651)",
+                       key:sub( 1, 10 ) ~= "help_title" )
+            end
             -- Forward: EN is the source of truth. A key the plugin reads
             -- MUST exist in EN (the usr_share / etc_cmdlog bug class: source
             -- reads lang.X, the file defines a differently-named key, the

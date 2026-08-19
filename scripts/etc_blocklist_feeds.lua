@@ -121,7 +121,7 @@ local msg_status_master = lang.msg_status_master or "  plugin enabled:  %s"
 local msg_status_feed   = lang.msg_status_feed   or "  [%s] enabled=%s  interval=%ds  entries=%d  last=%s"
 
 -- +blfeeds / etc_usercommands / cmd_help texts
-local help_title = lang.help_title or "etc_blocklist_feeds.lua - external blocklist feeds"
+local help_title = "etc_blocklist_feeds.lua - external blocklist feeds"
 local help_usage = lang.help_usage or "[+!#]blfeeds"
 local help_desc  = lang.help_desc  or "Show external-feed status: per-feed enabled state, interval, entry count, last refresh."
 local ucmd_menu  = lang.ucmd_menu  or { "Hub", "Blocklist", "Feeds status" }

@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt das Audit-Log (heutige Datei).",
-  "help_title":"etc_auditlog.lua",
   "help_usage":"[+!#]auditlog show",
   "msg_denied":"Du darfst diesen Befehl nicht benutzen.",
   "msg_nofile":"Heute liegen noch keine Audit-Log-Eintraege vor.",

@@ -55,7 +55,7 @@ local permission = cfg_get( "cmd_reload_permission" )
 --// msgs
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub_debug( err )
 
-local help_title = lang.help_title or "cmd_reload.lua"
+local help_title = "cmd_reload.lua"
 local help_usage = lang.help_usage or "[+!#]reload"
 local help_desc = lang.help_desc or "reloads complete configuration: cfg.tbl, user.tbl, scripts"
 

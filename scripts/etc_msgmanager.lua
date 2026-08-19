@@ -116,7 +116,7 @@ local is_blocked
 local find_online_by_firstnick
 
 --// msgs
-local help_title = lang.help_title or "etc_msgmanager.lua"
+local help_title = "etc_msgmanager.lua"
 local help_usage = lang.help_usage or "[+!#]msgmanager showusers|showsettings|blockmain <NICK>|blockpm <NICK>|blockboth <NICK>|unblock <NICK>"
 local help_desc = lang.help_desc or "Shows blocked users | show settings | block main chats | block pm chats | block both | unblock user"
 

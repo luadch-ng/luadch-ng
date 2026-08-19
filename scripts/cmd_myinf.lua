@@ -54,7 +54,7 @@ local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }
 local permission = cfg_get( "cmd_myinf_permission" )
 
 --// msgs
-local help_title = lang.help_title or "cmd_myinf.lua"
+local help_title = "cmd_myinf.lua"
 local help_usage = lang.help_usage or "[+!#]myinf [<NICK>]"
 local help_desc = lang.help_desc or "Shows client INF from a user or yourself"
 

@@ -79,7 +79,7 @@ local msg_iss_pass    = lang.msg_iss_pass    or "  - no passphrase set (etc_back
 local msg_iss_dir     = lang.msg_iss_dir     or "  - the backup directory is not writable (etc_backup_dir)"
 local msg_iss_mk      = lang.msg_iss_mk      or "  - master.key is not readable (etc_backup_include_master_key)"
 
-local help_title = lang.help_title or "backup"
+local help_title = "etc_backup.lua - backup"
 local help_usage = lang.help_usage or "+backup now|list|status"
 local help_desc  = lang.help_desc  or "Automatic encrypted backups: run one now, list artifacts, show status."
 local ucmd_now    = lang.ucmd_now    or { "Backup", "Run now" }

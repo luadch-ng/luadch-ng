@@ -108,7 +108,7 @@ local MAX_MINUTES = 525600
 
 
 --// lang
-local help_title = lang.help_title or "etc_lockdown.lua - maintenance gate"
+local help_title = "etc_lockdown.lua - maintenance gate"
 local help_usage = lang.help_usage or "[+!#]lockdown <level> [minutes] [reason] | off | status"
 local help_desc  = lang.help_desc  or "Temporarily admit only users at or above <level>; kick + refuse everyone below until you run `lockdown off` (or the timer expires)."
 

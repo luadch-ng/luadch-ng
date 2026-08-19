@@ -1,6 +1,5 @@
 {
     "help_desc": "Suche nach einem User in der Datenbank",
-    "help_title": "cmd_usersearch.lua",
     "help_usage": "[+!#]usersearch <SEARCHSTRING>",
     "msg_days": " Tage, ",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",

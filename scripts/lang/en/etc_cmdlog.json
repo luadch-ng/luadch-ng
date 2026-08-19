@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows the command log",
-  "help_title":"etc_cmdlog.lua",
   "help_usage":"[+!#]cmdlog show",
   "msg1":"   |   Command: [+!#]",
   "msg2":"   |   used by: ",

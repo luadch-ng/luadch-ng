@@ -1,6 +1,5 @@
 {
   "help_desc":"Show proxy-detection status: provider, action mode, blocked types, cache + query count.",
-  "help_title":"etc_proxydetect.lua - proxy/VPN detection",
   "help_usage":"[+!#]proxydetect",
   "msg_denied":"You are not allowed to use this command.",
   "msg_fail_alert":"[ PROXYDETECT ]--> provider '%s' lookups failing: %d errors in %ds - detection is degraded (fail-%s).",

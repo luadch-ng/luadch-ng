@@ -99,7 +99,7 @@ local scriptlang = cfg.get( "language" )
 --// msgs
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "usersearch"
+local help_title = "cmd_usersearch.lua"
 local help_usage = lang.help_usage or "[+!#]usersearch <searchstring>"
 local help_desc = lang.help_desc or "Search for user in reg list"
 

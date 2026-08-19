@@ -1,6 +1,5 @@
 {
   "help_desc":"Talk without nickname",
-  "help_title":"cmd_talk.lua",
   "help_usage":"[+!#]talk <MSG>",
   "msg_denied":"You are not allowed to use this command.",
   "msg_usage":"Usage: [+!#]talk <MSG>",

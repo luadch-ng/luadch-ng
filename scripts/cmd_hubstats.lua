@@ -71,7 +71,7 @@ local oplevel = cfg_get( "cmd_hubstats_oplevel" )
 --// msgs
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub_debug( err )
 
-local help_title = lang.help_title or "hubstats"
+local help_title = "cmd_hubstats.lua"
 local help_usage = lang.help_usage or "[+!#]hubstats"
 local help_desc = lang.help_desc or "shows statistics about the hub"
 

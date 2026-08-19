@@ -1,6 +1,5 @@
 {
   "help_desc":"Shutdowns hub",
-  "help_title":"cmd_shutdown.lua",
   "help_usage":"[+!#]shutdown [<MSG>]",
   "msg_countdown":"*** Hub shutdown in ***",
   "msg_denied":"You are not allowed to use this command.",

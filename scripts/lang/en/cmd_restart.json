@@ -1,6 +1,5 @@
 {
   "help_desc":"Restarts hub",
-  "help_title":"cmd_restart.lua",
   "help_usage":"[+!#]restart [<MSG>]",
   "msg_countdown":"*** Hub restart in ***",
   "msg_denied":"You are not allowed to use this command.",

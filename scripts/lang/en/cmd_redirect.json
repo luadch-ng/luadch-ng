@@ -1,6 +1,5 @@
 {
   "help_desc":"Redirect user to URL",
-  "help_title":"usr_redirect.lua",
   "help_usage":"[+!#]redirect <NICK> <URL>",
   "msg_denied":"You are not allowed to use this command.",
   "msg_god":"You are not allowed to redirect this user.",

@@ -77,11 +77,11 @@ local blacklist_file = "scripts/data/cmd_delreg_blacklist.tbl"
 --// msgs
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub_debug( err )
 
-local help_title = lang.help_title or "Blacklist"
+local help_title = "etc_blacklist.lua - Show"
 local help_usage = lang.help_usage or "[+!#]blacklist show"
 local help_desc = lang.help_desc or "show blacklisted users"
 
-local help_title2 = lang.help_title2 or "Blacklist"
+local help_title2 = "etc_blacklist.lua - Del"
 local help_usage2 = lang.help_usage2 or "[+!#]blacklist del <nick>"
 local help_desc2 = lang.help_desc2 or "delete user from blacklist"
 

@@ -1,6 +1,5 @@
 {
   "help_desc":"Shows IP from a user or yourself",
-  "help_title":"cmd_myip.lua",
   "help_usage":"[+!#]myip [<NICK>]",
   "msg_denied":"You are not allowed to use this command.",
   "msg_ip":"Your IP is: ",

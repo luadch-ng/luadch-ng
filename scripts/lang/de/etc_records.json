@@ -4,8 +4,6 @@
     "help_err": "Du bist nicht befugt diesen Befehl zu nutzen.",
     "help_err_wrong_id_o": "\n\t\t Falsche Eingabe, versuch es mal hiermit: \n\n\t\t %s \n\t\t %s \n\n\t\t %s \n\t\t %s ",
     "help_err_wrong_id_reg": "\n\t\t Falsche Eingabe, versuch es mal hiermit: \n\n\t\t %s \n\t\t %s ",
-    "help_title": "etc_records.lua - Benutzer",
-    "help_titleo": "etc_records.lua - Besitzer",
     "help_usage": "[+!#]records show",
     "help_usageo": "[+!#]records show|reset",
     "msg_hmsg": "Hub Rekorde: Neuer Hubshare Rekord: %s %s",

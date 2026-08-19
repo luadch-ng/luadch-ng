@@ -128,7 +128,7 @@ local scriptlang = cfg_get( "language" )
 --// msgs
 local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub_debug( err )
 
-local help_title = lang.help_title or "etc_cmdlog.lua"
+local help_title = "etc_cmdlog.lua"
 local help_usage = lang.help_usage or "[+!#]cmdlog show"
 local help_desc = lang.help_desc or "Shows the command log"
 

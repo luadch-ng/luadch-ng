@@ -1,6 +1,5 @@
 {
     "help_desc": "Visar och tar bort använda och oanvända konton som är frånkopplade",
-    "help_title": "",
     "help_usage": "",
     "msg_delreg_exception": "",
     "msg_delreg_exception_level": "",

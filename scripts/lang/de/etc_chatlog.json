@@ -1,8 +1,6 @@
 {
     "help_desc": "Erlaubt es dir die letzten Posts im Mainchat zu sehen oder diese Funktion zu (de)aktivieren.",
     "help_desco": "Chatverlauf löschen / oder: Liste der Verweigerer löschen.",
-    "help_title": "etc_chatlog.lua - Benutzer",
-    "help_titleo": "etc_chatlog.lua - Besitzer",
     "help_usage": "[+!#]history show [<LINES>] und [+!#]history toggle",
     "help_usageo": "[+!#]history [reset_t_logs|reset_t_exceptions]  / oder: [+!#]history showexceptions",
     "logo_1": "\n\n=== CHATLOG =====================================================================================\n%s\n   ",

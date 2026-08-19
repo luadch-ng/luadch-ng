@@ -325,7 +325,7 @@ local report = hub.import( "etc_report" )
 local permission2 = cfg.get( "cmd_unban_permission" )
 
 --// msgs - ban
-local help_title = lang.help_title or "cmd_ban.lua - Ban"
+local help_title = "cmd_ban.lua - Ban"
 local help_usage = lang.help_usage or "[+!#]ban nick|cid|ip <NICK>|<CID>|<IP> [<TIME> <REASON>] / [+!#]ban show|showhis [<NICK>]|clear|clearhis"
 local help_desc = lang.help_desc or "bans user; <time> are ban minutes and must be 1 or greater"
 
@@ -409,7 +409,7 @@ local msg_out2 = lang.msg_out2 or [[
 
 
 --// msgs - unban
-local help_title2 = lang.help_title2 or "cmd_ban.lua - Unban"
+local help_title2 = "cmd_ban.lua - Unban"
 local help_usage2 = lang.help_usage2 or "[+!#]unban nick|cid|ip <NICK>|<CID>|<IP>"
 local help_desc2 = lang.help_desc2 or "unbans user by NICK/CID/IP"
 

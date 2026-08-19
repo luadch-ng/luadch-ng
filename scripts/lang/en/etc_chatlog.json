@@ -1,8 +1,6 @@
 {
   "help_desc":"Shows the last written messages in mainchat, you can toggle it on/off.",
   "help_desco":"Delete Chatlog / or: delete list of deniers.",
-  "help_title":"etc_chatlog.lua - Users",
-  "help_titleo":"etc_chatlog.lua - Owners",
   "help_usage":"[+!#]history show [<LINES>]  / or: [+!#]history toggle",
   "help_usageo":"[+!#]history [reset_t_logs|reset_t_exceptions]  / or: [+!#]history showexceptions",
   "logo_1":"\n\n=== CHATLOG =====================================================================================\n%s\n   ",

@@ -1,6 +1,5 @@
 {
   "help_desc":"Disconnects a user",
-  "help_title":"cmd_disconnect.lua",
   "help_usage":"[+!#]disconnect <NICK> <REASON>",
   "msg_bot":"Error: User is a bot.",
   "msg_denied1":"You are not allowed to use this command.",

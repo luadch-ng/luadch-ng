@@ -1,6 +1,5 @@
 {
   "help_desc":"Delregs a user",
-  "help_title":"cmd_delreg.lua",
   "help_usage":"[+!#]delreg nick <NICK>  /  or del with blacklist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>",
   "msg_bot":"[ DELREG ]--> User is a bot.",
   "msg_deblacklist":"[ DELREG ]--> User:  %s  was removed from the blacklist by:  %s",

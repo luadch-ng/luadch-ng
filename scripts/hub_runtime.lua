@@ -105,7 +105,7 @@ local hci_file = "scripts/data/hub_runtime.tbl"
 local legacy_hci_file = "core/hci.lua"
 
 --// msgs
-local help_title = lang.help_title or "hub_runtime.lua"
+local help_title = "hub_runtime.lua"
 local help_usage = lang.help_usage or "[+!#]runtime show|reset"
 local help_desc = lang.help_desc or "Show/reset the hub runtime"
 

@@ -1,8 +1,6 @@
 {
   "help_desc":"Sends a pm with <MSG> to all users",
   "help_desc_op":"Sends a pm with <MSG> to all users with specific level / sends a pm with <MSG> without sender",
-  "help_title":"cmd_mass.lua - Users",
-  "help_title_op":"cmd_mass.lua - Ops",
   "help_usage":"[+!#]mass <MSG>",
   "help_usage_op":"[+!#]masslvl <LEVEL> <MSG> / [+!#]masshub <MSG>",
   "msg_allowed_levels":"  |  allowed levels: ",

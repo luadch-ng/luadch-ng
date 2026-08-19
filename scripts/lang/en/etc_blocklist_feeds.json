@@ -1,6 +1,5 @@
 {
   "help_desc":"Show external-feed status: per-feed enabled state, interval, entry count, last refresh.",
-  "help_title":"etc_blocklist_feeds.lua - external blocklist feeds",
   "help_usage":"[+!#]blfeeds",
   "msg_abuseipdb_no_key":"etc_blocklist_feeds.lua: abuseipdb feed is enabled but no API key is set (cfg '%s' or the LUADCH_* env var) - the feed is disabled.",
   "msg_clamped":"etc_blocklist_feeds.lua: feed '%s' refresh interval raised to the %ds minimum (feed policy).",

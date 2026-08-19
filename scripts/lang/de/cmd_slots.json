@@ -1,6 +1,5 @@
 {
   "help_desc":"Zeigt alle User mit freien Slots",
-  "help_title":"cmd_slots.lua",
   "help_usage":"[+!#]slots",
   "msg_out":"\n\n=== FREIE SLOTS ====================\n\n%s\n==================== FREIE SLOTS ===\n  ",
   "ucmd_menu":["User","Freie Slots"]

@@ -1,6 +1,5 @@
 {
   "help_desc":"Den Share von Usern verbergen",
-  "help_title":"usr_hide_share.lua",
   "help_usage":"[+!#]hideshare <NICK>",
   "msg_default":"Der Share dieses Users wurde levelspezifisch unterdrückt.",
   "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",

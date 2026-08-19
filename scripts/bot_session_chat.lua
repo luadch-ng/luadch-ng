@@ -88,7 +88,7 @@ local sessions_tbl = util.loadtable( sessions_file ) or {}
 --// msgs
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
-local help_title = lang.help_title or "Session Chat"
+local help_title = "bot_session_chat.lua"
 local help_usage = lang.help_usage or"[+!#]sessionchat <chatname>"
 local help_desc = lang.help_desc or "Session Chats are temporary chats for one user session"
 

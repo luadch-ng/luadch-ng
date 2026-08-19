@@ -72,7 +72,7 @@ local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {};
 local hci_file = "scripts/data/hub_runtime.tbl"
 
 --// msgs
-local help_title = lang.help_title or "uptime"
+local help_title = "cmd_uptime.lua"
 local help_usage = lang.help_usage or "[+!#]uptime"
 local help_desc = lang.help_desc or "Show hub uptime"
 local msg_denied = lang.msg_denied or "You are not allowed to use this command."

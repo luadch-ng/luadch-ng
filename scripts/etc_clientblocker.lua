@@ -110,15 +110,15 @@ local string_find    = string.find
 
 
 --// lang
-local help_title_add  = lang.help_title_add  or "etc_clientblocker.lua - addblocker"
+local help_title_add  = "etc_clientblocker.lua - addblocker"
 local help_usage_add  = lang.help_usage_add  or "[+!#]addblocker <pattern> [reason]"
 local help_desc_add   = lang.help_desc_add   or "Block all clients whose AP+VE matches the Lua pattern. Pattern is the first whitespace-token; everything after it is the kick reason (defaults to etc_clientblocker_default_reason)."
 
-local help_title_del  = lang.help_title_del  or "etc_clientblocker.lua - delblocker"
+local help_title_del  = "etc_clientblocker.lua - delblocker"
 local help_usage_del  = lang.help_usage_del  or "[+!#]delblocker <pattern|N>"
 local help_desc_del   = lang.help_desc_del   or "Remove a client-blocker pattern by literal pattern OR by 1-based row number from +blocker output."
 
-local help_title_list = lang.help_title_list or "etc_clientblocker.lua - blocker"
+local help_title_list = "etc_clientblocker.lua - blocker"
 local help_usage_list = lang.help_usage_list or "[+!#]blocker"
 local help_desc_list  = lang.help_desc_list  or "List configured client-blocker patterns."
 

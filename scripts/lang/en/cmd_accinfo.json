@@ -1,8 +1,6 @@
 {
   "help_desc":"Sends accinfo about a reguser by SID or NICK; no arguments -> about yourself",
   "help_desc2":"Sends accinfo (expanded) about a reguser by SID or NICK; no arguments -> about yourself",
-  "help_title":"cmd_accinfo.lua - Users",
-  "help_title2":"cmd_accinfo.lua - Operators",
   "help_usage":"[+!#]accinfo sid|nick <SID>|<NICK>",
   "help_usage2":"[+!#]accinfoop sid|nick <SID>|<NICK>",
   "msg_accinfo":"\n\n=== ACCINFO ==================================================================================================================\n\n    Nickname: %s\n    Password: %s\n\n    Level: %s  [ %s ]\n\n    Regged by: %s\n    Regged since: %s\n    Comment: %s\n\n    Last seen: %s\n\n    Traffic blocked: %s\n    Messages blocked: %s\n    Nickname is banned: %s\n\n    Hubname: %s\n    Hubmail: %s\n\n    Hubaddress: %s\n================================================================================================================== ACCINFO ===\n\n   ",

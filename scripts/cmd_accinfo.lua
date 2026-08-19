@@ -227,11 +227,11 @@ local msgmgr_module = hub.import( "etc_msgmanager" )
 local msgmgr_get_block_tbl = msgmgr_module and msgmgr_module.get_block_tbl
 
 --// msgs
-local help_title = lang.help_title or "cmd_accinfo.lua - Users"
+local help_title = "cmd_accinfo.lua - Users"
 local help_usage = lang.help_usage or "[+!#]accinfo sid|nick|cid <SID>|<NICK>"
 local help_desc = lang.help_desc or "Sends accinfo about a reguser by SID or NICK; no arguments -> about yourself"
 
-local help_title2 = lang.help_title2 or "cmd_accinfo.lua - Operators"
+local help_title2 = "cmd_accinfo.lua - Operators"
 local help_usage2 = lang.help_usage2 or "[+!#]accinfoop sid|nick <SID>|<NICK>"
 local help_desc2 = lang.help_desc2 or "Sends accinfo (expanded) about a reguser by SID or NICK; no arguments -> about yourself"
 
