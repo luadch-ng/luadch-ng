@@ -3,7 +3,7 @@
     "help_usage": "[+!#]help",
     "msg_out": "\n\n=== HUBBKOMMANDON =================================================================================\n(ledande [nummer] = minimiåtkomstnivå; ett kommando fungerar också med ! eller #)\n%s\n================================================================================= HUBBKOMMANDON ===\n  ",
     "ucmd_menu": [
-        "",
-        ""
+        "Allmänt",
+        "Hjälp"
     ]
 }
