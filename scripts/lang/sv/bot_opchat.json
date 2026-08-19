@@ -1,8 +1,8 @@
 {
     "help_desc": "Chatt för operatörer",
-    "msg_clear": "",
-    "msg_denied": "",
-    "msg_denied_2": "",
+    "msg_clear": "Chatt-historiken har rensats.",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_denied_2": "Du har inte behörighet att använda denna chatten.",
     "msg_help_1": "",
     "msg_help_2": "",
     "msg_help_3": "",
