@@ -161,7 +161,9 @@ hub.setlistener( "onStart", { },
         -- LOADED - BEFORE the activate / url / token gates - so a token
         -- placed in cfg.tbl is redacted from /v1/config (and PUT
         -- /v1/config/{key} refuses it) even while the plugin is inactive.
-        if secrets and secrets.register then secrets.register( token_key ) end
+        -- api_writable: a third-party push-endpoint bearer token the operator may set from
+        -- the WebUI (masked write, #178) - not the hub's own auth/crypto material.
+        if secrets and secrets.register then secrets.register( token_key, { api_writable = true } ) end
         if not cfg_get( "etc_status_push_activate" ) then
             return nil
         end

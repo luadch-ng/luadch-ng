@@ -4136,6 +4136,86 @@ def test_http_phase1c_endpoints(staging_dir: Path, proc=None):
         )
 
 
+def test_http_config_editable_secrets(staging_dir: Path, proc=None):
+    """#178: opted-in redacted secret keys become editable via a masked write, while
+    the hub's own auth/crypto secrets stay write-protected (default-deny).
+
+    Relies on the base staging enabling etc_geoip (Phase D2 above), whose onStart
+    registers etc_geoip_license_key as an api_writable secret.
+
+    - GET /v1/config -> 200; carries a `secret_writable` list containing
+      etc_geoip_license_key; the value itself is masked "<redacted>".
+    - PUT /v1/config/etc_geoip_license_key {value:"..."} -> 200, apply_status
+      reload_required, and the response does NOT echo the value.
+    - PUT /v1/config/http_api_tokens -> 403 (a baseline auth secret never opts in).
+    - PUT /v1/config/etc_geoip_license_key {value:"<redacted>"} -> 400 (the redaction
+      sentinel is refused, blocking a naive GET->PUT round-trip).
+    """
+    token_path = staging_dir / "cfg" / "api_token.first"
+    bootstrap_token = None
+    for line in token_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            bootstrap_token = line
+            break
+    if not bootstrap_token:
+        raise TestFailure(f"could not parse token from {token_path}")
+    auth = b"Authorization: Bearer " + bootstrap_token.encode("ascii") + b"\r\n"
+
+    def status(resp):
+        return resp.split("\r\n", 1)[0]
+
+    def body_of(resp):
+        return resp.split("\r\n\r\n", 1)[1] if "\r\n\r\n" in resp else ""
+
+    def put_config(key, value_json):
+        body = ('{"value":' + value_json + '}').encode("utf-8")
+        return _http_roundtrip(
+            b"PUT /v1/config/" + key.encode("ascii") + b" HTTP/1.1\r\n"
+            + auth
+            + b"Content-Type: application/json\r\n"
+            + b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n"
+            + b"\r\n"
+            + body
+        )
+
+    # 1. GET /v1/config: secret_writable lists the opted-in credential; value masked.
+    r = _http_roundtrip(b"GET /v1/config HTTP/1.1\r\n" + auth + b"\r\n")
+    if "200 OK" not in status(r):
+        raise TestFailure(f"GET /v1/config: expected 200, got {status(r)!r}")
+    b = body_of(r).replace(" ", "")
+    if '"secret_writable"' not in b:
+        raise TestFailure(f"GET /v1/config: missing secret_writable list; body={body_of(r)!r}")
+    if "etc_geoip_license_key" not in b:
+        raise TestFailure(
+            "GET /v1/config: etc_geoip_license_key not in secret_writable - precondition "
+            "failed: the base staging must keep etc_geoip enabled (Phase D2 patch above) so "
+            f"its onStart registers the api_writable secret; body={body_of(r)!r}"
+        )
+    if '"etc_geoip_license_key":"<redacted>"' not in b:
+        raise TestFailure(f"GET /v1/config: etc_geoip_license_key not masked; body={body_of(r)!r}")
+
+    # 2. Masked write of an opted-in secret -> 200 + reload_required, no value echo.
+    r = put_config("etc_geoip_license_key", '"smoke-license-key"')
+    if "200 OK" not in status(r):
+        raise TestFailure(f"PUT etc_geoip_license_key: expected 200, got {status(r)!r}; resp={r!r}")
+    b = body_of(r).replace(" ", "")
+    if '"apply_status":"reload_required"' not in b:
+        raise TestFailure(f"PUT etc_geoip_license_key: expected reload_required; body={body_of(r)!r}")
+    if "smoke-license-key" in body_of(r):
+        raise TestFailure(f"PUT etc_geoip_license_key: response must NOT echo the value; body={body_of(r)!r}")
+
+    # 3. A baseline auth secret stays write-protected (default-deny).
+    r = put_config("http_api_tokens", '"x"')
+    if "403" not in status(r):
+        raise TestFailure(f"PUT http_api_tokens: expected 403 (protected), got {status(r)!r}; resp={r!r}")
+
+    # 4. The redaction sentinel is refused (round-trip guard).
+    r = put_config("etc_geoip_license_key", '"<redacted>"')
+    if "400" not in status(r):
+        raise TestFailure(f"PUT etc_geoip_license_key=<redacted>: expected 400, got {status(r)!r}; resp={r!r}")
+
+
 def test_http_phase2_cmd_disconnect(staging_dir: Path, proc=None):
     """Phase 2 PR-1 of #82: cmd_disconnect plugin migrates to HTTP.
 
@@ -10711,10 +10791,14 @@ def test_http_config_api(staging_dir: Path, proc=None):
       9.  PUT a level-keyed map (cmd_ban_permission) - JSON string keys
           are coerced to integer keys so the level-map validator accepts
           it and it round-trips; a mixed-key map is NOT coerced (400).
+      2b. #644 surgical save: a successful PUT preserves the operator's
+          bare-key format + inline comments in cfg.tbl instead of the
+          wholesale quoted-key comment-stripped rewrite.
 
-    Restores the bare-key cfg.tbl format at the end (matches the #261
-    plugins-api test pattern) so downstream regex-based cfg flips
-    (BLOM / ZLIF / hub_listen) keep working.
+    Restores the pristine cfg.tbl at the end (byte-for-byte) so downstream
+    regex-based cfg flips (BLOM / ZLIF / hub_listen) keep working. Since the
+    surgical save (#644) now preserves the bare-key format, that restore is
+    belt-and-suspenders rather than load-bearing.
     """
     token_path = staging_dir / "cfg" / "api_token.first"
     bootstrap_token = None
@@ -10775,6 +10859,26 @@ def test_http_config_api(staging_dir: Path, proc=None):
             raise TestFailure(f"PUT live: apply_status != 'live'; got {j['data']!r}")
         if j["data"].get("key") != "max_users":
             raise TestFailure(f"PUT live: key echo wrong; got {j['data']!r}")
+
+        # 2b. #644 surgical save: the PUT must rewrite ONLY the changed value
+        #     in place, preserving the operator's bare-key format and inline
+        #     comments - NOT wholesale-rewrite to the canonical quoted-key,
+        #     comment-stripped form. Proven RED before core/cfg_write.lua was
+        #     wired into cfg.set (the wholesale save emits `[ "max_users" ] =
+        #     3000` and drops every comment).
+        cfg_after = cfg_path.read_text(encoding="utf-8")
+        if "max_users = 3000" not in cfg_after:
+            raise TestFailure(
+                "surgical save: 'max_users = 3000' not written bare to cfg.tbl "
+                f"(wholesale rewrite?); head={cfg_after[:160]!r}")
+        if "-- max users (integer)" not in cfg_after:
+            raise TestFailure(
+                "surgical save: the 'max users (integer)' inline comment was "
+                "stripped (comment-preserving save not active)")
+        if '[ "max_users" ]' in cfg_after or '["max_users"]' in cfg_after:
+            raise TestFailure(
+                "surgical save: cfg.tbl was wholesale-rewritten to the "
+                "canonical quoted-key form")
 
         # 3. PUT reload-required key
         r = put_value("language", '{"value": "en"}')
@@ -13550,6 +13654,16 @@ def main():
             failed.append("HTTP API Phase 1c endpoints + limits (#82)")
         else:
             log("PASS  HTTP API Phase 1c endpoints + limits (#82)")
+
+        # #178: editable redacted secrets via a masked PUT /v1/config, with the
+        # hub's own auth/crypto secrets staying write-protected (default-deny).
+        try:
+            test_http_config_editable_secrets(staging_dir, proc=proc)
+        except Exception as e:
+            log(f"FAIL  HTTP API editable secrets (#178): {e}")
+            failed.append("HTTP API editable secrets (#178)")
+        else:
+            log("PASS  HTTP API editable secrets (#178)")
 
         # Phase 2 PR-1 of #82 / #198: cmd_disconnect plugin migrated
         # to DELETE /v1/users/{sid}. Logs in a real ADC user, kicks

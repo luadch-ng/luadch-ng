@@ -578,7 +578,9 @@ hub.setlistener( "onStart", { },
         -- /v1/config redacts it) + resolve it env-var-first, then stagger
         -- the first update shortly after boot. Requires etc_geoip_enabled
         -- (the onTimer returns early when the check is off).
-        if secrets and secrets.register then secrets.register( "etc_geoip_license_key" ) end
+        -- api_writable: a third-party MaxMind credential the operator may set from the
+        -- WebUI (masked write, #178) - not the hub's own auth/crypto material.
+        if secrets and secrets.register then secrets.register( "etc_geoip_license_key", { api_writable = true } ) end
         license_key = secrets and secrets.lookup( "etc_geoip_license_key" ) or nil
         if auto_update then
             if account_id == "" or not license_key or license_key == "" then

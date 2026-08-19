@@ -150,6 +150,42 @@ assert_eq( "list_secret_keys: contains registered key",
     list[ 1 ], "etc_geoip_license_key" )
 
 ----------------------------------------------------------------------
+-- is_api_writable / list_api_writable (#178 default-deny opt-in)
+----------------------------------------------------------------------
+
+-- A secret registered WITHOUT the flag is not API-writable (default-deny).
+assert_false( "is_api_writable: plain-registered secret is NOT writable",
+    secrets.is_api_writable( "etc_geoip_license_key" ) )
+
+-- Opt a key in explicitly.
+assert_true( "register: opt-in with api_writable returns true",
+    secrets.register( "test_writable_key", { api_writable = true } ) )
+assert_true( "is_secret_key: opted-in key is a secret",
+    secrets.is_secret_key( "test_writable_key" ) )
+assert_true( "is_api_writable: opted-in key -> true",
+    secrets.is_api_writable( "test_writable_key" ) )
+
+-- A plain re-register must NOT downgrade an already-writable key.
+assert_true( "register: plain re-register returns true",
+    secrets.register( "test_writable_key" ) )
+assert_true( "is_api_writable: still writable after plain re-register (no downgrade)",
+    secrets.is_api_writable( "test_writable_key" ) )
+
+-- Empty / flagless opts does not opt in; unknown key is not writable.
+assert_true( "register: with empty opts table",
+    secrets.register( "test_plain_key", { } ) )
+assert_false( "is_api_writable: empty-opts key is not writable",
+    secrets.is_api_writable( "test_plain_key" ) )
+assert_false( "is_api_writable: never-registered key -> false",
+    secrets.is_api_writable( "never_registered" ) )
+
+local wlist = secrets.list_api_writable( )
+assert_eq( "list_api_writable: exactly the one opted-in key",
+    #wlist, 1 )
+assert_eq( "list_api_writable: contains the opted-in key",
+    wlist[ 1 ], "test_writable_key" )
+
+----------------------------------------------------------------------
 -- init() seeds the baseline registry
 ----------------------------------------------------------------------
 
@@ -160,6 +196,28 @@ assert_true( "init: http_api_tokens registered",
 
 assert_true( "init: master_key_path registered",
     secrets.is_secret_key( "master_key_path" ) )
+
+-- The baseline auth/crypto secrets must NOT be API-writable (default-deny; they never
+-- opt in) - this is the core of #178's write-protection.
+assert_false( "init: http_api_tokens is a secret but NOT api-writable",
+    secrets.is_api_writable( "http_api_tokens" ) )
+assert_false( "init: master_key_path is a secret but NOT api-writable",
+    secrets.is_api_writable( "master_key_path" ) )
+
+-- Structural guard: an explicit api_writable opt-in on a core auth/crypto secret is
+-- ignored at both register() and is_api_writable() - the guarantee does not rely on
+-- "nobody opts them in" (defense-in-depth against a future internal mistake).
+secrets.register( "http_api_tokens", { api_writable = true } )
+assert_false( "structural: http_api_tokens stays protected despite an api_writable opt-in",
+    secrets.is_api_writable( "http_api_tokens" ) )
+secrets.register( "master_key_path", { api_writable = true } )
+assert_false( "structural: master_key_path stays protected despite an api_writable opt-in",
+    secrets.is_api_writable( "master_key_path" ) )
+-- And such a key never leaks into the writable list.
+for _, k in ipairs( secrets.list_api_writable( ) ) do
+    assert_true( "structural: list_api_writable excludes core secrets (" .. k .. ")",
+        k ~= "http_api_tokens" and k ~= "master_key_path" )
+end
 
 local list_after = secrets.list_secret_keys( )
 assert_true( "list_secret_keys: returns sorted array",
@@ -258,6 +316,25 @@ local _ok, _res = pcall( secrets.lookup, "etc_webhook_unknown_secret" )
 assert_true( "lookup: unknown cfg key does not propagate cfg.get crash", _ok )
 assert_eq( "lookup: unknown cfg key returns nil", _res, nil )
 _real.cfg.get = _plain_get
+
+----------------------------------------------------------------------
+-- env_is_set (#178: warn when an env var would shadow a cfg write)
+----------------------------------------------------------------------
+
+_env[ "LUADCH_SHADOWED_KEY" ] = "from-env"
+assert_true( "env_is_set: non-empty env var present -> true",
+    secrets.env_is_set( "shadowed_key" ) )
+
+_env[ "LUADCH_UNSHADOWED_KEY" ] = nil
+assert_false( "env_is_set: env var absent -> false",
+    secrets.env_is_set( "unshadowed_key" ) )
+
+_env[ "LUADCH_EMPTY_KEY" ] = ""
+assert_false( "env_is_set: empty env var does NOT shadow -> false",
+    secrets.env_is_set( "empty_key" ) )
+
+assert_false( "env_is_set: non-derivable key name -> false",
+    secrets.env_is_set( "foo-bar" ) )
 
 -- Restore os.getenv
 os.getenv = _real_getenv
