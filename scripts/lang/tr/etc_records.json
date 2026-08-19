@@ -1,0 +1,24 @@
+{
+    "help_desc": "",
+    "help_desco": "",
+    "help_err": "",
+    "help_err_wrong_id_o": "",
+    "help_err_wrong_id_reg": "",
+    "help_usage": "",
+    "help_usageo": "",
+    "msg_hmsg": "",
+    "msg_reseted": "",
+    "msg_rmsg": "",
+    "msg_tmsg": "",
+    "msg_umsg": "",
+    "ucmd_menu": [
+        "",
+        ""
+    ],
+    "ucmd_menu_reset": [
+        "",
+        "",
+        "",
+        ""
+    ]
+}
