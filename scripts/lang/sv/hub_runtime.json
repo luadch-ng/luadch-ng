@@ -2,7 +2,7 @@
     "help_desc": "Visa/återställ hubbens upptid",
     "help_usage": "",
     "msg_days": " dagar, ",
-    "msg_denied": "",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_hours": "",
     "msg_minutes": "",
     "msg_reset_1": "",
