@@ -1,6 +1,6 @@
 {
-    "help_desc": "",
-    "help_desc_op": "",
+    "help_desc": "Visar din anslutningstid",
+    "help_desc_op": "Visar statistik över en användares anslutningstid",
     "help_usage": "",
     "help_usage_op": "",
     "month_name": [
