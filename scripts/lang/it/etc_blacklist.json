@@ -1,0 +1,28 @@
+{
+    "help_desc": "",
+    "help_desc2": "",
+    "help_usage": "",
+    "help_usage2": "",
+    "msg_01": "",
+    "msg_02": "",
+    "msg_03": "",
+    "msg_04": "",
+    "msg_05": "",
+    "msg_06": "",
+    "msg_denied": "",
+    "msg_out": "",
+    "msg_usage": "",
+    "ucmd_menu_del": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_show": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_nick": ""
+}
