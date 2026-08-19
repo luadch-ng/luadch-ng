@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar det sista skrivna meddelandet i huvudchatten, du kan växla mellan på/av.",
     "help_desco": "Ta bort chattlogg / eller: ta bort lista över förnekare.",
-    "help_usage": "",
+    "help_usage": "[+!#]history show [<RADER>]  / or: [+!#]history toggle",
     "help_usageo": "",
     "logo_1": "",
     "logo_2": "",
