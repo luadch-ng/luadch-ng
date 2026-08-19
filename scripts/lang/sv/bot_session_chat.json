@@ -3,7 +3,7 @@
     "help_desc": "Sessionschattar är tillfälliga chattar för en användarsession",
     "help_usage": "[+!#]sessionchat <CHATTNAMN>",
     "msg_already": "Användaren är redan medlem: ",
-    "msg_chatexists": "",
+    "msg_chatexists": "Chatten finns redan.",
     "msg_create": "",
     "msg_create2": "",
     "msg_create3": "",
