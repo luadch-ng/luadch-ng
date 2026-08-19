@@ -2,7 +2,7 @@
     "help_desc": "",
     "help_usage": "",
     "msg_added": "%s lade till blocklistpost #%d (%s, source=%s, stealth=%s).",
-    "msg_bad_cidr": "",
+    "msg_bad_cidr": "Ogiltig CIDR / IP-adress: %s",
     "msg_bad_expires": "",
     "msg_count": "",
     "msg_denied": "",
