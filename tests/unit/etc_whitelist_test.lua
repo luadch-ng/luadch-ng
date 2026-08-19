@@ -368,7 +368,7 @@ _reset_engine( )
 do
     wl._do_add_entry( "1.2.3.0/24", { reason = "trusted" }, "op", 80 )
     local show = wl._format_show( nil )
-    truthy( "show has header", show:find( "WHITELIST" ) )
+    truthy( "show has header", show:find( "ALLOWLIST" ) )
     truthy( "show lists the cidr", show:find( "1.2.3.0/24" ) )
     truthy( "show shows source", show:find( "src=manual" ) )
 

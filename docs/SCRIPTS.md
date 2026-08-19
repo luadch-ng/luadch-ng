@@ -71,7 +71,7 @@ one-line summary from each entry; see the entry for commands and cfg keys.
 | Plugin | Purpose |
 |---|---|
 | [etc_banner](#etc_banner) | Broadcast periodic banner messages to main chat at configurable intervals |
-| [etc_blacklist](#etc_blacklist) | Maintain and display the blacklist of delreg'd users to prevent re-registration |
+| [etc_blacklist](#etc_blacklist) | Maintain and display the denylist of delreg'd users to prevent re-registration |
 | [etc_chatlog](#etc_chatlog) | Log main chat messages with timestamps, user nicks, and message content |
 | [etc_cmdlog](#etc_cmdlog) | Audit log of all operator `+cmd` invocations (who, what, when) |
 | [etc_dhtblocker](#etc_dhtblocker) | Disconnect users with DHT (Distributed Hash Table) search enabled |
@@ -227,7 +227,7 @@ the account's next login. Ships disabled (`enabled = false`); enable it in
 
 ### cmd_delreg
 
-Delete registrations by nick. Optionally blacklist with reason to
+Delete registrations by nick. Optionally denylist with reason to
 prevent re-registration.
 
 **Commands:** `+delreg nick <nick> [<reason>]`
@@ -526,7 +526,7 @@ intervals.
 
 ### etc_blacklist
 
-Maintain and display the blacklist of delreg'd users to prevent
+Maintain and display the denylist of delreg'd users to prevent
 re-registration.
 
 ### etc_chatlog
@@ -805,11 +805,11 @@ old-path window was small.
 Operator-facing chat command for the global IP/CIDR allowlist (the
 deferred #78 allowlist). Engine is `core/whitelist.lua` (Phase A);
 this plugin ships the `+whitelist` admin CLI (Phase B) and the HTTP
-API (Phase D). A whitelisted IP is exempt from the AUTOMATED
+API (Phase D). An allowlisted IP is exempt from the AUTOMATED
 blockers - GeoIP, proxy detection, external feeds, the hub-limit ban
 - and from automated blocklist-store entries, but NOT from a
 deliberate manual `+ban` / `+blocklist add` (a manual block wins). To
-block a whitelisted IP, remove it from the whitelist first.
+block an allowlisted IP, remove it from the allowlist first.
 
 **Commands** (all require `etc_whitelist_oplevel`, default 80):
 
@@ -841,13 +841,13 @@ rotate); review + extend via `+whitelist add`. A `/64` exempts a
 whole subnet - each seeded range is meant to be a single per-VPS
 pinger allocation; narrow to `/128` if that matters for your hub.
 
-**Precedence (which blocker wins).** whitelist > automated blockers
+**Precedence (which blocker wins).** allowlist > automated blockers
 (GeoIP / proxydetect / feeds / hub-limit ban + automated
 blocklist-store entries); a manual `+ban` / `+blocklist add`
 (`source=manual`) > whitelist. Enforced in `core/blocklist.check_ip`
 and in each blocker plugin's per-connection guard. NOT yet extended
 to the share / slots / nick-policy plugins (`usr_share` / `usr_slots`
-/ `usr_nick_*`) - a whitelisted IP still faces those.
+/ `usr_nick_*`) - an allowlisted IP still faces those.
 
 **Audit fires:** `whitelist.add` / `whitelist.remove` /
 `whitelist.export` / `whitelist.import`.
@@ -929,9 +929,9 @@ opted in individually.
   floor 30 min.
 - `spamhaus` / `spamhaus_v6` - Spamhaus DROP v4 / v6 (JSONL, `.cidr` +
   `.sblid`). Interval floor 1 h (their published auto-fetch floor).
-- `abuseipdb` - AbuseIPDB blacklist (top-N reported IPs, plaintext).
+- `abuseipdb` - AbuseIPDB denylist (top-N reported IPs, plaintext).
   Needs an API key (`Key` header, env-var-first via `core/secrets`);
-  the free-tier blacklist download is 5/day, so the interval floor is
+  the free-tier denylist download is 5/day, so the interval floor is
   6 h. Enabled without a key, the feed disables itself and warns once.
 - `generic` - operator-supplied line-list URL (IP/CIDR per line,
   `#`/`;` comments tolerated). No key, no default URL.
@@ -1400,7 +1400,7 @@ Force TLS-encrypted client-to-client transfers (force ADCS). On an
 `adcs://` hub the client<->hub link is encrypted, but a peer can still
 negotiate a plaintext DIRECT transfer; this plugin refuses to broker a
 plaintext transfer setup (`CTM` / `RevCTM` / NAT-traversal + its reply),
-forcing `ADCS/`. All-or-nothing - no level or whitelist exemption.
+forcing `ADCS/`. All-or-nothing - no level or allowlist exemption.
 Ships ENABLED in `warn` mode (PMs both parties a client-setup hint and
 lets the transfer through); set `etc_forcetlstransfer_mode = "block"` to
 actually drop plaintext setups (which needs each user's own TLS transfer
@@ -1415,7 +1415,7 @@ or above a given level so the hub can be drained for maintenance without
 a permanent `reg_only` config change. While active, logins below the
 level are refused (with a reconnect countdown) and online users below it
 are kicked; an optional timer auto-lifts it, or `+lockdown off` does.
-Whitelisted IPs (hublist pingers) stay admitted when
+Allowlisted IPs (hublist pingers) stay admitted when
 `etc_lockdown_exempt_whitelist` is true, so the hub stays visible on
 hublists during a lockdown. State survives `+reload` / restart
 (`scripts/data/etc_lockdown.tbl`). Ships disabled.
@@ -1442,7 +1442,7 @@ clutter from disabled scripts.
 ### hub_cmd_manager
 
 Enforce permission levels on direct ADC commands (EMSG, DMSG, SCH,
-etc). Blacklist / whitelist support.
+etc). Denylist / allowlist support.
 
 ### hub_inf_manager
 
@@ -1714,7 +1714,7 @@ repository:
 **[luadch-ng/scripts](https://github.com/luadch-ng/scripts)**
 
 Each companion plugin lives in its own subdirectory under `scripts/`.
-Drop the subdirectory into your `scripts/` tree, whitelist the plugin
+Drop the subdirectory into your `scripts/` tree, allowlist the plugin
 in the `cfg.scripts` array in `cfg/cfg.tbl`, then `+reload`. Each
 plugin folder contains its own README describing its commands and
 cfg keys.

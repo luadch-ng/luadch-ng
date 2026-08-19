@@ -225,7 +225,7 @@ local ucmd_nick = lang.ucmd_nick or "Nick:"
 local ucmd_desc = lang.ucmd_desc or "Comment (optional):"
 local ucmd_desc2 = lang.ucmd_desc2 or "Comment:"
 
-local msg_blacklist1 = lang.msg_blacklist1 or "Error: This User is blacklisted!"
+local msg_blacklist1 = lang.msg_blacklist1 or "Error: This User is denylisted!"
 local msg_blacklist2 = lang.msg_blacklist2 or "Reason: "
 local msg_blacklist3 = lang.msg_blacklist3 or "Deleted on: "
 local msg_blacklist4 = lang.msg_blacklist4 or "Deleted by: "
