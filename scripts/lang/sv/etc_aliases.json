@@ -1,7 +1,7 @@
 {
-    "help_desc_add": "",
-    "help_desc_del": "",
-    "help_desc_list": "",
+    "help_desc_add": "Lägg till ett kommandoalias (alias -> mål)",
+    "help_desc_del": "Ta bort ett kommandoalias",
+    "help_desc_list": "Lista konfigurerade alias och inbyggda kommandonamn",
     "help_usage_add": "",
     "help_usage_del": "",
     "help_usage_list": "",
