@@ -168,24 +168,24 @@ local block = hub.import( "etc_trafficmanager" )
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or {}; err = err and hub.debug( err )
 
 local msg_denied = lang.msg_denied or "[ DELREG ]--> You are not allowed to use this command or to delreg targets with this level."
-local msg_usage = lang.msg_usage or "Usage: [+!#]delreg nick <NICK>  /  or del with blacklist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>"
+local msg_usage = lang.msg_usage or "Usage: [+!#]delreg nick <NICK>  /  or del with denylist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>"
 local msg_error = lang.msg_error or "[ DELREG ]--> An error occurred: "
 local msg_del = lang.msg_del or "[ DELREG ]--> You were delregged."
 local msg_del_reason = lang.msg_del_reason or "[ DELREG ]--> You were delregged. Reason: %s"
 local msg_bot = lang.msg_bot or "[ DELREG ]--> User is a bot."
 local msg_ok = lang.msg_ok or "[ DELREG ]--> User  %s  was delregged by  %s"
-local msg_ok2 = lang.msg_ok2 or "[ DELREG ]--> User  %s  was delregged and blacklisted by  %s  reason: %s"
+local msg_ok2 = lang.msg_ok2 or "[ DELREG ]--> User  %s  was delregged and denylisted by  %s  reason: %s"
 local msg_notfound = lang.msg_notfound or "[ DELREG ]--> User is not registered."
-local msg_deblacklist = lang.msg_deblacklist or "[ DELREG ]--> User:  %s  was removed from the blacklist by:  %s"
+local msg_deblacklist = lang.msg_deblacklist or "[ DELREG ]--> User:  %s  was removed from the denylist by:  %s"
 
 local help_title = "cmd_delreg.lua"
-local help_usage = lang.help_usage or "[+!#]delreg nick <NICK>  /  or del with blacklist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>"
+local help_usage = lang.help_usage or "[+!#]delreg nick <NICK>  /  or del with denylist entry:  [+!#]delreg nick <NICK> <DESCRIPTION>"
 local help_desc = lang.help_desc or "delregs an existing user by nick or cid"
 
 local ucmd_menu_ct1 = lang.ucmd_menu_ct1 or { "User", "Control", "Delreg", "by NICK" }
 local ucmd_menu_ct2 = lang.ucmd_menu_ct2 or { "Delreg", "OK" }
 local ucmd_nick = lang.ucmd_nick or "Nick:"
-local ucmd_reason = lang.ucmd_reason or "Reason: (no blacklist entry if empty)"
+local ucmd_reason = lang.ucmd_reason or "Reason: (no denylist entry if empty)"
 
 --// database
 local blacklist_file = "scripts/data/cmd_delreg_blacklist.tbl"

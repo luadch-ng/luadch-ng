@@ -45,7 +45,7 @@ Two facts to plan around:
 
 ## 2. Enable it
 
-1. **Whitelist the plugin.** In `cfg/cfg.tbl`, in the `cfg.scripts`
+1. **Allowlist the plugin.** In `cfg/cfg.tbl`, in the `cfg.scripts`
    list, set `etc_webhook.lua` to enabled:
 
    ```lua

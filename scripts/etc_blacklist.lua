@@ -79,11 +79,11 @@ local lang, err = cfg_loadlanguage( scriptlang, scriptname ); lang = lang or { }
 
 local help_title = "etc_blacklist.lua - Show"
 local help_usage = lang.help_usage or "[+!#]blacklist show"
-local help_desc = lang.help_desc or "show blacklisted users"
+local help_desc = lang.help_desc or "show denylisted users"
 
 local help_title2 = "etc_blacklist.lua - Del"
 local help_usage2 = lang.help_usage2 or "[+!#]blacklist del <nick>"
-local help_desc2 = lang.help_desc2 or "delete user from blacklist"
+local help_desc2 = lang.help_desc2 or "delete user from denylist"
 
 local msg_denied = lang.msg_denied or "You are not allowed to use this command."
 local msg_usage = lang.msg_usage or "Usage: [+!#]blacklist show  /  [+!#]blacklist del <nick>"
@@ -92,19 +92,19 @@ local msg_01 = lang.msg_01 or "\t  Username: "
 local msg_02 = lang.msg_02 or "\t  Deleted on: "
 local msg_06 = lang.msg_06 or "\t  Deleted by: "
 local msg_03 = lang.msg_03 or "\t  Reason: "
-local msg_04 = lang.msg_04 or "The following user was deleted from Blacklist: "
+local msg_04 = lang.msg_04 or "The following user was deleted from Denylist: "
 local msg_05 = lang.msg_05 or "Error: User not found."
 
-local ucmd_menu_show = lang.ucmd_menu_show or { "Hub", "etc", "Blacklist", "show" }
-local ucmd_menu_del = lang.ucmd_menu_del or { "Hub", "etc", "Blacklist", "user delete" }
+local ucmd_menu_show = lang.ucmd_menu_show or { "Hub", "etc", "Denylist", "show" }
+local ucmd_menu_del = lang.ucmd_menu_del or { "Hub", "etc", "Denylist", "user delete" }
 local ucmd_nick = lang.ucmd_nick or "Username:"
 
 local msg_out = lang.msg_out or [[
 
 
-=== BLACKLIST =========================================================================================
+=== DENYLIST =========================================================================================
 %s
-========================================================================================= BLACKLIST ===
+========================================================================================= DENYLIST ===
   ]]
 
 

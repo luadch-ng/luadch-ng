@@ -132,11 +132,11 @@ local help_title      = "etc_whitelist.lua - allowlist"
 local help_usage      = lang.help_usage      or "[+!#]whitelist show|add|del|count|export|import ..."
 local help_desc       = lang.help_desc       or "Manage the global IP/CIDR allowlist (exempts trusted IPs from the automated blockers, not from a manual ban). Run `+whitelist show`."
 
-local ucmd_menu_show   = lang.ucmd_menu_show   or { "Hub", "Whitelist", "show" }
-local ucmd_menu_add    = lang.ucmd_menu_add    or { "Hub", "Whitelist", "add" }
-local ucmd_menu_del    = lang.ucmd_menu_del    or { "Hub", "Whitelist", "remove by id" }
-local ucmd_menu_count  = lang.ucmd_menu_count  or { "Hub", "Whitelist", "count by source" }
-local ucmd_menu_export = lang.ucmd_menu_export or { "Hub", "Whitelist", "export to JSONL" }
+local ucmd_menu_show   = lang.ucmd_menu_show   or { "Hub", "Allowlist", "show" }
+local ucmd_menu_add    = lang.ucmd_menu_add    or { "Hub", "Allowlist", "add" }
+local ucmd_menu_del    = lang.ucmd_menu_del    or { "Hub", "Allowlist", "remove by id" }
+local ucmd_menu_count  = lang.ucmd_menu_count  or { "Hub", "Allowlist", "count by source" }
+local ucmd_menu_export = lang.ucmd_menu_export or { "Hub", "Allowlist", "export to JSONL" }
 
 local ucmd_popup_cidr   = lang.ucmd_popup_cidr   or "CIDR or IP (e.g. 192.0.2.0/24):"
 local ucmd_popup_reason = lang.ucmd_popup_reason or "Reason (optional):"
@@ -150,22 +150,22 @@ local msg_usage_import  = lang.msg_usage_import  or "Usage: +whitelist import <p
 local msg_unknown_verb  = lang.msg_unknown_verb  or "Unknown verb '%s'. Try: show, add, del, count, export, import."
 local msg_bad_cidr      = lang.msg_bad_cidr      or "Invalid CIDR / IP: %s"
 local msg_bad_expires   = lang.msg_bad_expires   or "Invalid expires date '%s'. Expected YYYY-MM-DD."
-local msg_added         = lang.msg_added         or "%s added whitelist entry #%d (%s, source=%s)."
-local msg_save_failed   = lang.msg_save_failed   or "Failed to persist whitelist: %s"
+local msg_added         = lang.msg_added         or "%s added allowlist entry #%d (%s, source=%s)."
+local msg_save_failed   = lang.msg_save_failed   or "Failed to persist allowlist: %s"
 local msg_open_failed   = lang.msg_open_failed   or "Could not open the file: %s"
 local msg_encode_failed = lang.msg_encode_failed or "JSON encode failed: %s"
-local msg_removed       = lang.msg_removed       or "%s removed whitelist entry #%d (%s, source=%s)."
+local msg_removed       = lang.msg_removed       or "%s removed allowlist entry #%d (%s, source=%s)."
 local msg_remove_failed = lang.msg_remove_failed or "whitelist.del failed: %s"
-local msg_not_found     = lang.msg_not_found     or "No whitelist entry with id #%d."
+local msg_not_found     = lang.msg_not_found     or "No allowlist entry with id #%d."
 local msg_hierarchy     = lang.msg_hierarchy     or "Cannot remove entry #%d: it was added by a higher-level operator (you=%d, by=%d)."
-local msg_show_header   = lang.msg_show_header   or "\n=== WHITELIST ==="
+local msg_show_header   = lang.msg_show_header   or "\n=== ALLOWLIST ==="
 local msg_show_footer   = lang.msg_show_footer   or "=== END ===\n"
 local msg_show_empty    = lang.msg_show_empty    or "(no entries)"
 local msg_show_filter   = lang.msg_show_filter   or "(filtered: source=%s)"
 local msg_show_capped   = lang.msg_show_capped   or "(showing %d of %d entries; raise etc_whitelist_show_limit or filter by source)"
-local msg_count         = lang.msg_count         or "whitelist: %d entries total"
+local msg_count         = lang.msg_count         or "allowlist: %d entries total"
 local msg_no_dkjson     = lang.msg_no_dkjson     or "JSONL export/import requires dkjson, which is not available."
-local msg_export_ok     = lang.msg_export_ok     or "%s exported %d whitelist entries to %s."
+local msg_export_ok     = lang.msg_export_ok     or "%s exported %d allowlist entries to %s."
 local msg_import_ok     = lang.msg_import_ok     or "%s imported %d entries from %s (%d skipped, %d errors)."
 local msg_unsafe_path   = lang.msg_unsafe_path   or "Path '%s' is unsafe: %s"
 local msg_import_level  = lang.msg_import_level  or "Import requires level %d or higher (you are %d)."

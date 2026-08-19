@@ -7,7 +7,7 @@ luadch blocks unwanted connections in two complementary layers:
 | **Pre-handshake IP/CIDR blocklist** | TCP accept, before ADC/TLS | known-bad IPs and CIDR ranges (manual + external feeds) | `+blocklist` ([`SCRIPTS.md`](SCRIPTS.md) etc_blocklist) |
 | **Post-handshake bans** | after login | nick / CID / short-term IP bans | `+ban` (cmd_ban) |
 | **GeoIP policy** | on connect, post-handshake | country / ASN policy | `etc_geoip` (this doc) |
-| **Allowlist (whitelist)** | consulted first by every automated blocker | trusted IPs / CIDRs (hublist pingers) exempted | `+whitelist` ([`SCRIPTS.md`](SCRIPTS.md) etc_whitelist) |
+| **Allowlist** | consulted first by every automated blocker | trusted IPs / CIDRs (hublist pingers) exempted | `+whitelist` ([`SCRIPTS.md`](SCRIPTS.md) etc_whitelist) |
 
 The pre-handshake blocklist is your DoS/scanner shield (a hostile IP is
 dropped before it costs you a TLS handshake). GeoIP is *policy*: it
@@ -17,7 +17,7 @@ kicks them post-handshake with a reason they can read - the same layer
 note at the end.
 
 The **allowlist** (`+whitelist`, the #78 allowlist) sits in front of all
-of the automated layers: a whitelisted IP is exempt from GeoIP, proxy
+of the automated layers: an allowlisted IP is exempt from GeoIP, proxy
 detection, the external feeds, the hub-limit ban and the automated
 blocklist-store entries - but NOT from a deliberate manual `+ban` /
 `+blocklist add` (a manual block wins). A small set of known
@@ -274,7 +274,7 @@ a shrinking feed leaves no stale rows.
 | `tor` | Tor exit nodes | `check.torproject.org/torbulkexitlist` | 30 min | Plain IPv4, one per line. **Do not** point it at `dan.me.uk` - that host firewall-bans IPs fetching more than once per 30 min. |
 | `spamhaus` | Spamhaus DROP v4 | `spamhaus.org/drop/drop_v4.json` | 1 h | JSON (one `{"cidr","sblid"}` per line). Spamhaus policy is "at least 1 h apart"; the default is 24 h (DROP churns slowly). EDROP merged into DROP in 2024 - there is no separate EDROP feed. |
 | `spamhaus_v6` | Spamhaus DROP v6 | `spamhaus.org/drop/drop_v6.json` | 1 h | Same format; shares the `spamhaus` interval + stealth toggle. |
-| `abuseipdb` | AbuseIPDB blacklist | `api.abuseipdb.com/api/v2/blacklist?plaintext` | 6 h | Top-N most-reported IPs (free tier = 10,000 individual IPs). **Needs an API key.** The blacklist-download endpoint is capped at 5 requests/day on the free tier - a separate limit from the "1,000 Checks & Reports" and "100 Block Checks" quotas shown on the pricing page - so the interval floor is 6 h (4 pulls/day). Default 24 h. |
+| `abuseipdb` | AbuseIPDB denylist | `api.abuseipdb.com/api/v2/blacklist?plaintext` | 6 h | Top-N most-reported IPs (free tier = 10,000 individual IPs). **Needs an API key.** The denylist-download endpoint is capped at 5 requests/day on the free tier - a separate limit from the "1,000 Checks & Reports" and "100 Block Checks" quotas shown on the pricing page - so the interval floor is 6 h (4 pulls/day). Default 24 h. |
 | `generic` | operator URL | (none - you set it) | 5 min | Any line-list of one IP or CIDR per line (`#`/`;` comment lines and inline trailing comments tolerated). No API key. `etc_blocklist_feeds_generic_enabled` does nothing until you set `etc_blocklist_feeds_generic_url`. |
 
 The operator's configured refresh interval is **clamped up** to the
