@@ -1,3 +1,6 @@
 {
-    "hub_cid_taken": "Din CID är upptagen."
+    "hub_cid_taken": "Din CID är upptagen.",
+    "hub_hbri_succeed": "Valideringen lyckades",
+    "hub_hbri_address_mismatch": "Valideringsadressfel",
+    "hub_hbri_unknown_token": "Okänd valideringstoken"
 }
