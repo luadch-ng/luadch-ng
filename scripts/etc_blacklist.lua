@@ -95,16 +95,16 @@ local msg_03 = lang.msg_03 or "\t  Reason: "
 local msg_04 = lang.msg_04 or "The following user was deleted from Denylist: "
 local msg_05 = lang.msg_05 or "Error: User not found."
 
-local ucmd_menu_show = lang.ucmd_menu_show or { "Hub", "etc", "Blacklist", "show" }
-local ucmd_menu_del = lang.ucmd_menu_del or { "Hub", "etc", "Blacklist", "user delete" }
+local ucmd_menu_show = lang.ucmd_menu_show or { "Hub", "etc", "Denylist", "show" }
+local ucmd_menu_del = lang.ucmd_menu_del or { "Hub", "etc", "Denylist", "user delete" }
 local ucmd_nick = lang.ucmd_nick or "Username:"
 
 local msg_out = lang.msg_out or [[
 
 
-=== BLACKLIST =========================================================================================
+=== DENYLIST =========================================================================================
 %s
-========================================================================================= BLACKLIST ===
+========================================================================================= DENYLIST ===
   ]]
 
 

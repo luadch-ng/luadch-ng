@@ -836,7 +836,7 @@ plugin seeds a small set of known hublist-pinger IPs as
 flagged by the automated blockers out of the box. Seed-on-missing
 ONLY - once the `.tbl` exists your edits (including deletions) are
 authoritative and never re-seeded. Set `etc_whitelist_seed = false`
-to boot with an empty whitelist. The list bit-rots (pinger IPs
+to boot with an empty allowlist. The list bit-rots (pinger IPs
 rotate); review + extend via `+whitelist add`. A `/64` exempts a
 whole subnet - each seeded range is meant to be a single per-VPS
 pinger allocation; narrow to `/128` if that matters for your hub.
@@ -844,7 +844,7 @@ pinger allocation; narrow to `/128` if that matters for your hub.
 **Precedence (which blocker wins).** allowlist > automated blockers
 (GeoIP / proxydetect / feeds / hub-limit ban + automated
 blocklist-store entries); a manual `+ban` / `+blocklist add`
-(`source=manual`) > whitelist. Enforced in `core/blocklist.check_ip`
+(`source=manual`) > allowlist. Enforced in `core/blocklist.check_ip`
 and in each blocker plugin's per-connection guard. NOT yet extended
 to the share / slots / nick-policy plugins (`usr_share` / `usr_slots`
 / `usr_nick_*`) - an allowlisted IP still faces those.

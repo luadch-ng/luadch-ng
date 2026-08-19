@@ -132,11 +132,11 @@ local help_title      = "etc_whitelist.lua - allowlist"
 local help_usage      = lang.help_usage      or "[+!#]whitelist show|add|del|count|export|import ..."
 local help_desc       = lang.help_desc       or "Manage the global IP/CIDR allowlist (exempts trusted IPs from the automated blockers, not from a manual ban). Run `+whitelist show`."
 
-local ucmd_menu_show   = lang.ucmd_menu_show   or { "Hub", "Whitelist", "show" }
-local ucmd_menu_add    = lang.ucmd_menu_add    or { "Hub", "Whitelist", "add" }
-local ucmd_menu_del    = lang.ucmd_menu_del    or { "Hub", "Whitelist", "remove by id" }
-local ucmd_menu_count  = lang.ucmd_menu_count  or { "Hub", "Whitelist", "count by source" }
-local ucmd_menu_export = lang.ucmd_menu_export or { "Hub", "Whitelist", "export to JSONL" }
+local ucmd_menu_show   = lang.ucmd_menu_show   or { "Hub", "Allowlist", "show" }
+local ucmd_menu_add    = lang.ucmd_menu_add    or { "Hub", "Allowlist", "add" }
+local ucmd_menu_del    = lang.ucmd_menu_del    or { "Hub", "Allowlist", "remove by id" }
+local ucmd_menu_count  = lang.ucmd_menu_count  or { "Hub", "Allowlist", "count by source" }
+local ucmd_menu_export = lang.ucmd_menu_export or { "Hub", "Allowlist", "export to JSONL" }
 
 local ucmd_popup_cidr   = lang.ucmd_popup_cidr   or "CIDR or IP (e.g. 192.0.2.0/24):"
 local ucmd_popup_reason = lang.ucmd_popup_reason or "Reason (optional):"
