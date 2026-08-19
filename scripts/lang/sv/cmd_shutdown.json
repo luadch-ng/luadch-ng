@@ -1,7 +1,7 @@
 {
     "help_desc": "Stänger ner hubben",
-    "help_usage": "",
-    "msg_countdown": "",
+    "help_usage": "[+!#]shutdown [<MEDDELANDE>]",
+    "msg_countdown": "*** Hubbens stängs ner om ***",
     "msg_denied": "",
     "msg_hub_disabled": "",
     "msg_ok": "",
