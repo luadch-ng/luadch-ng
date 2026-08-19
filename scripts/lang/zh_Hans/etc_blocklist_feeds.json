@@ -1,0 +1,20 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_abuseipdb_no_key": "",
+    "msg_clamped": "",
+    "msg_denied": "",
+    "msg_refresh_fail": "",
+    "msg_refresh_ok": "",
+    "msg_report_fail": "",
+    "msg_report_ok": "",
+    "msg_status_feed": "",
+    "msg_status_footer": "",
+    "msg_status_header": "",
+    "msg_status_master": "",
+    "ucmd_menu": [
+        "",
+        "",
+        ""
+    ]
+}
