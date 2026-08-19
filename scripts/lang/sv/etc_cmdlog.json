@@ -2,7 +2,7 @@
     "help_desc": "Visar kommandologgen",
     "help_usage": "",
     "msg1": "   |   Kommando: [+!#]",
-    "msg2": "",
+    "msg2": "   |   användes av: ",
     "msg_denied": "",
     "msg_nofile": "",
     "msg_out": "",
