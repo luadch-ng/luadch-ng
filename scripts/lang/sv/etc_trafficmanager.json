@@ -1,6 +1,6 @@
 {
-    "help_desc": "",
-    "help_desc2": "",
+    "help_desc": "Visar aktuella inställningar från 'cfg/cfg.tbl' | Visar alla blockerade användare och deras blockeringslägen",
+    "help_desc2": "Blockerar nerladdningar ( d ), uppladdningar ( u ) och sök ( s ) | Avblockera användare",
     "help_usage": "",
     "help_usage2": "",
     "msg_ab_level": "",
