@@ -1,0 +1,27 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_db_loaded": "",
+    "msg_db_missing": "",
+    "msg_db_stale": "",
+    "msg_denied": "",
+    "msg_report": "",
+    "msg_status_action": "",
+    "msg_status_asn": "",
+    "msg_status_basn": "",
+    "msg_status_bcountry": "",
+    "msg_status_country": "",
+    "msg_status_enabled": "",
+    "msg_status_footer": "",
+    "msg_status_header": "",
+    "msg_update_fail": "",
+    "msg_update_missing_key": "",
+    "msg_update_ok": "",
+    "msg_update_recovered": "",
+    "msg_update_start": "",
+    "ucmd_menu": [
+        "",
+        "",
+        ""
+    ]
+}
