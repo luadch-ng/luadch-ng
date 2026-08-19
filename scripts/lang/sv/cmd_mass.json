@@ -1,6 +1,6 @@
 {
     "help_desc": "Skickar ett PM med <MSG> till alla användare",
-    "help_desc_op": "",
+    "help_desc_op": "Skickar ett PM med <MEDDELANDE> till alla användare med särskild åtkomstnivå / skickar ett PM med <MEDDELANDE> utan avsändare",
     "help_usage": "",
     "help_usage_op": "",
     "msg_allowed_levels": "",
