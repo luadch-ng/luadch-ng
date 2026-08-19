@@ -1,0 +1,24 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_bot": "",
+    "msg_denied1": "",
+    "msg_denied2": "",
+    "msg_denied3": "",
+    "msg_denied4": "",
+    "msg_usage": "",
+    "report_msg": "",
+    "ucmd_menu1": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu2": [
+        "",
+        ""
+    ],
+    "ucmd_reason": "",
+    "ucmd_target": "",
+    "user_msg": ""
+}
