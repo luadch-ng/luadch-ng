@@ -1,0 +1,26 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_bot": "",
+    "msg_deblacklist": "",
+    "msg_del": "",
+    "msg_del_reason": "",
+    "msg_denied": "",
+    "msg_error": "",
+    "msg_notfound": "",
+    "msg_ok": "",
+    "msg_ok2": "",
+    "msg_usage": "",
+    "ucmd_menu_ct1": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2": [
+        "",
+        ""
+    ],
+    "ucmd_nick": "",
+    "ucmd_reason": ""
+}
