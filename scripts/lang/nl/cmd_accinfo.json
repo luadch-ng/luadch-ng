@@ -1,5 +1,5 @@
 {
-    "help_desc": "",
+    "help_desc": "Verstuurt accinfo over een geregistreerde gebruiker op basis van SID of NICK; zonder argumenten -> over jezelf",
     "help_desc2": "",
     "help_usage": "",
     "help_usage2": "",
