@@ -1,7 +1,7 @@
 {
     "help_desc": "",
-    "help_usage": "",
-    "msg_days": "",
+    "help_usage": "[+!#]usersearch <SÖKSTRÄNG>",
+    "msg_days": " dagar, ",
     "msg_denied": "",
     "msg_hours": "",
     "msg_max_limit": "",
