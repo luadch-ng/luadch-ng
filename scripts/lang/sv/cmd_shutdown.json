@@ -2,8 +2,8 @@
     "help_desc": "Stänger ner hubben",
     "help_usage": "[+!#]shutdown [<MEDDELANDE>]",
     "msg_countdown": "*** Hubbens stängs ner om ***",
-    "msg_denied": "",
-    "msg_hub_disabled": "",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_hub_disabled": "Hubben stängs ner.",
     "msg_ok": "",
     "msg_shutdown": "",
     "ucmd_menu": [
