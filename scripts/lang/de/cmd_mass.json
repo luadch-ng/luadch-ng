@@ -1,5 +1,5 @@
 {
-    "help_desc": "Sendet eine PM Nachricht an alle User",
+    "help_desc": "Sendet eine Private Nachricht an alle User",
     "help_desc_op": "Sendet eine PM Nachricht an alle User eines bestimmten Levels / an alle ohne Ansender",
     "help_usage": "[+!#]mass <MSG>",
     "help_usage_op": "[+!#]masslvl <LEVEL> <MSG> / [+!#]masshub <MSG>",
