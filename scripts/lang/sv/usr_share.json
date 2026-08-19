@@ -1,4 +1,4 @@
 {
-    "msg_redirect": "",
-    "msg_sharelimits": ""
+    "msg_redirect": "[ ANVÄNDARDELNING ]--> Du blev omdirigerad på grund av:  ",
+    "msg_sharelimits": "[ ANVÄNDARUTDELNING ]--> Lägsta utdelningsgränsen i hubben:  %s  |  Högsta utdelningsgränsen i hubben:  %s  |  Din utdelning:  %s"
 }
