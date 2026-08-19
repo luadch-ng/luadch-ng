@@ -1,0 +1,54 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_add_user": "",
+    "msg_add_user_with_duration": "",
+    "msg_denied": "",
+    "msg_error_in": "",
+    "msg_error_out": "",
+    "msg_expired": "",
+    "msg_god": "",
+    "msg_invalid_duration": "",
+    "msg_isbot": "",
+    "msg_off": "",
+    "msg_remove_user": "",
+    "msg_show_users": "",
+    "msg_unit_day": "",
+    "msg_unit_hour": "",
+    "msg_unit_minute": "",
+    "msg_unit_second": "",
+    "msg_unit_year": "",
+    "msg_usage": "",
+    "msg_user_restriction_added": "",
+    "msg_user_restriction_removed": "",
+    "ucmd_duration": "",
+    "ucmd_menu_ct0": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1b": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct3": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct4": [
+        "",
+        ""
+    ],
+    "ucmd_nick": ""
+}
