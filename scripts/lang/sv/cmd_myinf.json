@@ -2,9 +2,9 @@
     "help_desc": "Visar klient-INF från en användare eller dig själv",
     "help_usage": "[+!#]myinf [<ANVÄNDARNAMN>]",
     "msg_denied": "Du har inte behörighet att använda detta kommando.",
-    "msg_inf": "",
+    "msg_inf": "\n\n=== KLIENT-INF FÖR ANVÄNDARE ======================================================\n\nAnvändare: %s\n\n%s\n====================================================== KLIENT-INF FÖR ANVÄNDARE ===\n      ",
     "ucmd_menu_ct1": [
-        "",
+        "Om dig",
         ""
     ],
     "ucmd_menu_ct2": [
