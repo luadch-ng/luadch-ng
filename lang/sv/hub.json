@@ -4,7 +4,7 @@
     "hub_hbri_address_mismatch": "Valideringsadressfel",
     "hub_hbri_unknown_token": "Okänd valideringstoken",
     "hub_hbri_timeout": "",
-    "hub_hbri_wrong_protocol": "",
+    "hub_hbri_wrong_protocol": "Valideringsbegäran på fel IP-protokoll",
     "hub_hub_is_full": "",
     "hub_hubbot_response": "",
     "hub_invalid_ip": "",
