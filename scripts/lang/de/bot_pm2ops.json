@@ -1,5 +1,5 @@
 {
-  "msg_denied":"Du bist nicht befugt in diesem Chat zu schreiben.",
-  "msg_send":"Fertig, deine Nachricht wurde erfolgreich an alle Operatoren geschickt.",
-  "msg_toops":"Neue  %s  Nachricht von:  %s  |  Msg: %s"
+    "msg_denied": "Du bist nicht befugt in diesem Chat zu schreiben.",
+    "msg_send": "Fertig, deine Nachricht wurde erfolgreich an alle Operatoren geschickt.",
+    "msg_toops": "Neue  %s  Nachricht von:  %s  |  Msg: %s"
 }
