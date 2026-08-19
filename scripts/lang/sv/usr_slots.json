@@ -1,4 +1,4 @@
 {
-    "msg_redirect": "",
-    "msg_slotlimits": ""
+    "msg_redirect": "[ ANVÄNDARSLOTTAR ]--> Du blev omdirigerad pga.:  ",
+    "msg_slotlimits": "[ ANVÄNDARSLOTTAR ]--> Minsta antalet slottar i hubben:  %s  |  Högsta antalet slottar i hubben:  %s  |  Dina slottar:  %s"
 }
