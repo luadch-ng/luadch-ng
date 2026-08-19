@@ -1,7 +1,7 @@
 {
     "help_desc": "Visar error.log",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_usage": "[+!#]errors",
+    "msg_denied": "[ FEL ]--> Du har inte behörighet att använda detta kommando.",
     "msg_noerrors": "",
     "ucmd_menu": [
         "",
