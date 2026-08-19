@@ -1,8 +1,12 @@
 {
-  "help_desc":"Chatten ohne Nick",
-  "help_usage":"[+!#]talk <MSG>",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_usage":"Gebrauch: [+!#]talk <MSG>",
-  "ucmd_menu":["User","Messages","Talk"],
-  "ucmd_what":"Nachricht:"
+    "help_desc": "Chatten ohne Nick",
+    "help_usage": "[+!#]talk <MSG>",
+    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
+    "msg_usage": "Gebrauch: [+!#]talk <MSG>",
+    "ucmd_menu": [
+        "User",
+        "Messages",
+        "Talk"
+    ],
+    "ucmd_what": "Nachricht:"
 }
