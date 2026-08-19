@@ -1,7 +1,7 @@
 {
     "help_desc": "Ställer in ett nytt hubbämne eller återställer till standard",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_usage": "[+!#]topic <NYTT-ÄMNE>|default",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_topic_changed": "",
     "msg_topic_reset": "",
     "msg_usage": "",
