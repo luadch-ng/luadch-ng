@@ -1,7 +1,7 @@
 {
     "help_desc": "Skickar accinfo om en registrerad användare via SID eller NICK; utan argument -> om dig själv",
-    "help_desc2": "",
-    "help_usage": "",
+    "help_desc2": "Visar accinfo (utökad) om en registrerad användare efter SID eller ANVÄNDARNAMN; inget argument -> om dig själv",
+    "help_usage": "[+!#]accinfo sid|nick <SID>|<ANVÄNDARNAMN>",
     "help_usage2": "",
     "msg_accinfo": "",
     "msg_accinfo2": "",
