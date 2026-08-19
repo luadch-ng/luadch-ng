@@ -1,7 +1,7 @@
 {
     "help_desc": "",
-    "help_usage": "",
-    "msg_denied": "",
+    "help_usage": "[+!#]botflag <ANVÄNDARNAMN> on|off",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
     "msg_nochange": "",
     "msg_notify": "",
     "msg_ok": "",
