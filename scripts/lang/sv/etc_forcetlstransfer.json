@@ -1,4 +1,4 @@
 {
-    "msg_block": "",
-    "msg_warn": ""
+    "msg_block": "[ TVINGA TLS ]--> En okrypterad överföring blockerades - den här hubben kräver krypterade (ADCS) överföringar. Aktivera tvinga kryptering i din klient och vidarebefordra din TLS-port. Installationsguide: https://dcvault.net/docs/clients/installation-setup#connection",
+    "msg_warn": "[ TVINGA TLS ]--> En okrypterad överföring upptäcktes - den här hubben använder krypterade (ADCS) överföringar. Aktivera tvinga kryptering i din klient och vidarebefordra din TLS-port. Installationsguide: https://dcvault.net/docs/clients/installation-setup#connection"
 }
