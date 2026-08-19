@@ -10,7 +10,7 @@ introduced a tightened plugin sandbox across Tier-1 (PR
 [#211](https://github.com/luadch-ng/luadch-ng/pull/211),
 [#212](https://github.com/luadch-ng/luadch-ng/pull/212),
 [#213](https://github.com/luadch-ng/luadch-ng/pull/213)). The plugin
-`_ENV` is now an explicit allowlist; everything else is unreachable.
+`_ENV` is now an explicit whitelist; everything else is unreachable.
 
 This guide lists **every primitive that became unreachable** and the
 recommended replacement for each.
@@ -25,7 +25,7 @@ Each pattern has a copy-paste fix.
 
 ## Reference: what the new sandbox contains
 
-Plugins see only an explicit allowlist of globals after #206. The list
+Plugins see only an explicit whitelist of globals after #206. The list
 below is **illustrative** - the `SANDBOX_GLOBALS` table in
 [`core/scripts.lua`](../core/scripts.lua) is authoritative and grows as
 new core modules are exposed; if this guide disagrees with that table,
@@ -40,7 +40,7 @@ the code wins.
 | luadch core | `hub`, `cfg`, `util`, `util_http`, `http_filter`, `http_events`, `http_client`, `adc`, `adclib`, `signal`, `out`, `unicode`, `sysinfo`, `const`, `audit`, `secrets`, `whitelist`, `blocklist`, `mmdb`, `geoip_update`, `hmac`, `backup` |
 | Optional libs | `ssl` (with `.x509` pre-attached as a field), `socket`, `basexx`, `zlib_stream`, `dkjson` |
 
-Anything not on the `SANDBOX_GLOBALS` allowlist is **unreachable** from
+Anything not on the `SANDBOX_GLOBALS` whitelist is **unreachable** from
 plugin code.
 
 ## Removed primitives
@@ -201,7 +201,7 @@ All blocked. Only `io.open` survived in the curated shim.
 
 | Old call | New code |
 |---|---|
-| `io.read()` / `io.write()` | `print()` for stdout (already in allowlist), or `hub.debug()` for the event log |
+| `io.read()` / `io.write()` | `print()` for stdout (already in whitelist), or `hub.debug()` for the event log |
 | `io.lines(path)` | `for line in (io.open(path, "r")):lines() do ... end` - the file handle's `:lines()` method survives, only the `io.lines()` shorthand was removed |
 | Process-global stdin/stdout/stderr manipulation | not supported |
 

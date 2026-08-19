@@ -7634,7 +7634,7 @@ def test_whitelist_78_phase_b():
         reply = reader.recv_until(
             lambda f: _is_chat_frame(f)
                 and _dcontains(f, "added")
-                and _dcontains(f, "allowlist entry"),
+                and _dcontains(f, "whitelist entry"),
             timeout=PROTOCOL_TIMEOUT_SEC,
         )
         if not reply:
@@ -7671,7 +7671,7 @@ def test_whitelist_78_phase_b():
         reply = reader.recv_until(
             lambda f: _is_chat_frame(f)
                 and _dcontains(f, "removed")
-                and _dcontains(f, "allowlist entry"),
+                and _dcontains(f, "whitelist entry"),
             timeout=PROTOCOL_TIMEOUT_SEC,
         )
         if not reply:
