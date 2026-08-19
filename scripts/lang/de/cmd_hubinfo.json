@@ -1,5 +1,5 @@
 {
-    "help_desc": "Sendet eine Liste von grundlegenden Hubinformationen",
+    "help_desc": "Zeigt grundlegende Informationen über den Hub an",
     "help_usage": "[+!#]hubinfo",
     "msg_days": " Tage, ",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
