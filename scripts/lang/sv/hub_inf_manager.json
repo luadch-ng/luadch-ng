@@ -1,4 +1,4 @@
 {
-    "msg_failedauth_reason": "",
-    "msg_invalid": ""
+    "msg_failedauth_reason": "Användare skickade otillåten flagga i INF: ",
+    "msg_invalid": "Ogiltig namngiven parameter i INF: "
 }
