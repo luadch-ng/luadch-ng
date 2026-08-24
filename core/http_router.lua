@@ -1502,6 +1502,12 @@ local _config_reload_required = {
     http_api_burst                  = true,
     http_api_authfail_prefix_rate   = true,
     http_api_authfail_prefix_burst  = true,
+    -- #648: these two are read by ratelimit.init() too but were missing
+    -- here, so PUT mis-reported them "live" while a cfg.set() left the
+    -- cached bucket parameters stale until reload. Restore the one-to-one
+    -- mirror with the cfg_get calls in ratelimit.lua.
+    http_api_authverify_rate        = true,
+    http_api_authverify_burst       = true,
 }
 local _config_restart_required = {
     tcp_ports        = true,

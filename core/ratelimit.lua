@@ -453,7 +453,18 @@ tick = function( )
     end
 end
 
-init = function( )
+-- Re-reads the full ratelimit cfg surface into the module scalars and
+-- rebuilds the tier overlay. Also drops the live token buckets so a
+-- changed capacity/rate takes effect immediately (restart-equivalent)
+-- instead of the boot-time limits bleeding through until each bucket
+-- refills. The live tables that are NOT rate budgets are preserved:
+-- _perip_count (active socket count), _ip_blocks (sticky F-AUTH-3
+-- lockouts) and _hs_started (in-flight handshake deadlines) - dropping
+-- those on an operator +reload would miscount live sockets, forgive a
+-- locked-out abuser, and lose handshake tracking. Runs at boot (from
+-- init) and on every +reload / POST /v1/reload (as the cfg-reload
+-- listener registered by init, #648).
+local function _apply_cfg( )
     _activate = cfg_get "ratelimit_activate"
     _bypass_level = cfg_get "ratelimit_bypass_level"
     _perip_max_conns = cfg_get "ratelimit_perip_max_conns"
@@ -514,7 +525,26 @@ init = function( )
     local av_rate = cfg_get "http_api_authverify_rate"
     _http_authverify_rate = ( av_rate and av_rate > 0 ) and ( av_rate / 60 ) or ( 6 / 60 )
     _http_authverify_burst = cfg_get "http_api_authverify_burst" or 3
+    -- #648: reset the token buckets so a changed capacity/rate applies
+    -- at once (see the _apply_cfg header for what is preserved).
+    _buckets = { }
     _last_cleanup = socket_gettime( )
+end
+
+init = function( )
+    _apply_cfg( )
+    -- #648: PUT /v1/config reports the ratelimit_* / http_api_* keys as
+    -- "reload_required", but nothing re-ran the cfg read on reload, so a
+    -- change only took effect at the next full restart. Subscribe the
+    -- re-read to the cfg-reload event (fired by cfg.reload() on both
+    -- +reload and POST /v1/reload). Registered here in init (which runs
+    -- once at boot via init.lua's _core loop), NOT in _apply_cfg (which
+    -- re-runs on every reload) so the listener list cannot grow per
+    -- reload. Mirrors blocklist/whitelist; guarded for unit tests that
+    -- stub cfg without registerevent.
+    if type( cfg.registerevent ) == "function" then
+        cfg.registerevent( "reload", _apply_cfg )
+    end
 end
 
 ----------------------------------// PUBLIC INTERFACE //--
