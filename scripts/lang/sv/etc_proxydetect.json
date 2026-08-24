@@ -1,0 +1,25 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_fail_alert": "",
+    "msg_key_missing": "",
+    "msg_provider_bad": "",
+    "msg_quota": "",
+    "msg_report": "",
+    "msg_status_action": "",
+    "msg_status_btypes": "",
+    "msg_status_cache": "",
+    "msg_status_enabled": "",
+    "msg_status_failopen": "",
+    "msg_status_footer": "",
+    "msg_status_header": "",
+    "msg_status_provider": "",
+    "msg_status_queries": "",
+    "msg_tos_note": "",
+    "ucmd_menu": [
+        "",
+        "",
+        ""
+    ]
+}

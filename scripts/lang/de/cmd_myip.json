@@ -1,5 +1,5 @@
 {
-    "help_desc": "Zeigt IP eines Users oder dir selbst",
+    "help_desc": "Zeigt die IP-Adresse eines Users oder deine eigene",
     "help_usage": "[+!#]myip [<NICK>]",
     "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
     "msg_ip": "Deine IP ist: ",

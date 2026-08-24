@@ -1,0 +1,41 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_bytes": " byte",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_files": "",
+    "msg_iss_dir": "",
+    "msg_iss_mk": "",
+    "msg_iss_pass": "",
+    "msg_list_head": "",
+    "msg_list_none": "",
+    "msg_nag_head": "",
+    "msg_now_fail": "",
+    "msg_now_ok": "",
+    "msg_st_daily": "",
+    "msg_st_enabled": "",
+    "msg_st_every": "",
+    "msg_st_last": "",
+    "msg_st_next": "",
+    "msg_st_no": "",
+    "msg_st_none": "",
+    "msg_st_ready": "",
+    "msg_st_schedule": "",
+    "msg_st_yes": "",
+    "msg_usage": "",
+    "ucmd_list": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_now": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_status": [
+        "",
+        "",
+        ""
+    ]
+}

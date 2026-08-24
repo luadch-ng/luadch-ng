@@ -1,10 +1,10 @@
 {
     "help_desc": "Visar error.log",
-    "help_usage": "",
-    "msg_denied": "",
-    "msg_noerrors": "",
+    "help_usage": "[+!#]errors",
+    "msg_denied": "[ FEL ]--> Du har inte behörighet att använda detta kommando.",
+    "msg_noerrors": "[ FEL ]--> Inga fel.",
     "ucmd_menu": [
-        "",
+        "Hubb",
         "",
         "",
         ""

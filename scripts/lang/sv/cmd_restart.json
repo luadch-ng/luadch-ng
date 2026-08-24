@@ -1,9 +1,9 @@
 {
     "help_desc": "Startar om hubben",
-    "help_usage": "",
-    "msg_countdown": "",
-    "msg_denied": "",
-    "msg_hub_disabled": "",
+    "help_usage": "[+!#]restart [<MEDDELANDE>]",
+    "msg_countdown": "*** Omstart av hubben om ***",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_hub_disabled": "Hubben startas om.",
     "msg_ok": "",
     "msg_restart": "",
     "ucmd_menu": [

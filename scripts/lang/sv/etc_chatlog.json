@@ -1,0 +1,52 @@
+{
+    "help_desc": "Visar det sista skrivna meddelandet i huvudchatten, du kan växla mellan på/av.",
+    "help_desco": "Ta bort chattlogg / eller: ta bort lista över förnekare.",
+    "help_usage": "[+!#]history show [<RADER>]  / or: [+!#]history toggle",
+    "help_usageo": "",
+    "logo_1": "",
+    "logo_2": "",
+    "msg_del_exceptions": "",
+    "msg_del_log": "",
+    "msg_denied": "",
+    "msg_deniers": "",
+    "msg_empty": "",
+    "msg_intro": "",
+    "msg_join": "",
+    "msg_leave": "",
+    "msg_usage": "",
+    "ucmd_menu_reset_t_exceptions": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_reset_t_log": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_show": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_showexceptions": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_toggle": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup": ""
+}

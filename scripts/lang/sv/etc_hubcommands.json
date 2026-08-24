@@ -1,0 +1,5 @@
+{
+    "msg_command_echo": "[kommando] %s",
+    "msg_did_you_mean": "Menade du +%s? Hubbkommandon behöver ett prefix [+!#]; ditt meddelande skickades INTE ut i huvudchatten.",
+    "msg_literal_brackets": "Tecknen '[+!#]' i dokumentationen är notation för 'välj ett av +, ! eller #', inte faktiska klammerparenteser. Prova '+%s' (ditt meddelande skickades INTE till huvudchatten)."
+}

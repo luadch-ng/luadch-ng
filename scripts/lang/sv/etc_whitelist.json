@@ -1,0 +1,59 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_added": "%s lade till vitlistpost #%d (%s, source=%s).",
+    "msg_bad_cidr": "Ogiltig CIDR / IP-adress: %s",
+    "msg_bad_expires": "",
+    "msg_count": "",
+    "msg_denied": "",
+    "msg_encode_failed": "",
+    "msg_export_ok": "",
+    "msg_hierarchy": "",
+    "msg_import_level": "",
+    "msg_import_ok": "",
+    "msg_no_dkjson": "",
+    "msg_not_found": "",
+    "msg_open_failed": "",
+    "msg_remove_failed": "",
+    "msg_removed": "",
+    "msg_save_failed": "",
+    "msg_show_capped": "",
+    "msg_show_empty": "",
+    "msg_show_filter": "",
+    "msg_show_footer": "",
+    "msg_show_header": "",
+    "msg_unknown_verb": "",
+    "msg_unsafe_path": "",
+    "msg_usage": "",
+    "msg_usage_add": "",
+    "msg_usage_del": "",
+    "msg_usage_import": "",
+    "ucmd_menu_add": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_count": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_del": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_export": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_show": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup_cidr": "",
+    "ucmd_popup_id": "",
+    "ucmd_popup_reason": ""
+}

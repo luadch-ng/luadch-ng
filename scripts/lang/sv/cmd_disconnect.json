@@ -1,9 +1,9 @@
 {
     "help_desc": "Kopplar från en användare",
-    "help_usage": "",
-    "msg_bot": "",
-    "msg_denied1": "",
-    "msg_denied2": "",
+    "help_usage": "[+!#]disconnect <ANVÄNDARNAMN> <ANLEDNING>",
+    "msg_bot": "Fel: Användaren är en bot.",
+    "msg_denied1": "Du har inte behörighet att använda detta kommando.",
+    "msg_denied2": "Du kan inte koppla från användare med hög åtkomstnivå.",
     "msg_denied3": "",
     "msg_denied4": "",
     "msg_usage": "",

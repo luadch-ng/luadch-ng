@@ -1,9 +1,9 @@
 {
     "help_desc": "Omdirigera användare till webbadressen",
-    "help_usage": "",
-    "msg_denied": "",
-    "msg_god": "",
-    "msg_isbot": "",
+    "help_usage": "[+!#]redirect <ANVÄNDARNAMN> <HUBBADRESS>",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_god": "Du har inte behörighet att omdirigera denna användare.",
+    "msg_isbot": "Användaren är en bot.",
     "msg_notonline": "",
     "msg_redirect": "",
     "msg_report": "",

@@ -1,0 +1,28 @@
+{
+    "help_desc": "Visa/återställ hubbens upptid",
+    "help_usage": "",
+    "msg_days": " dagar, ",
+    "msg_denied": "Du har inte behörighet att använda detta kommando.",
+    "msg_hours": "",
+    "msg_minutes": "",
+    "msg_reset_1": "",
+    "msg_reset_2": "",
+    "msg_runtime": "",
+    "msg_seconds": "",
+    "msg_unknown": "",
+    "msg_usage": "",
+    "msg_years": "",
+    "ucmd_menu_reset": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_show": [
+        "",
+        "",
+        "",
+        ""
+    ]
+}

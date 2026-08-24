@@ -1,0 +1,37 @@
+{
+    "help_desc_add": "",
+    "help_desc_del": "",
+    "help_desc_list": "Lista konfigurerade mönster för klientblockering.",
+    "help_usage_add": "",
+    "help_usage_del": "",
+    "help_usage_list": "",
+    "msg_added": "",
+    "msg_bad_pattern": "",
+    "msg_deleted": "",
+    "msg_denied": "",
+    "msg_list_empty": "",
+    "msg_list_footer": "",
+    "msg_list_header": "",
+    "msg_no_such_pattern": "",
+    "msg_pattern_exists": "",
+    "msg_report": "",
+    "msg_usage_add": "",
+    "msg_usage_del": "",
+    "ucmd_menu_add": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_del": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_list": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup_pat": "",
+    "ucmd_popup_reason": ""
+}

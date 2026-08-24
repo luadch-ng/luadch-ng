@@ -1,0 +1,14 @@
+{
+    "msg_days": " dagar, ",
+    "msg_hours": " timmar, ",
+    "msg_invalid": "",
+    "msg_max": "\n\n=== HUBBKONTROLL FÖR ANVÄNDARE ===================\n\nDu blev frånkopplad på grund av:\n\nTillåtna publika hubbar: %s  |  du är i: %s\nTillåtna registrerade hubbar: %s  |  du är i: %s\nTillåtna operatörshubbar: %s  |  du är i: %s\n\nMax hubs: %s  |  yours: %s\n\n=================== HUBBKONTROLL FÖR ANVÄNDARE ===\n  ",
+    "msg_minutes": " minuter, ",
+    "msg_reason": "",
+    "msg_redirect": "",
+    "msg_seconds": "",
+    "msg_years": "",
+    "report_msg": "",
+    "report_msg_kick": "",
+    "report_msg_redirect": ""
+}

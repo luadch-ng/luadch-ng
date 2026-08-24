@@ -1,0 +1,53 @@
+{
+    "help_desc": "Visa blockerade användare | visa inställningar | blockera huvudchatten | blockera privatchatten | blockera båda | ta bort blockering på användaren",
+    "help_usage": "[+!#]msgmanager showusers|showsettings|blockmain <ANVÄNDARNAMN>|blockpm <ANVÄNDARNAMN>|blockboth <ANVÄNDARNAMN>|unblock <ANVÄNDARNAMN>",
+    "msg_block": "[ MEDDELANDEHANTERARE ]--> Blockera användare:  %s  |  läge:  %s",
+    "msg_denied": "Du har inte tillåtelse att använda detta kommando.",
+    "msg_denied_main": "",
+    "msg_denied_pm": "",
+    "msg_god": "",
+    "msg_isbot": "",
+    "msg_mode_both": "",
+    "msg_mode_main": "",
+    "msg_mode_pm": "",
+    "msg_notfound": "",
+    "msg_notonline": "",
+    "msg_report_block": "",
+    "msg_report_unblock": "",
+    "msg_settings": "",
+    "msg_stillblocked": "",
+    "msg_unblock": "",
+    "msg_usage": "",
+    "msg_users": "",
+    "ucmd_menu_ct1_1": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_2": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2_1": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2_2": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2_3": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2_4": [
+        "",
+        ""
+    ]
+}

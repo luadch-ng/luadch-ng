@@ -1,9 +1,9 @@
 {
     "help_desc": "Avregistrerar en användare",
-    "help_usage": "",
-    "msg_bot": "",
-    "msg_deblacklist": "",
-    "msg_del": "",
+    "help_usage": "[+!#]delreg nick <ANVÄNDARNAMN>  /  eller ta bort med svartlistspost:  [+!#]delreg nick <ANVÄNDARNAMN> <BESKRIVNING>",
+    "msg_bot": "[ TA BORT ]--> Användaren är en bot.",
+    "msg_deblacklist": "[ TA BORT ]--> Användare:  %s  togs bort från svartlistan av:  %s",
+    "msg_del": "[ TA BORT ]--> Ditt konto har tagits bort.",
     "msg_del_reason": "",
     "msg_denied": "",
     "msg_error": "",

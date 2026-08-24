@@ -1,14 +1,17 @@
 {
-  "help_desc":"Sendet eine Liste von grundlegenden Hubinformationen",
-  "help_usage":"[+!#]hubinfo",
-  "msg_days":" Tage, ",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_hours":" Stunden, ",
-  "msg_level_label":"        Level:  ",
-  "msg_minutes":" Minuten, ",
-  "msg_out":"\n\n=== HUBINFO =====================================================================================\n\n   [ HUB ]\n\n        Hubname:  %s\n        Adresse: %s\n\n        Reg only: %s\n\n        ADC Port:  %s\n        ADCS Port:  %s\n        ADC Port IPv6:  %s\n        ADCS Port IPv6:  %s\n\n        SSL aktiv:  %s\n        TLS Mode:  %s\n        Keyprint aktiv:      %s\n        Keyprint:  %s\n\n        Version:  %s %s\n        Copyright:  %s\n\n        Uptime (kompl.):  %s\n        Uptime (Session):  %s\n\n        Laufende Skripts:  %s\n        Speicherverbrauch:  %s\n\n        Hubshare:  %s\n\n        Hub Website:  %s\n        Hub Network:  %s\n        Hub eMail:  %s\n        Hubowner:  %s\n\n   [ CERTIFICATE ]\n\n        Validity\n\n             Not Before:   %s\n             Not After:      %s\n\n        Signature\n\n             Algorithm:     %s\n\n   [ USERS ]\n\n        Total registered:      %s\n        Total online:            %s\n        Reg. online:     %s\n        Unreg. online:  %s\n        Active online:          %s\n        Passive online:       %s\n\n   [ USER LEVELS ]\n\n%s\n   [ SYSTEM ]\n\n        OS:     %s\n        CPU:   %s\n        RAM total:  %s\n        RAM frei:  %s\n\n===================================================================================== HUBINFO ===\n  ",
-  "msg_seconds":" Sekunden",
-  "msg_unknown":"<UNBEKANNT>",
-  "msg_years":" Jahre, ",
-  "ucmd_menu":["Allgemein","Hubinfo"]
+    "help_desc": "Zeigt grundlegende Informationen über den Hub an",
+    "help_usage": "[+!#]hubinfo",
+    "msg_days": " Tage, ",
+    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
+    "msg_hours": " Stunden, ",
+    "msg_level_label": "        Level:  ",
+    "msg_minutes": " Minuten, ",
+    "msg_out": "\n\n=== HUBINFO =====================================================================================\n\n   [ HUB ]\n\n        Hubname:  %s\n        Adresse: %s\n\n        Reg only: %s\n\n        ADC Port:  %s\n        ADCS Port:  %s\n        ADC Port IPv6:  %s\n        ADCS Port IPv6:  %s\n\n        SSL aktiv:  %s\n        TLS Mode:  %s\n        Keyprint aktiv:      %s\n        Keyprint:  %s\n\n        Version:  %s %s\n        Copyright:  %s\n\n        Uptime (kompl.):  %s\n        Uptime (Session):  %s\n\n        Laufende Skripts:  %s\n        Speicherverbrauch:  %s\n\n        Hubshare:  %s\n\n        Hub Website:  %s\n        Hub Network:  %s\n        Hub eMail:  %s\n        Hubowner:  %s\n\n   [ CERTIFICATE ]\n\n        Validity\n\n             Not Before:   %s\n             Not After:      %s\n\n        Signature\n\n             Algorithm:     %s\n\n   [ USERS ]\n\n        Total registered:      %s\n        Total online:            %s\n        Reg. online:     %s\n        Unreg. online:  %s\n        Active online:          %s\n        Passive online:       %s\n\n   [ USER LEVELS ]\n\n%s\n   [ SYSTEM ]\n\n        OS:     %s\n        CPU:   %s\n        RAM total:  %s\n        RAM frei:  %s\n\n===================================================================================== HUBINFO ===\n  ",
+    "msg_seconds": " Sekunden",
+    "msg_unknown": "<UNBEKANNT>",
+    "msg_years": " Jahre, ",
+    "ucmd_menu": [
+        "Allgemein",
+        "Hubinfo"
+    ]
 }

@@ -1,5 +1,5 @@
 {
-    "help_desc": "Zeigt Account Infos von einem Reguser nach SID oder NICK; keine Argumente -> über dich selbst",
+    "help_desc": "Zeigt die Accountdaten eines registrierten Users an, wahlweise per SID oder NICK; ohne Argument die eigenen",
     "help_desc2": "Zeigt Account Infos von einem Reguser (erweitert) nach SID oder NICK; keine Argumente -> über dich selbst",
     "help_usage": "[+!#]accinfo sid|nick <SID>|<NICK>",
     "help_usage2": "[+!#]accinfoop sid|nick <SID>|<NICK>",

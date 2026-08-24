@@ -1,18 +1,26 @@
 {
-  "help_desc":"Löscht einen User aus der Registrierung",
-  "help_usage":"[+!#]delreg nick <NICK>  /  oder löschen mit Blacklist Eintrag:  [+!#]delreg nick <NICK> <DESCRIPTION>",
-  "msg_bot":"[ DELREG ]--> User ist ein Bot.",
-  "msg_deblacklist":"[ DELREG ]--> User:  %s  wurde von der Blacklist entfernt von:  %s",
-  "msg_del":"[ DELREG ]--> Du wurdest gelöscht.",
-  "msg_del_reason":"[ DELREG ]--> Du wurdest gelöscht. Grund: %s",
-  "msg_denied":"[ DELREG ]--> Du bist entweder nicht befugt diesen Befehl zu nutzen oder einen User dieses Levels zu löschen.",
-  "msg_error":"[ DELREG ]--> Ein Fehler ist aufgetreten: ",
-  "msg_notfound":"[ DELREG ]--> User ist nicht registriert.",
-  "msg_ok":"[ DELREG ]--> User:  %s  wurde gelöscht von:  %s",
-  "msg_ok2":"[ DELREG ]--> User:  %s  wurde gelöscht und zur Blacklist hinzugefügt von:  %s  |  Grund: %s",
-  "msg_usage":"Gebrauch: [+!#]delreg nick <NICK>  /  oder löschen mit Blacklist Eintrag:  [+!#]delreg nick <NICK> <DESCRIPTION>",
-  "ucmd_menu_ct1":["User","Control","Delreg","nach NICK"],
-  "ucmd_menu_ct2":["Delreg","OK"],
-  "ucmd_nick":"Nick:",
-  "ucmd_reason":"Begründung: (kein Blacklist Eintrag falls leer)"
+    "help_desc": "Löscht einen registrierten Benutzer",
+    "help_usage": "[+!#]delreg nick <NICK>  /  oder löschen mit Blacklist Eintrag:  [+!#]delreg nick <NICK> <DESCRIPTION>",
+    "msg_bot": "[ DELREG ]--> User ist ein Bot.",
+    "msg_deblacklist": "[ DELREG ]--> User:  %s  wurde von der Blacklist entfernt von:  %s",
+    "msg_del": "[ DELREG ]--> Du wurdest gelöscht.",
+    "msg_del_reason": "[ DELREG ]--> Du wurdest gelöscht. Grund: %s",
+    "msg_denied": "[ DELREG ]--> Du bist entweder nicht befugt diesen Befehl zu nutzen oder einen User dieses Levels zu löschen.",
+    "msg_error": "[ DELREG ]--> Ein Fehler ist aufgetreten: ",
+    "msg_notfound": "[ DELREG ]--> User ist nicht registriert.",
+    "msg_ok": "[ DELREG ]--> User:  %s  wurde gelöscht von:  %s",
+    "msg_ok2": "[ DELREG ]--> User:  %s  wurde gelöscht und zur Blacklist hinzugefügt von:  %s  |  Grund: %s",
+    "msg_usage": "Gebrauch: [+!#]delreg nick <NICK>  /  oder löschen mit Blacklist Eintrag:  [+!#]delreg nick <NICK> <DESCRIPTION>",
+    "ucmd_menu_ct1": [
+        "User",
+        "Control",
+        "Delreg",
+        "nach NICK"
+    ],
+    "ucmd_menu_ct2": [
+        "Delreg",
+        "OK"
+    ],
+    "ucmd_nick": "Nick:",
+    "ucmd_reason": "Begründung: (kein Blacklist Eintrag falls leer)"
 }

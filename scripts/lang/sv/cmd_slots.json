@@ -1,9 +1,9 @@
 {
     "help_desc": "Visar användare med lediga slottar",
     "help_usage": "",
-    "msg_out": "",
+    "msg_out": "\n\n=== LEDIGA SLOTTAR ====================\n\n%s\n==================== LEDIGA SLOTTAR ===\n  ",
     "ucmd_menu": [
-        "",
-        ""
+        "Användare",
+        "Lediga slottar"
     ]
 }
