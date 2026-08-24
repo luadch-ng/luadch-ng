@@ -4503,6 +4503,7 @@ local defaults = {
         "etc_msgmanager.lua",
         "etc_trafficmanager.lua",
         "etc_records.lua",
+        "etc_stats_history.lua",
         "etc_dhtblocker.lua",
 
         "hub_bot_cleaner.lua",

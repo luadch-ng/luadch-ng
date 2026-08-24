@@ -424,6 +424,11 @@ jobs:
       - name: Run etc_records unit test
         run: lua5.4 tests/unit/etc_records_test.lua
 
+      # etc_stats_history (#665): the multi-tier RRD consolidation
+      # (_record_tier) + the GET /v1/stats/history handler.
+      - name: Run etc_stats_history unit test
+        run: lua5.4 tests/unit/stats_history_test.lua
+
       # etc_webhook (#398): inbound webhook receiver. Uses the REAL
       # core/hmac.lua so signature verification is genuinely exercised.
       # Covers HMAC pass / wrong / missing, sha256= prefix, event filter,
@@ -800,6 +805,10 @@ jobs:
       - name: Run etc_records unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/etc_records_test.lua
+
+      - name: Run etc_stats_history unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/stats_history_test.lua
 
       - name: Run etc_webhook unit test
         shell: msys2 {0}
