@@ -1,10 +1,10 @@
 {
-  "help_desc":"Restarts hub",
+  "help_desc":"Restarts the hub.",
   "help_usage":"[+!#]restart [<MSG>]",
   "msg_countdown":"*** Hub restart in ***",
   "msg_denied":"You are not allowed to use this command.",
   "msg_hub_disabled":"Hub is restarting.",
-  "msg_ok":"Hub restart...",
+  "msg_ok":"Restarting the hub...",
   "msg_restart":"\n\n=== HUB RESTART ======================================================================================================\n\n  %s\n\n====================================================================================================== HUB RESTART ===\n\n  ",
   "ucmd_menu":["Hub","Core","Hub restart","CLICK"],
   "ucmd_msg":"Mass Message (optional)"

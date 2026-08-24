@@ -1,4 +1,4 @@
 {
-  "msg_redirect":"[ USER SLOTS ]--> You got redirected because:  ",
+  "msg_redirect":"[ USER SLOTS ]--> You were redirected because:  ",
   "msg_slotlimits":"[ USER SLOTS ]--> Hub min slots:  %s  |  Hub max slots:  %s  |  Your slots:  %s"
 }

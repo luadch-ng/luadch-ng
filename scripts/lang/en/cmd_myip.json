@@ -1,9 +1,9 @@
 {
-  "help_desc":"Shows IP from a user or yourself",
+  "help_desc":"Shows a user's IP, or your own.",
   "help_usage":"[+!#]myip [<NICK>]",
   "msg_denied":"You are not allowed to use this command.",
   "msg_ip":"Your IP is: ",
   "msg_targetip":"Username: %s  |  IP: %s",
-  "ucmd_menu_ct1":["About You","show IP"],
+  "ucmd_menu_ct1":["About You","Show IP"],
   "ucmd_menu_ct2":["Show","IP"]
 }

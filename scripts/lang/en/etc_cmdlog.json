@@ -1,11 +1,11 @@
 {
-  "help_desc":"Shows the command log",
+  "help_desc":"Shows the command log.",
   "help_usage":"[+!#]cmdlog show",
   "msg1":"   |   Command: [+!#]",
   "msg2":"   |   used by: ",
   "msg_denied":"You are not allowed to use this command.",
-  "msg_nofile":"No 'cmd.log' found",
+  "msg_nofile":"No cmd.log file found.",
   "msg_out":"\n    \n=== COMMAND LOGGER ========================================================================================\n\n%s\n======================================================================================== COMMAND LOGGER ===\n\n      ",
   "msg_usage":"Usage: [+!#]cmdlog show",
-  "ucmd_menu":["Hub","Logs","show","cmd.log"]
+  "ucmd_menu":["Hub","Logs","Show","cmd.log"]
 }

@@ -23,7 +23,7 @@
   "msg_st_schedule":"schedule: ",
   "msg_st_yes":"yes",
   "msg_usage":"Usage: +backup now|list|status",
-  "ucmd_list":["Hub","Backup","list"],
-  "ucmd_now":["Hub","Backup","run now"],
-  "ucmd_status":["Hub","Backup","status"]
+  "ucmd_list":["Hub","Backup","List"],
+  "ucmd_now":["Hub","Backup","Run now"],
+  "ucmd_status":["Hub","Backup","Status"]
 }

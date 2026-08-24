@@ -1,11 +1,11 @@
 {
-  "help_desc":"Show proxy-detection status: provider, action mode, blocked types, cache + query count.",
+  "help_desc":"Shows the proxy-detection status: provider, action mode, blocked types, cache and query count.",
   "help_usage":"[+!#]proxydetect",
   "msg_denied":"You are not allowed to use this command.",
-  "msg_fail_alert":"[ PROXYDETECT ]--> provider '%s' lookups failing: %d errors in %ds - detection is degraded (fail-%s).",
-  "msg_key_missing":"etc_proxydetect.lua: provider '%s' needs an API key (etc_proxydetect_api_key or LUADCH_ETC_PROXYDETECT_API_KEY) - the plugin is inert.",
-  "msg_provider_bad":"etc_proxydetect.lua: unknown provider '%s' - the plugin is inert. Set etc_proxydetect_provider to one of: %s.",
-  "msg_quota":"etc_proxydetect.lua: daily query cap (%d) reached - skipping lookups (fail-open) until the window resets.",
+  "msg_fail_alert":"[ PROXYDETECT ]--> provider '%s' lookups failing: %d errors in %ds, so detection is degraded (fail-%s).",
+  "msg_key_missing":"etc_proxydetect.lua: provider '%s' needs an API key (etc_proxydetect_api_key or LUADCH_ETC_PROXYDETECT_API_KEY), so the plugin is inert.",
+  "msg_provider_bad":"etc_proxydetect.lua: unknown provider '%s'. The plugin is inert. Set etc_proxydetect_provider to one of: %s.",
+  "msg_quota":"etc_proxydetect.lua: daily query cap (%d) reached. Skipping lookups (fail-open) until the window resets.",
   "msg_report":"[ PROXYDETECT ]--> The user %s with IP %s is a %s (%s). Action: %s.",
   "msg_status_action":"  action:           %s",
   "msg_status_btypes":"  blocked types:    %s",
@@ -16,6 +16,6 @@
   "msg_status_header":"\n=== PROXYDETECT STATUS ===",
   "msg_status_provider":"  provider:         %s",
   "msg_status_queries":"  queries today:    %d / %s",
-  "msg_tos_note":"etc_proxydetect.lua: provider '%s' - review its free-tier terms (see docs/BLOCKLIST.md): %s.",
-  "ucmd_menu":["Hub","Proxydetect","status"]
+  "msg_tos_note":"etc_proxydetect.lua: provider '%s'. Review its free-tier terms (see docs/BLOCKLIST.md): %s.",
+  "ucmd_menu":["Hub","Proxydetect","Status"]
 }

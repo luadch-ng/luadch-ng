@@ -1,10 +1,10 @@
 {
-  "help_desc":"Shutdowns hub",
+  "help_desc":"Shuts down the hub.",
   "help_usage":"[+!#]shutdown [<MSG>]",
   "msg_countdown":"*** Hub shutdown in ***",
   "msg_denied":"You are not allowed to use this command.",
   "msg_hub_disabled":"Hub is shutting down.",
-  "msg_ok":"Shutdown hub...",
+  "msg_ok":"Shutting down the hub...",
   "msg_shutdown":"\n\n=== HUB SHUTDOWN ======================================================================================================\n\n  %s\n\n====================================================================================================== HUB SHUTDOWN ===\n\n  ",
   "ucmd_menu":["Hub","Core","Hub shutdown","CLICK"],
   "ucmd_msg":"Mass Message (optional)"

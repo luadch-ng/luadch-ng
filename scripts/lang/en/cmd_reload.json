@@ -1,7 +1,7 @@
 {
-  "help_desc":"Reloads complete configuration: cfg.tbl, user.tbl, all scripts",
+  "help_desc":"Reloads the complete configuration: cfg.tbl, user.tbl and all scripts.",
   "help_usage":"[+!#]reload",
   "msg_denied":"You are not allowed to use this command.",
-  "msg_ok":"Configuration reloaded.",
+  "msg_ok":"The configuration has been reloaded.",
   "ucmd_menu":["Hub","Core","Hub reload"]
 }

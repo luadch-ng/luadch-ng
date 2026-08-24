@@ -1,5 +1,5 @@
 {
-  "help_desc":"Shows users with free slots",
+  "help_desc":"Shows users with free slots.",
   "help_usage":"[+!#]slots",
   "msg_out":"\n\n=== FREE SLOTS ====================\n\n%s\n==================== FREE SLOTS ===\n  ",
   "ucmd_menu":["User","Free Slots"]

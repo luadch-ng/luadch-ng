@@ -5,5 +5,5 @@
   "msg_nofile":"No audit log entries for today yet.",
   "msg_out":"\n\n=== AUDIT LOG (today) ====================================================================================\n\n%s\n==================================================================================== AUDIT LOG (today) ===\n\n      ",
   "msg_usage":"Usage: [+!#]auditlog show",
-  "ucmd_menu":["Hub","Logs","show","audit.log (today)"]
+  "ucmd_menu":["Hub","Logs","Show","audit.log (today)"]
 }

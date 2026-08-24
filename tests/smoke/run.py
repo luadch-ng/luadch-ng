@@ -7315,7 +7315,7 @@ def test_cmd_ban_rejects_bad_time():
     second client is needed:
 
       pre-fix : falls through to the lookup -> "User not found."
-      post-fix: -> "Bantime must be 1 minute or greater."
+      post-fix: -> "The ban time must be at least 1 minute, ..." (msg_badtime)
 
     Asserting on the msg_badtime phrase therefore provably fails pre-fix
     (CLAUDE.md §1a.7). Step 3 is a positive control: a VALID time on the
@@ -7361,10 +7361,14 @@ def test_cmd_ban_rejects_bad_time():
         # spaces would terminate the body and the rest would be parsed
         # as ADC flags. Replies come back escaped the same way, so assert
         # on single words rather than whole sentences.
+        # The reject reply is cmd_ban.json:msg_badtime ("The ban time must be
+        # at least 1 minute, ..."). "least" is the word unique to it: absent
+        # from the echoed "+ban ..." command frame and from the "User not
+        # found" reply. Keep in sync with msg_badtime if that string is reworded.
         for bad_time in ("-5", "0"):
             sock.sendall(f"BMSG {sid} +ban\\snick\\s{target}\\s{bad_time}\\sspam\n".encode("utf-8"))
             got = _chat_text(_collect(reader))
-            if "Bantime" not in got:
+            if "least" not in got:
                 raise TestFailure(
                     f"+ban with time={bad_time} was not rejected with the bantime "
                     f"message. Pre-fix, is_integer() accepts negatives so this fell "
@@ -7388,7 +7392,7 @@ def test_cmd_ban_rejects_bad_time():
                 f"+ban with a valid time=5 did not reach the target lookup - the "
                 f"bantime guard is over-rejecting: {got[:400]!r}"
             )
-        if "Bantime" in got:
+        if "least" in got:
             raise TestFailure(
                 f"+ban with a valid time=5 was rejected by the bantime guard: "
                 f"{got[:400]!r}"

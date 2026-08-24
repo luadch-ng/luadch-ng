@@ -1,9 +1,9 @@
 {
-  "help_desc":"Show GeoIP status: DB load state, action mode, blocked countries / ASNs.",
+  "help_desc":"Shows GeoIP status: DB load state, action mode, blocked countries and ASNs.",
   "help_usage":"[+!#]geoip",
   "msg_db_loaded":"etc_geoip.lua: loaded %s database (%s, built %s).",
-  "msg_db_missing":"etc_geoip.lua: %s database not found at '%s' - GeoIP checks for it are disabled. Run geoipupdate (see docs/BLOCKLIST.md).",
-  "msg_db_stale":"etc_geoip.lua: %s database is older than 30 days (built %s) - run geoipupdate to refresh.",
+  "msg_db_missing":"etc_geoip.lua: %s database not found at '%s', so GeoIP checks for it are disabled. Run geoipupdate (see docs/BLOCKLIST.md).",
+  "msg_db_stale":"etc_geoip.lua: %s database is older than 30 days (built %s). Run geoipupdate to refresh.",
   "msg_denied":"You are not allowed to use this command.",
   "msg_report":"[ GEOIP ]--> The user %s with IP %s (%s) is not permitted (%s). Action: %s.",
   "msg_status_action":"  action:             %s",
@@ -15,9 +15,9 @@
   "msg_status_footer":"=== END ===\n",
   "msg_status_header":"\n=== GEOIP STATUS ===",
   "msg_update_fail":"[ GEOIP ]--> database auto-update failed: %s (keeping the last-good database).",
-  "msg_update_missing_key":"etc_geoip.lua: auto-update is on but no MaxMind account_id / license_key is set - see docs/BLOCKLIST.md.",
+  "msg_update_missing_key":"etc_geoip.lua: auto-update is on but no MaxMind account_id or license_key is set. See docs/BLOCKLIST.md.",
   "msg_update_ok":"[ GEOIP ]--> %d database(s) auto-updated from MaxMind.",
   "msg_update_recovered":"[ GEOIP ]--> database auto-update recovered.",
   "msg_update_start":"[ GEOIP ]--> auto-update: checking %s for updates at MaxMind...",
-  "ucmd_menu":["Hub","GeoIP","status"]
+  "ucmd_menu":["Hub","GeoIP","Status"]
 }

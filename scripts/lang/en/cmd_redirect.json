@@ -1,5 +1,5 @@
 {
-  "help_desc":"Redirect user to URL",
+  "help_desc":"Redirects a user to a URL.",
   "help_usage":"[+!#]redirect <NICK> <URL>",
   "msg_denied":"You are not allowed to use this command.",
   "msg_god":"You are not allowed to redirect this user.",
@@ -9,7 +9,7 @@
   "msg_report":"[ REDIRECT ]--> User:  %s  |  with level  %s [ %s ]  |  was auto redirected to:  %s",
   "msg_report_redirect":"[ REDIRECT ]--> User:  %s  |  has redirected user:  %s  |  to:  %s",
   "msg_usage":"Usage: [+!#]redirect <NICK> <URL>",
-  "ucmd_menu_ct2_1":["Redirect","default URL"],
-  "ucmd_menu_ct2_2":["Redirect","custom URL"],
+  "ucmd_menu_ct2_1":["Redirect","Default URL"],
+  "ucmd_menu_ct2_2":["Redirect","Custom URL"],
   "ucmd_url":"Redirect URL:"
 }

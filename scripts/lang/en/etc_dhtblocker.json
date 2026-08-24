@@ -1,4 +1,4 @@
 {
-  "msg_reason":"Active DHT function",
-  "report_msg":"[ DHT BLOCKER ]--> User: %s | IP: %s | was banned for %s minutes because of active DHT function."
+  "msg_reason":"DHT is active in your client.",
+  "report_msg":"[ DHT BLOCKER ]--> User: %s | IP: %s | was banned for %s minutes because DHT is active in their client."
 }

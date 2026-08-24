@@ -1,14 +1,14 @@
 {
   "msg_days":" days, ",
   "msg_hours":" hours, ",
-  "msg_invalid":"Invalid hubcount.",
+  "msg_invalid":"Invalid hub count.",
   "msg_max":"\n\n=== USER HUBS CHECK ===================\n\nYou were disconnected because:\n\nMax user hubs: %s  |  yours: %s\nMax reg hubs: %s  |  yours: %s\nMax op hubs: %s  |  yours: %s\n\nMax hubs: %s  |  yours: %s\n\n=================== USER HUBS CHECK ===\n  ",
   "msg_minutes":" minutes, ",
-  "msg_reason":"Exceeded users hub limit",
-  "msg_redirect":"[ USER HUBS ]--> You got redirected because: exceeded users hub limit. Hubs: ",
+  "msg_reason":"Exceeded the hub limit",
+  "msg_redirect":"[ USER HUBS ]--> You were redirected because you exceeded the hub limit. Hubs: ",
   "msg_seconds":" seconds",
   "msg_years":" years, ",
-  "report_msg":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was banned for:  %s  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
-  "report_msg_kick":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was disconnected  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
-  "report_msg_redirect":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was redirected  |  reason: exceeded users hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)"
+  "report_msg":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was banned for:  %s  |  reason: exceeded the hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
+  "report_msg_kick":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was disconnected  |  reason: exceeded the hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)",
+  "report_msg_redirect":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  was redirected  |  reason: exceeded the hub limit. Hubs:  %s  (total:  %s hubs)  |  allowed:  %s  (max.  %s  hubs total)"
 }

@@ -1,12 +1,12 @@
 {
-  "activate_cmd_msg":"The 'cmd.log' cleaner is disabled",
-  "activate_error_msg":"The 'error.log' cleaner is disabled",
+  "activate_cmd_msg":"The 'cmd.log' cleaner is disabled.",
+  "activate_error_msg":"The 'error.log' cleaner is disabled.",
   "failmsg":"You are not allowed to use this command.",
-  "help_desc":"Cleans logfiles",
+  "help_desc":"Cleans the log files.",
   "help_usage":"[+!#]cleanlog error|cmd",
-  "logfile_cmd_msg":"The 'cmd.log' was cleaned",
-  "logfile_error_msg":"The 'error.log' was cleaned",
+  "logfile_cmd_msg":"The 'cmd.log' was cleared.",
+  "logfile_error_msg":"The 'error.log' was cleared.",
   "msg_usage":"Usage: [+!#]cleanlog error|cmd",
-  "ucmd_menu_cmd":["Hub","Logs","clean","cmd.log"],
-  "ucmd_menu_error":["Hub","Logs","clean","error.log"]
+  "ucmd_menu_cmd":["Hub","Logs","Clean","cmd.log"],
+  "ucmd_menu_error":["Hub","Logs","Clean","error.log"]
 }
