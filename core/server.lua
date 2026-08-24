@@ -158,7 +158,6 @@ local _maxreadlen
 local _checkinterval
 local _sendtimeout
 local _max_idle_time
-local _handshake_sweep_interval    -- #207: dedicated TLS handshake sweep cadence
 local _hs_sweep_last               -- #207: last-fire timestamp for the sweep
 
 local _cleanqueue
@@ -191,18 +190,6 @@ _maxreadlen = 1024 * 1024    -- max len of read buffer
 _checkinterval = 120    -- interval in secs to check clients for acitivty and
 _sendtimeout = 60   -- allowed send idle time in secs
 _max_idle_time = 30 * 60    -- allowed time of no read/write client activity in secs
-
--- #207: dedicated sweep interval for stuck TLS handshakes. The
--- broad _checkinterval = 120s sweep was too coarse for handshake
--- defense - with `ratelimit_handshake_timeout = 10s` default, a
--- stuck handshake's handler+coroutine held memory for up to
--- 10+120 = 130 seconds. Cfg-tunable via
--- `ratelimit_handshake_sweep_interval` (default 10s). Read at
--- module-load: cfg is loaded before server.lua per init.lua's
--- `_core` order. The cfg validator (cfg_defaults.lua) constrains
--- the value to >= 1 so we never produce a busy loop.
-_handshake_sweep_interval = tonumber( cfg_get "ratelimit_handshake_sweep_interval" ) or 10
-if _handshake_sweep_interval < 1 then _handshake_sweep_interval = 1 end
 
 _cleanqueue = false    -- clean bufferqueue after using
 
@@ -1116,13 +1103,22 @@ addtimer( function( )
 )
 
 -- #207: dedicated faster sweep for stuck TLS handshakes. Runs
--- every _handshake_sweep_interval seconds (default 10s) instead
--- of being gated by the 120s _checkinterval. Reduces the worst-
--- case lifetime of a stuck handshake's handler + coroutine from
--- ~130s to ~20s under the default handshake timeout of 10s.
+-- every ratelimit_handshake_sweep_interval seconds (default 10s)
+-- instead of being gated by the 120s _checkinterval. Reduces the
+-- worst-case lifetime of a stuck handshake's handler + coroutine
+-- from ~130s to ~20s under the default handshake timeout of 10s.
+-- The cadence is read live here - once per timer tick, which the
+-- loop caps at 1/sec - rather than cached at module-load, so
+-- PUT /v1/config / cfg.set apply a new value without a hub restart
+-- (its apply_status is "live"; #648 follow-up). The cfg validator
+-- only type-checks this key, so the `< 1` clamp is what enforces the
+-- >= 1 floor - a 0 or negative value would otherwise busy-loop the
+-- sweep every tick.
 _hs_sweep_last = os_time( )
 addtimer( function( )
-        if os_difftime( _currenttime, _hs_sweep_last ) < _handshake_sweep_interval then
+        local sweep_interval = tonumber( cfg_get "ratelimit_handshake_sweep_interval" ) or 10
+        if sweep_interval < 1 then sweep_interval = 1 end
+        if os_difftime( _currenttime, _hs_sweep_last ) < sweep_interval then
             return
         end
         _hs_sweep_last = _currenttime
