@@ -176,6 +176,11 @@ local function fire_reload( )
     for _, fn in ipairs( _reload_listeners ) do fn( ) end
 end
 
+-- The no-growth safety argument rests on init() registering the reload
+-- listener exactly once (in init, not in the re-run _apply_cfg). init()
+-- ran once at load (line ~78); lock the invariant before any second init.
+eq( "init registered exactly one cfg-reload listener", #_reload_listeners, 1 )
+
 -- Establish a small admin burst and drain it.
 _cfg.http_api_burst      = 4
 _cfg.http_api_rate_admin = 60      -- >0; fixed clock => no refill

@@ -1467,13 +1467,14 @@ local _config_reload_required = {
     scripts_cfg_path   = true,
     scripts_lang_path  = true,
     core_lang_path     = true,
-    -- ratelimit.init() caches its full cfg surface at module-load
-    -- time into local state (see `init()` in core/ratelimit.lua). A
-    -- hot cfg.set() on any of these keys returns "live" misleadingly;
-    -- the new values only take effect at +reload. The list mirrors
-    -- the `cfg_get` calls in ratelimit.init() one-to-one so adding a
-    -- new ratelimit key in the future is a one-line append both
-    -- there and here. Sweep done as part of #275 SEC-6.
+    -- ratelimit reads its full cfg surface into module locals in
+    -- `_apply_cfg` (see core/ratelimit.lua), called from init() at boot
+    -- and, since #648, on every cfg.reload() - so a hot cfg.set() on any
+    -- of these keys is reported "reload_required" and the new values
+    -- genuinely take effect at +reload / POST /v1/reload. The list
+    -- mirrors the `cfg_get` calls in `_apply_cfg` one-to-one, so adding a
+    -- new ratelimit key in the future is a one-line append both there and
+    -- here. Sweep done as part of #275 SEC-6.
     ratelimit_activate              = true,
     ratelimit_bypass_level          = true,
     ratelimit_perip_max_conns       = true,
@@ -1502,10 +1503,10 @@ local _config_reload_required = {
     http_api_burst                  = true,
     http_api_authfail_prefix_rate   = true,
     http_api_authfail_prefix_burst  = true,
-    -- #648: these two are read by ratelimit.init() too but were missing
-    -- here, so PUT mis-reported them "live" while a cfg.set() left the
-    -- cached bucket parameters stale until reload. Restore the one-to-one
-    -- mirror with the cfg_get calls in ratelimit.lua.
+    -- #648: these two are read by ratelimit's `_apply_cfg` too but were
+    -- missing here, so PUT mis-reported them "live" while a cfg.set() left
+    -- the cached bucket parameters stale until reload. Restore the
+    -- one-to-one mirror with the cfg_get calls in ratelimit.lua.
     http_api_authverify_rate        = true,
     http_api_authverify_burst       = true,
 }
