@@ -30,6 +30,10 @@
 
 local _now = 1000.0
 
+-- #648: cfg-reload listeners registered by ratelimit.init() land here so
+-- the test can fire them the way cfg.lua's reload() does.
+local _reload_listeners = { }
+
 local _cfg = {
     ratelimit_activate            = true,
     ratelimit_bypass_level        = 60,
@@ -56,7 +60,16 @@ local _real = {
     type     = type,
     math     = math,
     socket   = { gettime = function( ) return _now end },
-    cfg      = { get = function( k ) return _cfg[ k ] end },
+    cfg      = {
+        get = function( k ) return _cfg[ k ] end,
+        -- #648: capture cfg-reload listeners so the test can simulate
+        -- cfg.reload() firing them (the real cfg.lua does exactly this).
+        registerevent = function( what, fn )
+            if what == "reload" then
+                _reload_listeners[ #_reload_listeners + 1 ] = fn
+            end
+        end,
+    },
 }
 
 _G.use = function( name )
@@ -144,6 +157,58 @@ eq( "authverify: dave/ip-d refused (per-nick empty, fresh IP)",
 
 -- a fresh nick + fresh IP is independent.
 eq( "authverify: carol/fresh -> allow", ( rl.http_authverify( "carol", "203.0.113.7" ) ), true )
+
+----------------------------------------------------------------------
+-- #648 REGRESSION: a ratelimit cfg change must take effect on
+-- cfg.reload(), not only at a full restart. Pre-fix, init() registered
+-- no cfg-reload listener, so the cached _http_burst kept its boot value
+-- and PUT /v1/config + POST /v1/reload silently no-op'd until restart
+-- despite reporting apply_status "reload_required". Post-fix init()
+-- subscribes _apply_cfg, which re-reads the cfg AND clears the buckets
+-- so a raised burst applies at once (restart-equivalent).
+--
+-- fire_reload() replays what cfg.reload() does: mutate _cfg, then call
+-- every registered "reload" listener. Fixed clock => buckets never
+-- refill, so token counts are exact.
+----------------------------------------------------------------------
+
+local function fire_reload( )
+    for _, fn in ipairs( _reload_listeners ) do fn( ) end
+end
+
+-- The no-growth safety argument rests on init() registering the reload
+-- listener exactly once (in init, not in the re-run _apply_cfg). init()
+-- ran once at load (line ~78); lock the invariant before any second init.
+eq( "init registered exactly one cfg-reload listener", #_reload_listeners, 1 )
+
+-- Establish a small admin burst and drain it.
+_cfg.http_api_burst      = 4
+_cfg.http_api_rate_admin = 60      -- >0; fixed clock => no refill
+fire_reload( )
+for i = 1, 4 do
+    eq( "http_token admin allow " .. i .. " (burst 4)", ( rl.http_token( "op", "admin" ) ), true )
+end
+eq( "http_token admin refuse 5 (burst 4 exhausted)", ( rl.http_token( "op", "admin" ) ), false )
+
+-- Operator raises the burst and reloads. The SAME token must immediately
+-- see the new capacity. Pre-fix _http_burst never refreshed (and the old
+-- bucket was never cleared), so this stayed throttled at 4 -> RED.
+_cfg.http_api_burst = 12
+fire_reload( )
+for i = 1, 12 do
+    eq( "http_token admin allow " .. i .. " after reload (burst 12)", ( rl.http_token( "op", "admin" ) ), true )
+end
+eq( "http_token admin refuse 13 after reload (new burst 12 exhausted)",
+    ( rl.http_token( "op", "admin" ) ), false )
+
+-- A LOWERED limit must apply on reload too: cut the burst, reload, and a
+-- fresh token gets only the new (smaller) capacity.
+_cfg.http_api_burst = 2
+fire_reload( )
+eq( "http_token admin allow 1 after lowering reload (burst 2)", ( rl.http_token( "op2", "admin" ) ), true )
+eq( "http_token admin allow 2 after lowering reload (burst 2)", ( rl.http_token( "op2", "admin" ) ), true )
+eq( "http_token admin refuse 3 after lowering reload (burst 2 exhausted)",
+    ( rl.http_token( "op2", "admin" ) ), false )
 
 ----------------------------------------------------------------------
 -- Disabled limiter: accept_ip returns true for any input incl. nil,
