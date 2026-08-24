@@ -1,5 +1,5 @@
 {
-  "help_desc":"Talk without nickname",
+  "help_desc":"Sends a message to the main chat without showing your nickname.",
   "help_usage":"[+!#]talk <MSG>",
   "msg_denied":"You are not allowed to use this command.",
   "msg_usage":"Usage: [+!#]talk <MSG>",

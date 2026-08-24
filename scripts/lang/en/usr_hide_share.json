@@ -1,5 +1,5 @@
 {
-  "help_desc":"Hide/unhide the share of a user",
+  "help_desc":"Hides or unhides a user's share.",
   "help_usage":"[+!#]hideshare <NICK>",
   "msg_default":"This user's share is hidden due to permission levels.",
   "msg_denied":"You are not allowed to use this command.",
@@ -7,8 +7,8 @@
   "msg_hide_user":"Share hidden for: %s",
   "msg_isbot":"User is a bot.",
   "msg_notonline":"User is offline.",
-  "msg_unhide_target":"Your share was restored by: %s  |  Therefore, you will be disconnected now",
+  "msg_unhide_target":"Your share was restored by: %s  |  you will now be disconnected.",
   "msg_unhide_user":"Share restored for: %s  |  User was disconnected",
   "msg_usage":"Usage: [+!#]hideshare <NICK>",
-  "ucmd_menu_ct2_1":["Change","Share","hide//unhide"]
+  "ucmd_menu_ct2_1":["Change","Share","Hide or unhide"]
 }

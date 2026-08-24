@@ -1,10 +1,10 @@
 {
-  "help_desc":"Shows SSL informations about the client to hub connection by you or other users",
+  "help_desc":"Shows SSL information about a user's client-to-hub connection, or your own.",
   "help_usage":"[+!#]sslinfo [<NICK>]",
   "msg_denied":"You are not allowed to use this command.",
   "msg_isbot":"User is a bot.",
   "msg_notfound":"User not found.",
-  "msg_out":"\n\n=== SSL INFO =====================================\n\n    Client to Hub SSL connection info\n\n    User:  %s\n\n%s\n===================================== SSL INFO ===\n  ",
-  "ucmd_menu_ct1":["About You","show Client2Hub SSL info"],
+  "msg_out":"\n\n=== SSL INFO =====================================\n\n    Client-to-hub SSL connection info\n\n    User:  %s\n\n%s\n===================================== SSL INFO ===\n  ",
+  "ucmd_menu_ct1":["About You","Show Client2Hub SSL info"],
   "ucmd_menu_ct2":["Show","Client2Hub SSL info"]
 }

@@ -1,9 +1,9 @@
 {
-  "help_desc":"Shows statistics about the hub",
+  "help_desc":"Shows statistics about the hub.",
   "help_usage":"[+!#]hubstats",
   "month_name":["January\t","February\t","March\t","April\t","May\t","June\t","July\t","August\t","September","October\t","November","December"],
   "msg_denied":"You are not allowed to use this command.",
-  "msg_label":"\tYEAR\t\tMONTH\t\tØ USERS\tØ SHARE\tREG's\t\tDELREG's\tBAN's\t\tUNBAN's",
+  "msg_label":"\tYEAR\t\tMONTH\t\tØ USERS\tØ SHARE\tREGs\t\tDELREGs\tBANs\t\tUNBANs",
   "msg_stats":"\n\n=== HUBSTATS ========================================================================================================================\n\n%s\n%s\n%s\n======================================================================================================================== HUBSTATS ===\n  ",
   "ucmd_menu_ct1":["Hub","etc","Hubstats"]
 }

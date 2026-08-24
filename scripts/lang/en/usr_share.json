@@ -1,4 +1,4 @@
 {
-  "msg_redirect":"[ USER SHARE ]--> You got redirected because:  ",
+  "msg_redirect":"[ USER SHARE ]--> You were redirected because:  ",
   "msg_sharelimits":"[ USER SHARE ]--> Hub min share:  %s  |  Hub max share:  %s  |  Your share:  %s"
 }

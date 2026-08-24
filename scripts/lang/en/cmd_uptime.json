@@ -1,11 +1,11 @@
 {
-  "help_desc":"Shows uptime from you and from the hub",
+  "help_desc":"Shows your uptime and the hub's uptime.",
   "help_usage":"[+!#]uptime",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",
   "msg_hours":" hours, ",
-  "msg_minutes":" min, ",
-  "msg_seconds":" sec",
+  "msg_minutes":" minutes, ",
+  "msg_seconds":" seconds",
   "msg_unknown":"<UNKNOWN>",
   "msg_uptime":"\n    \n=== UPTIME ==========================================================\n\n                  Hub uptime (complete):  %s\n                  Hub uptime (session):  %s\n                  \n                  Your uptime:  %s\n\n========================================================== UPTIME ===\n  ",
   "msg_years":" years, "

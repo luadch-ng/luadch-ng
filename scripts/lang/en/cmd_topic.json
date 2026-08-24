@@ -1,11 +1,11 @@
 {
-  "help_desc":"Sets a new hub topic or resets it to default",
+  "help_desc":"Sets a new hub topic, or resets it to the default.",
   "help_usage":"[+!#]topic <NEW-TOPIC>|default",
   "msg_denied":"You are not allowed to use this command.",
-  "msg_topic_changed":"%s  changed hub topic to: %s   |   old topic was: %s",
-  "msg_topic_reset":"%s  reset hub topic to default: %s",
+  "msg_topic_changed":"%s  changed the hub topic to: %s   |   old topic was: %s",
+  "msg_topic_reset":"%s  reset the hub topic to the default: %s",
   "msg_usage":"Usage: [+!#]topic <NEW-TOPIC>|default",
-  "ucmd_menu":["Hub","Core","Hub topic","set new topic"],
-  "ucmd_menu2":["Hub","Core","Hub topic","set to default"],
+  "ucmd_menu":["Hub","Core","Hub topic","Set new topic"],
+  "ucmd_menu2":["Hub","Core","Hub topic","Set to default"],
   "ucmd_popup":"New Topic:"
 }

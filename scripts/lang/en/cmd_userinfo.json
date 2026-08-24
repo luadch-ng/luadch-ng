@@ -1,16 +1,16 @@
 {
-  "help_desc":"Sends info about a user by SID or NICK; no argument -> about yourself",
+  "help_desc":"Shows a user's info, looked up by SID or nick. Without arguments, shows your own.",
   "help_usage":"[+!#]userinfo sid|nick <SID>|<NICK>",
   "msg_days":" days, ",
-  "msg_god":"You are not allowed to view the userinfo from this user",
+  "msg_god":"You are not allowed to view this user's info.",
   "msg_hours":" hours, ",
-  "msg_minutes":" min, ",
+  "msg_minutes":" minutes, ",
   "msg_off":"User not found.",
-  "msg_seconds":" sec",
+  "msg_seconds":" seconds",
   "msg_unknown":"<UNKNOWN>",
   "msg_usage":"Usage: [+!#]userinfo sid|nick <SID>|<NICK>",
   "msg_userinfo":"\n    \n=== USERINFO =============================================================================\n\nNick: %s\n1. Nick: %s\nDesc:  %s\nShare:  %s\nEmail:  %s\nSlots:  %s\nHubs:  %s\nVersion:  %s\nSID:  %s\nCID: %s\nKP: %s\nHash:  %s\nIP: %s\nPort: %s\nSrvport: %s\nSSL: %s\nSU: %s\nBot: %s\nRank: %s\nLevel: %s  [ %s ]\nRegged: %s\n\nSent:        %s\nReceived: %s\n\nUptime: %s\n\n============================================================================= USERINFO ===\n\n  ",
   "msg_years":" years, ",
-  "ucmd_menu_ct1":["About You","show Userinfo"],
+  "ucmd_menu_ct1":["About You","Show Userinfo"],
   "ucmd_menu_ct2":["Show","Userinfo"]
 }
