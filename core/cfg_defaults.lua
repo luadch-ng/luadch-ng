@@ -4895,13 +4895,19 @@ local defaults = {
         end
     },
     -- #207: cadence of the dedicated "kill stuck TLS handshakes"
-    -- sweep. Decoupled from the broader _checkinterval (120s) so a
-    -- handshake whose `ratelimit_handshake_timeout` expired gets
-    -- reaped within roughly `sweep_interval` seconds rather than
-    -- waiting for the next 120s sweep. Worst-case stuck-handshake
-    -- lifetime = handshake_timeout + sweep_interval (default
-    -- 10 + 10 = ~20s). Setting to 0 effectively disables the fast
-    -- sweep and falls back to the broader 120s cadence.
+    -- sweep, a DoS mitigation - a stuck handshake pins a handler +
+    -- coroutine until it is reaped. A handshake whose
+    -- `ratelimit_handshake_timeout` expired gets reaped within roughly
+    -- `sweep_interval` seconds; worst-case stuck-handshake lifetime =
+    -- handshake_timeout + sweep_interval (default 10 + 10 = ~20s).
+    -- server.lua reads this live (apply_status "live", #648 follow-up)
+    -- and clamps it to a >= 1s floor - the validator below only
+    -- type-checks the value, so the clamp is the floor. It CANNOT be
+    -- disabled: 0 or a negative becomes a 1s sweep, not "off". That is
+    -- deliberate - nothing else reaps stuck handshakes (the 120s
+    -- _checkinterval loop does idle-timeout + bucket cleanup, not a
+    -- handshake sweep), so a disable path would open a memory-pinning
+    -- DoS hole. Do not add one.
     ratelimit_handshake_sweep_interval = { 10,
         function( value )
             return types_number( value, nil, true )
