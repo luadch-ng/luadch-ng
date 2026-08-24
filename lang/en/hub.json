@@ -12,7 +12,7 @@
   "hub_invalid_pid":"Your PID is invalid.",
   "hub_login_message":"This server is running %s %s %s (Uptime: %d days, %d hours, %d minutes, %d seconds)",
   "hub_login_tls_label":"[TLS: %s]",
-  "hub_max_bad_password":"Max bad password exceeded. Timeout in seconds: ",
+  "hub_max_bad_password":"Too many bad password attempts. Try again in %d seconds.",
   "hub_nick_or_cid_taken":"Nick/CID taken.",
   "hub_nick_taken":"Your nick is taken.",
   "hub_no_base_support":"Your client does not support the BASE extension.",

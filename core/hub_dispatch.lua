@@ -76,6 +76,7 @@ local iostream_newcountedstage = iostream.newcountedstage
 local adclib_hasholdpas = adclib.hasholdpas
 local escapeto = adclib_escape
 local escapefrom = adclib.unescape
+local utf_format = unicode.utf8.format    -- lang-template formatter (as in hub.lua)
 
 local cfg_get = cfg.get
 local cfg_saveusers = cfg.saveusers
@@ -601,16 +602,18 @@ _identify = {
             if #lc ~= 14 then profile.lastconnect = util_date() end -- util.date() has allways 14 chars: yyyymmddhhmmss
             local sec, y, d, h, m, s = util_difftime( util_date(), profile.lastconnect )
             if ( ( profile.badpassword or 0 ) >= _cfg_max_bad_password ) and ( sec < _cfg_bad_pass_timeout ) then
-                user:kill( "ISTA 223 " .. _i18n.max_bad_password .. sec .. "/" .. _cfg_bad_pass_timeout .. "\n" )
-                scripts_firelistener( "onFailedAuth", nick, userip, cid, escapefrom( _i18n.max_bad_password .. sec .. "/" .. _cfg_bad_pass_timeout ) )
+                -- Seconds left on the lockout, floored to a whole number for the
+                -- %d template. `sec` is an os.difftime float and bad_pass_timeout
+                -- is only type-checked, so a fractional value must not reach %d
+                -- (string.format "%d" errors on a non-integer) and crash the auth
+                -- path. Clamp to >= 1 so a sub-second remainder (a fractional
+                -- timeout, or clock skew) never renders "Try again in 0 seconds".
+                local remaining = ( _cfg_bad_pass_timeout - sec ) // 1
+                if remaining < 1 then remaining = 1 end
+                user:kill( "ISTA 223 " .. utf_format( _i18n.max_bad_password, remaining ) .. "\n" )
+                scripts_firelistener( "onFailedAuth", nick, userip, cid, escapefrom( utf_format( _i18n.max_bad_password, remaining ) ) )
                 return true
             end
-            --[[profile.lastconnect = profile.lastconnect or os_time( )
-            local diff = os_difftime( os_time( ), profile.lastconnect )
-            if ( ( profile.badpassword or 0 ) >= _cfg_max_bad_password ) and ( diff < _cfg_bad_pass_timeout ) then
-                user:kill( "ISTA 223 " .. _i18n.max_bad_password .. diff .. "/" .. _cfg_bad_pass_timeout .. "\n" )
-                return true
-            end ]]
             user:salt( adclib_createsalt( GPA_SALT_CHARS ) )
             user.write( "IGPA " .. user.salt( ) .. "\n" )
             user:state "verify"

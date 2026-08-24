@@ -1461,7 +1461,7 @@ loadlanguage = function( )
     _i18n.invalid_pid        = adclib_escape( i18n.hub_invalid_pid        or "Your PID is invalid." )
     _i18n.invalid_pass       = adclib_escape( i18n.hub_invalid_pass       or "Invalid password." )
     _i18n.no_base_support    = adclib_escape( i18n.hub_no_base_support    or "Your client does not support BASE." )
-    _i18n.max_bad_password   = adclib_escape( i18n.hub_max_bad_password   or "Max bad password exceeded. Timeout in seconds: " )
+    _i18n.max_bad_password   = adclib_escape( i18n.hub_max_bad_password   or "Too many bad password attempts. Try again in %d seconds." )
     _i18n.nick_or_cid_taken  = adclib_escape( i18n.hub_nick_or_cid_taken  or "Nick/CID taken." )
     _i18n.no_cid_nick_found  = adclib_escape( i18n.hub_no_cid_nick_found  or "No CID/PID/NICK/IP found in your INF." )
     -- BMSG-bound strings: rendered through user:reply, escaped at emit
