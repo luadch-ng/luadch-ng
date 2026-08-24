@@ -1,4 +1,4 @@
 {
-  "msg_failedauth_reason":"User sent offending flag in INF: ",
-  "msg_invalid":"Invalid named parameter in inf: "
+  "msg_failedauth_reason":"User sent an offending flag in the INF: ",
+  "msg_invalid":"Invalid named parameter in the INF: "
 }

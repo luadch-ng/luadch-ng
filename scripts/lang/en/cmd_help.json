@@ -1,6 +1,6 @@
 {
-  "help_desc":"Shows this help for hub commands",
+  "help_desc":"Lists the available hub commands.",
   "help_usage":"[+!#]help",
-  "msg_out":"\n\n=== HUB COMMANDS =================================================================================\n(leading [number] = minimum level; a command also works with ! or #)\n%s\n================================================================================= HUB COMMANDS ===\n  ",
+  "msg_out":"\n\n=== HUB COMMANDS =================================================================================\n(a leading [number] is the minimum level, and a command also works with ! or #)\n%s\n================================================================================= HUB COMMANDS ===\n  ",
   "ucmd_menu":["General","Help"]
 }

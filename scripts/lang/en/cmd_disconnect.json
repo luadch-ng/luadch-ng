@@ -1,9 +1,9 @@
 {
-  "help_desc":"Disconnects a user",
+  "help_desc":"Disconnects a user.",
   "help_usage":"[+!#]disconnect <NICK> <REASON>",
-  "msg_bot":"Error: User is a bot.",
+  "msg_bot":"User is a bot.",
   "msg_denied1":"You are not allowed to use this command.",
-  "msg_denied2":"You can't disconnect superior users.",
+  "msg_denied2":"You can't disconnect a user with a higher level than you.",
   "msg_denied3":"You can't disconnect yourself.",
   "msg_denied4":"User is offline.",
   "msg_usage":"Usage: [+!#]disconnect <NICK> <REASON>",

@@ -1,7 +1,7 @@
 {
-  "help_desc":"Shows error.log",
+  "help_desc":"Shows the error log.",
   "help_usage":"[+!#]errors",
   "msg_denied":"[ ERRORS ]--> You are not allowed to use this command.",
   "msg_noerrors":"[ ERRORS ]--> No errors.",
-  "ucmd_menu":["Hub","Logs","show","error.log"]
+  "ucmd_menu":["Hub","Logs","Show","error.log"]
 }

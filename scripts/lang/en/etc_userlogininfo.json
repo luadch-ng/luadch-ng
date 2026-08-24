@@ -1,13 +1,13 @@
 {
   "client_mode_a":"active",
   "client_mode_p":"passive",
-  "client_ssl_n":"no ( please activate it! )",
+  "client_ssl_n":"no (please enable it)",
   "client_ssl_y":"yes",
   "msg_days":" days, ",
   "msg_hours":" hours, ",
   "msg_info":"\n\n=== USER LOGIN INFO ==============================\n\n        Your Nick:\t%s\n        Your IP:\t%s\n        Your Level:\t%s  [ %s ]\n\n        Client Version:\t%s\n        Client Mode:\t%s\n\n        Regged by:\t%s\n        Regged on:\t%s\n\n        Last visit:  %s\n\n        Client SSL:\t%s\n        TLS Mode:\t%s\n        TLS Cipher:\t%s\n\n============================== USER LOGIN INFO ===\n   ",
-  "msg_minutes":" min, ",
-  "msg_seconds":" sec",
+  "msg_minutes":" minutes, ",
+  "msg_seconds":" seconds",
   "msg_unknown":"<UNKNOWN>",
   "msg_years":" years, "
 }

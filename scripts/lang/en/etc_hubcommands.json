@@ -1,5 +1,5 @@
 {
   "msg_command_echo":"[command] %s",
-  "msg_did_you_mean":"Did you mean +%s? Hub commands need the [+!#] prefix; your message was NOT sent to main chat.",
-  "msg_literal_brackets":"The `[+!#]` in the docs is notation for 'pick one of +, !, or #', not literal brackets. Try `+%s` (your message was NOT sent to main chat)."
+  "msg_did_you_mean":"Did you mean +%s? Hub commands need the [+!#] prefix, so your message was NOT sent to the main chat.",
+  "msg_literal_brackets":"The `[+!#]` in the docs is notation for 'pick one of +, !, or #', not literal brackets. Try `+%s` (your message was NOT sent to the main chat)."
 }

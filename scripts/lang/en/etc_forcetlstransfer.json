@@ -1,4 +1,4 @@
 {
-  "msg_block":"[ FORCE TLS ]--> An unencrypted transfer was blocked - this hub requires encrypted ( ADCS ) transfers. Please enable forced transfer encryption in your client and forward your TLS port. Setup guide: https://dcvault.net/docs/clients/installation-setup#connection",
-  "msg_warn":"[ FORCE TLS ]--> An unencrypted transfer was detected - this hub asks for encrypted ( ADCS ) transfers. Please enable forced transfer encryption in your client and forward your TLS port. Setup guide: https://dcvault.net/docs/clients/installation-setup#connection"
+  "msg_block":"[ FORCE TLS ]--> An unencrypted transfer was blocked. This hub requires encrypted (ADCS) transfers. Please enable forced transfer encryption in your client and forward your TLS port. Setup guide: https://dcvault.net/docs/clients/installation-setup#connection",
+  "msg_warn":"[ FORCE TLS ]--> An unencrypted transfer was detected. This hub asks for encrypted (ADCS) transfers. Please enable forced transfer encryption in your client and forward your TLS port. Setup guide: https://dcvault.net/docs/clients/installation-setup#connection"
 }

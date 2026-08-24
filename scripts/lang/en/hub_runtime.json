@@ -1,5 +1,5 @@
 {
-  "help_desc":"Show/reset the hub runtime",
+  "help_desc":"Shows or resets the hub runtime.",
   "help_usage":"[+!#]runtime show|reset",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",
@@ -7,11 +7,11 @@
   "msg_minutes":" minutes, ",
   "msg_reset_1":"Hub runtime was reset.",
   "msg_reset_2":"Hub runtime has been reset by: %s",
-  "msg_runtime":"\n\n=== RUNTIME ============================================================\n\n               Hub runtime - Session:   %s\n               Hub runtime - Complete: %s\n\n============================================================ RUNTIME ===\n  ",
+  "msg_runtime":"\n\n=== RUNTIME ============================================================\n\n               Hub runtime (session):   %s\n               Hub runtime (complete): %s\n\n============================================================ RUNTIME ===\n  ",
   "msg_seconds":" seconds",
   "msg_unknown":"<UNKNOWN>",
   "msg_usage":"Usage: [+!#]runtime show|reset",
   "msg_years":" years, ",
-  "ucmd_menu_reset":["Hub","Core","Hub runtime","reset","OK"],
-  "ucmd_menu_show":["Hub","Core","Hub runtime","show"]
+  "ucmd_menu_reset":["Hub","Core","Hub runtime","Reset","OK"],
+  "ucmd_menu_show":["Hub","Core","Hub runtime","Show"]
 }

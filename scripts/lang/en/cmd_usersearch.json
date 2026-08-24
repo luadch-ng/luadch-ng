@@ -1,14 +1,14 @@
 {
-  "help_desc":"Search for user in reg list",
+  "help_desc":"Searches the list of registered users.",
   "help_usage":"[+!#]usersearch <SEARCHSTRING>",
   "msg_days":" days, ",
   "msg_denied":"You are not allowed to use this command.",
   "msg_hours":" hours, ",
-  "msg_max_limit":"\n\tMax limit for showing reached, use more specific search string",
+  "msg_max_limit":"\n\tThe result limit was reached. Use a more specific search term.",
   "msg_minutes":" minutes, ",
   "msg_no_allowed":"Not allowed to view",
   "msg_no_matches":"No matches found",
-  "msg_online":"user is online",
+  "msg_online":"currently online",
   "msg_redacted":"<REDACTED>",
   "msg_result":"\n\tNick: %s\n\tLevel: %s\n\tPassword: %s\n\tRegged by: %s\n\tRegged since: %s\n\tLast seen: %s",
   "msg_result_nick":"\n\tNick: %s",
@@ -16,5 +16,5 @@
   "msg_unknown":"<UNKNOWN>",
   "msg_years":" years, ",
   "ucmd_menu":["Hub","etc","Usersearch"],
-  "ucmd_popup":"Search registered nick"
+  "ucmd_popup":"Search for a registered nick:"
 }

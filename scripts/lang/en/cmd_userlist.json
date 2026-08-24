@@ -1,8 +1,8 @@
 {
-  "help_desc":"Sends list of regged users",
+  "help_desc":"Shows a list of the registered users.",
   "help_usage":"[+!#]userlist [bydate]",
   "msg_denied":"You are not allowed to use this command.",
-  "msg_useramount":"User amount in the levels:\n",
+  "msg_useramount":"Number of users per level:\n",
   "msg_userlist":"Userlist:",
   "ucmd_menu":["Hub","etc","Userlist","by LEVEL"],
   "ucmd_menu_bydate":["Hub","etc","Userlist","by DATE"]
