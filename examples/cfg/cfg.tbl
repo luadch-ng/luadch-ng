@@ -1673,6 +1673,7 @@ return { -- the settings are a lua table, do not tough this!
         "cmd_delreg.lua",  -- using report, ban, block import
         "cmd_usercleaner.lua", -- using report import
         { "etc_records.lua", enabled = true },  -- API-toggleable (#261)
+        { "etc_stats_history.lua", enabled = true },  -- online-users time-series for the dashboard graph (#665); API-toggleable
         { "etc_dhtblocker.lua", enabled = true },  -- using report import; API-toggleable (#261)
         "etc_dummy_warning.lua",
         "etc_onfailedauth.lua",  -- using report import
