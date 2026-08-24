@@ -12,7 +12,7 @@
   "hub_invalid_pid":"Deine PID ist ungültig.",
   "hub_login_message":"Auf diesem Server läuft %s %s %s (Uptime: %d Tage, %d Stunden, %d Minuten, %d Sekunden)",
   "hub_login_tls_label":"[TLS: %s]",
-  "hub_max_bad_password":"Du hast zu oft das falsche Passwort eingegeben. Wartezeit in Sekunden: ",
+  "hub_max_bad_password":"Zu viele fehlgeschlagene Passwort-Versuche. Bitte in %d Sekunden erneut versuchen.",
   "hub_nick_or_cid_taken":"Nick/CID vergeben.",
   "hub_nick_taken":"Dein Nick ist vergeben.",
   "hub_no_base_support":"Dein Client unterstützt kein BASE.",
