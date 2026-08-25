@@ -44,8 +44,9 @@ _G.os = os; _G.string = string; _G.table = table
 _G.tonumber = tonumber; _G.tostring = tostring; _G.type = type
 _G.ipairs = ipairs; _G.pairs = pairs
 
--- strip control bytes (< 0x20) so sanitisation is observable
-local function strip( s ) return ( s:gsub( "[%z\1-\31]", "" ) ) end
+-- Mirror production util.strip_control_bytes EXACTLY (core/util.lua):
+-- control chars (incl. 0x7f) are REPLACED with '?', non-strings -> "".
+local function strip( s ) return ( type( s ) == "string" ) and ( s:gsub( "%c", "?" ) ) or "" end
 _G.util = {
     loadtable            = function( ) return { } end,
     savearray            = function( ) end,
@@ -99,7 +100,7 @@ ok( "recorded message body preserved",   tail1[ 1 ] and tail1[ 1 ].message == "h
 
 cl.log_line( "Hub\1Bot", "a\2b" )
 local tail2 = cl._get_log_tail( 1 )
-ok( "log_line control-byte sanitises",   tail2[ 1 ] and tail2[ 1 ].nick == "HubBot" and tail2[ 1 ].message == "ab" )
+ok( "log_line control-byte sanitises (-> '?')", tail2[ 1 ] and tail2[ 1 ].nick == "Hub?Bot" and tail2[ 1 ].message == "a?b" )
 
 local before = #cl._t_log
 cl.log_line( nil, "x" ); cl.log_line( "n", 123 ); cl.log_line( nil, nil )
@@ -149,7 +150,7 @@ p._http_handler_chat( { body = { message = "y" } } )
 ok( "audit falls back to http-api when neither present", audited and audited.actor.nick == "http-api" )
 
 p._http_handler_chat( { body = { message = "he\1llo" }, actor = "op" } )
-ok( "message control bytes stripped before broadcast", bcast and bcast.msg == "hello" )
+ok( "message control bytes sanitised before broadcast (-> '?')", bcast and bcast.msg == "he?llo" )
 
 local e1 = p._http_handler_chat( { body = { message = "" } } )
 ok( "empty message -> 400 E_BAD_INPUT", e1 and e1.status == 400 and e1.error and e1.error.code == "E_BAD_INPUT" )
@@ -157,6 +158,15 @@ local e2 = p._http_handler_chat( { body = { } } )
 ok( "missing message -> 400", e2 and e2.status == 400 )
 local e3 = p._http_handler_chat( { } )
 ok( "missing body -> 400", e3 and e3.status == 400 )
+
+-- the shared path used by the ADC `+talk` command directly: broadcasts
+-- as the hubbot AND mirrors into the chat log (same as /v1/chat)
+local dlog = #cl._t_log
+p._post_to_mainchat( "via talk" )
+ok( "_post_to_mainchat broadcasts as the hubbot (BMSG)", bcast and bcast.msg == "via talk" and bcast.from == bot and bcast.pm == nil )
+ok( "_post_to_mainchat mirrors into the chat log",       #cl._t_log == dlog + 1 )
+local tlog = cl._get_log_tail( 1 )[ 1 ]
+ok( "+talk mirror attributed to the hubbot",             tlog and tlog.nick == "HubBot" and tlog.message == "via talk" )
 
 io.write( string.format( "\n%d checks, %d failures\n", checks, failures ) )
 os.exit( failures == 0 and 0 or 1 )
