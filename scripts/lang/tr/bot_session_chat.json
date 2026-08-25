@@ -1,0 +1,42 @@
+{
+    "chatdesc": "",
+    "help_desc": "",
+    "help_usage": "",
+    "msg_already": "",
+    "msg_chatexists": "",
+    "msg_create": "",
+    "msg_create2": "",
+    "msg_create3": "",
+    "msg_del": "",
+    "msg_del_2": "",
+    "msg_delall": "",
+    "msg_denied": "",
+    "msg_denied_2": "",
+    "msg_denied_3": "",
+    "msg_help_1": "",
+    "msg_help_2": "",
+    "msg_help_3": "",
+    "msg_help_4": "",
+    "msg_help_member": "",
+    "msg_help_owner": "",
+    "msg_members": "",
+    "msg_new_member": "",
+    "msg_nomember": "",
+    "msg_notonline": "",
+    "msg_usage": "",
+    "msg_welcome": "",
+    "ucmd_menu_ct1_create": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_remove": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup": ""
+}
