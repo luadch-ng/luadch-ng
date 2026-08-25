@@ -5,6 +5,10 @@
 
         - Usage: [+!#]disconnect <NICK> <REASON>
 
+        v1.6:
+            - HTTP kick shows the kicked user the hubbot; the opchat report + audit
+              record the real operator (req.actor). ADC path unchanged. (webui#177 C)
+
         v1.4 (retro-noted):
             - split the kill into the shared do_disconnect helper for the
               HTTP DELETE /v1/users/{sid} path (#82 Phase 2)

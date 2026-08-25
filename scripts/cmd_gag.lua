@@ -5,6 +5,11 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.16:
+                - HTTP gag/ungag: the stored added_by + opchat report + audit
+                  record the real operator (req.actor), not the token label; the
+                  gag target notice stays anonymous. (webui#177 C)
+
             v0.15: by Aybo
                 - new GET /v1/gags read endpoint (feeds the WebUI's
                   status-aware Gag/Ungag toggle). Lists every gag the

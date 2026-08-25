@@ -5,6 +5,11 @@
         - this script adds commands to send pm mass messages
         - usage: [+!#]mass <MSG> / [+!#]masslvl <LEVEL> <MSG> / [+!#]masshub <MSG>
 
+        v0.21:
+            - HTTP announce: the banner "Sender:" line no longer leaks the token
+              fingerprint - it shows the hubbot nick; the audit records the real
+              operator (req.actor). (webui#177 C)
+
         v0.20:
             - route the "  |  allowed levels: " help-desc appender
               through lang (msg_allowed_levels). Part of #301 i18n cleanup.

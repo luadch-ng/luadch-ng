@@ -11,6 +11,13 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.49:
+            - HTTP ban: the banned user (creation kick AND later reconnect) sees the
+              hubbot; the stored by_nick, opchat report, audit, and response `by`
+              record the real operator (req.actor). A persisted `http` origin flag
+              drives the hubbot on the shared onConnect reconnect path; ADC bans keep
+              the OP nick there. (webui#177 C)
+
         v0.48:
             - feat: periodic onTimer sweep prunes expired non-permanent
               bans. Before this, an expired tempban was only removed
@@ -537,7 +544,7 @@ local del = function( target )
     end
 end
 
-local addban = function( by, id, bantime, reason, level, nick, victim, permanent )
+local addban = function( by, id, bantime, reason, level, nick, victim, permanent, http )
     local key = #bans + 1
     if not victim then
         for i, bantbl in ipairs( bans ) do
@@ -563,7 +570,13 @@ local addban = function( by, id, bantime, reason, level, nick, victim, permanent
         start = os.time( os.date( "*t" ) ),
         reason = reason,
         by_nick = nick,
-        by_level = level
+        by_level = level,
+        -- #177 C: marks a WebUI-originated ban so the onConnect reconnect
+        -- message shows the hubbot (not the operator `by_nick`) to the banned
+        -- user, matching the creation-time kick. `by_nick` still records the
+        -- operator for `+ban show` / the /v1/bans list / audit. ADC bans leave
+        -- this nil and keep showing the OP nick on reconnect (unchanged).
+        http = http or nil,
     }
     local n, i = victim and victim:firstnick() or by == "nick" and id or "", nil
     if n ~= "" then
@@ -948,7 +961,7 @@ http_handler_create_ban = function( req )
     -- gets the highest level so it survives operator-vs-operator
     -- ADC `+unban` attempts (only level >= ban.by_level can lift).
     local new_idx = addban( addban_by, addban_id, bantime, clean_reason,
-                            100, operator, addban_victim, permanent )
+                            100, operator, addban_victim, permanent, true )
     local entry = bans[ new_idx ]
 
     -- Caller-invoked report + kill, matching the ADC-path ordering
@@ -1301,10 +1314,14 @@ hub.setlistener( "onConnect", {},
             end
         end
         if what then
+            -- #177 C: a WebUI-originated ban (ban.http) shows the hubbot to the
+            -- reconnecting user, never the operator nick - matching the
+            -- creation-time kick. ADC bans keep the OP nick (ban.http nil).
+            local victim_by = ban.http and hub.getbot():nick() or ban.by_nick
             if user:level() >= tonumber( ban.by_level ) then
                 table.remove( bans, key )  -- remove ban entry
                 util.savearray( bans, bans_path )  -- save table
-                user:reply( utf.format( msg_ban_attempt, ban.by_nick, ban.reason ), hub.getbot(), hub.getbot() )  -- and send info
+                user:reply( utf.format( msg_ban_attempt, victim_by, ban.reason ), hub.getbot(), hub.getbot() )  -- and send info
                 return nil  -- user can login without problems
             end
             -- A permanent ban NEVER expires and MUST NOT be pruned:
@@ -1314,7 +1331,7 @@ hub.setlistener( "onConnect", {},
             -- it - a silent unban. The higher-level bypass above still
             -- applies (an op above the banner can log in and lift it).
             if ban.permanent then
-                message = utf.format( msg_ban, ban.by_nick, ban.reason ) .. msg_permanent
+                message = utf.format( msg_ban, victim_by, ban.reason ) .. msg_permanent
                 user:kill( "ISTA 231 " .. hub.escapeto( message ) .. "\n", "TL-1" )
                 return PROCESSED
             end
@@ -1323,7 +1340,7 @@ hub.setlistener( "onConnect", {},
                 table.remove( bans, key )
                 util.savearray( bans, bans_path )
             else
-                message = utf.format( msg_ban, ban.by_nick, ban.reason ) .. get_bantime( remaining )
+                message = utf.format( msg_ban, victim_by, ban.reason ) .. get_bantime( remaining )
                 -- remember: never fire listenter X inside listener X; will cause infinite loop
                 -- also: never fire listener X in listener Y, where listener Y fires listener X; will as well cause a infinite loop.
                 --scripts.firelistener( "onFailedAuth", user:nick( ), user:ip( ), user:cid( ), "Banned for "  .. get_bantime( remaining ) .. " (" .. ban.reason .. ")" )

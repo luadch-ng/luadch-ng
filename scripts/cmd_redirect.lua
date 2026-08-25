@@ -4,6 +4,11 @@
 
         usage: [+!#]redirect <NICK> <URL>
 
+        v0.9:
+            - HTTP redirect: the opchat report + audit record the real operator
+              (req.actor), not the token label; the redirected user still sees no
+              actor. (webui#177 C)
+
         v0.8:
             - resolve an online target by firstnick when a nick-prefix is
               active: usr_nick_prefix re-keys the hub's nick table to the
