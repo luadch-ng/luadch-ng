@@ -2,6 +2,13 @@
 
     etc_chatlog.lua by Motnahp
 
+        v1.7:
+            - extract record_line() helper (build + trim + persist) shared by the
+              onBroadcast listener and a new exported log_line()
+            - export log_line(nick, message) so hub-originated main-chat posts (which
+              do not fire onBroadcast) can be recorded - used by cmd_talk for the
+              hubbot's +talk / POST /v1/chat posts  (webui#177 A)
+
         v1.6:
             - HTTP API: GET /v1/chatlog?lines=N (read scope)  #82 Phase 4 PR-1
             - extract get_log_tail() helper shared by ADC + HTTP paths
@@ -78,7 +85,7 @@
 --[[ Settings ]]--
 
 local scriptname = "etc_chatlog"
-local scriptversion = "1.6"
+local scriptversion = "1.7"
 
 -- HTTP API §6.4 tail-style ceiling. The §6.4 list-endpoint cap
 -- is 1000, but for chatlog the effective bound is also the
@@ -386,26 +393,47 @@ hub.setlistener( "onLogin", { },
     end
 )
 
+-- Append one line to the chat-log buffer: build the entry, trim to
+-- max_lines, persist every `saveit` arrivals. Shared by the
+-- onBroadcast listener below AND the exported `log_line`, so
+-- hub-originated main-chat posts (which do NOT fire onBroadcast) can
+-- still be recorded. Callers do their own gating.
+local record_line = function( nick, message )
+    savehistory = savehistory + 1  -- increment savehistory to save if it reaches saveit
+    local t = {  -- build table
+        [1] = os.date( "%Y-%m-%d / %H:%M:%S" ),
+        [2] = nick,
+        [3] = message
+    }
+    table.insert( t_log, t )  -- add table to t_log
+    for x = 1, #t_log -  max_lines do  -- remove an item of t_log it there are to many items in
+        table.remove( t_log, 1 )
+    end
+    if savehistory >= saveit then  -- save t_log and set savehistory 0
+        savehistory = 0
+        util.savearray( t_log, log_path )
+    end
+end
+
+-- Exported: record a main-chat line originating from another plugin.
+-- cmd_talk uses it for the hubbot's `+talk` / `POST /v1/chat` posts,
+-- which go out via hub.broadcast and therefore never fire
+-- onBroadcast - without this they would be absent from the log and
+-- the GET /v1/chatlog feed. Bypasses the onBroadcast gating on
+-- purpose (the hubbot is not subject to chat filters). No-op on bad
+-- input.
+local log_line = function( nick, message )
+    if type( nick ) ~= "string" or type( message ) ~= "string" then return end
+    record_line( util.strip_control_bytes( nick ), util.strip_control_bytes( message ) )
+end
+
 hub.setlistener( "onBroadcast", { },
     function( user, adccmd, msg)
         local data = hub.escapefrom(adccmd[6]) -- get current mainchat message, don't use 'msg'; reason: mainchat message might be changed by another script in the meantime
         local msg = string.match( msg, "^%s*(.*)" ) -- this pattern will generate an error ^%s*(.*%S) so i have changed it 2022-12-11
         local result = string.byte( msg, 1 )
         if msgmanager_permission[ user:level() ] and result ~= 33 and result ~= 35 and result ~= 43 then  -- in ASCII (decimal): 33 = "!"; 35 = "#"; 43 = "+"
-            savehistory = savehistory + 1  -- increment savehistory to save if it reaches saveit
-            local t = {  -- build table
-                [1] = os.date( "%Y-%m-%d / %H:%M:%S" ),
-                [2] = user:nick( ),
-                [3] = data
-            }
-            table.insert( t_log, t )  -- add table to t_log
-            for x = 1, #t_log -  max_lines do  -- remove an item of t_log it there are to many items in
-                table.remove( t_log, 1 )
-            end
-            if savehistory >= saveit then  -- save t_log and set savehistory 0
-                savehistory = 0
-                util.savearray( t_log, log_path )
-            end
+            record_line( user:nick( ), data )
         end
     end
 )
@@ -456,5 +484,15 @@ show_t_exceptions = function ( )  -- returns t_exceptions
 end
 
 hub.debug( "** Loaded " .. scriptname .. ".lua **" )
+
+-- Exported module (webui#177 A): `log_line` lets cmd_talk mirror the
+-- hubbot's main-chat posts into the log. The `_`-prefixed entries are
+-- unit-test hooks only.
+return {
+    log_line      = log_line,
+    _record_line  = record_line,
+    _get_log_tail = get_log_tail,
+    _t_log        = t_log,
+}
 
 --[[   End    ]]--
