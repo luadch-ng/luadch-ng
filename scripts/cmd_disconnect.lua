@@ -68,7 +68,7 @@
 --------------
 
 local scriptname = "cmd_disconnect"
-local scriptversion = "1.5"
+local scriptversion = "1.6"
 
 local cmd = "disconnect"
 
@@ -122,18 +122,23 @@ local ucmd_menu2 = lang.ucmd_menu2 or { "Disconnect", "OK" }
 -- hierarchy, self-disconnect, bot rejection); the helper trusts
 -- its inputs.
 --
--- `actor_label` is what shows in the opchat report and the kicked
--- user's ISTA message: a nick for the ADC path, a non-secret
--- token label for the HTTP path. Both `reason` and `actor_label`
--- are control-byte sanitised via `util.strip_control_bytes`
--- (single source of truth across the Phase 2 bundled-plugin
--- migrations - defence in depth around adclib::escape, which only
--- handles ' ', '\n', '\\').
-local do_disconnect = function( targetuser, reason, actor_label )
+-- `actor_label` is who the OPERATOR-facing opchat report names. It is
+-- a nick for the ADC path; for the HTTP path it is the real operator
+-- (req.actor) rather than the API token label (#177 C).
+-- `victim_actor` is who the KICKED USER's ISTA message names; it
+-- defaults to `actor_label` (so the ADC path shows the operator to
+-- both, unchanged), but the HTTP path passes the hubbot nick so the
+-- kicked user sees the hubbot, never the operator nick or a token
+-- label (#177). Both `reason` and the actor strings are control-byte
+-- sanitised via `util.strip_control_bytes` (single source of truth
+-- across the Phase 2 bundled-plugin migrations - defence in depth
+-- around adclib::escape, which only handles ' ', '\n', '\\').
+local do_disconnect = function( targetuser, reason, actor_label, victim_actor )
     local clean_reason = util.strip_control_bytes( reason )
     local clean_actor  = util.strip_control_bytes( actor_label )
+    local clean_victim = util.strip_control_bytes( victim_actor or actor_label )
     local targetuser_nick = targetuser:nick()
-    local msg_target = utf.format( user_msg, clean_actor, clean_reason )
+    local msg_target = utf.format( user_msg, clean_victim, clean_reason )
     targetuser:kill( "ISTA 230 " .. hub.escapeto( msg_target ) .. "\n", "TL30" )
     local msg_report = utf.format( report_msg, targetuser_nick, clean_actor, clean_reason )
     return msg_report
@@ -209,14 +214,17 @@ end
 -- bearer token's `admin` scope IS the authorisation gate.
 local http_handler_disconnect = function( req, target )
     local reason = ( req.body and req.body.reason ) or ""
-    local actor_label = req.token_label or "http-api"
-    local msg_report = do_disconnect( target, reason, actor_label )
+    -- #177 C: the kicked user sees the hubbot (never the operator nick or a
+    -- token label); the opchat report + audit record the real operator.
+    local operator = util_http.operator_label( req )
+    local victim_actor = hub.getbot():nick()
+    local msg_report = do_disconnect( target, reason, operator, victim_actor )
     -- HTTP path has no operator-chat to echo into; fire the
     -- opchat report directly so an operator watching opchat sees
     -- a consistent line regardless of which surface drove the kick.
     report.send( report_activate, report_hubbot, report_opchat, llevel, msg_report )
     audit.fire( audit.build( "user.kick",
-        { nick = actor_label, sid = "<http>" },
+        { nick = operator, sid = "<http>" },
         target,
         ( reason ~= "" and reason or nil ), nil ) )
     return { reason = reason }

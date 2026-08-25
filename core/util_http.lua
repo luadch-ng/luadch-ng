@@ -146,10 +146,36 @@ local function http_register_user_action( scriptname, method, path, action_verb,
     end, meta )
 end
 
+-- Resolve the human operator behind an HTTP-API request, for the
+-- audit trail, stored records (ban `by_nick`, gag `added_by`), and
+-- operator-facing reports (opchat). The BFF asserts the logged-in
+-- operator's nick in the `X-Actor` header, surfaced as `req.actor`
+-- (already logsafe-sanitised by the router); a direct token call
+-- without that header falls back to the token's non-secret label,
+-- then a fixed "http-api".
+--
+-- IMPORTANT: `req.actor` is client-asserted (any token holder can set
+-- X-Actor) and is therefore an ACCOUNTABILITY label ONLY, never an
+-- authorisation input - the bearer token's scope is the auth gate.
+-- End-user-visible attribution (a kicked/banned user's message, a
+-- main-chat post, the announce banner) must use the hubbot nick
+-- instead, so the operator identity never reaches end users (#177).
+-- `use "util"` is resolved lazily here (matching http_register_user_action's
+-- `use "hub"` pattern) to avoid any _core load-order dependency.
+local function operator_label( req )
+    local util = use "util"
+    local actor = req and req.actor
+    if type( actor ) == "string" and actor ~= "" then
+        return util.strip_control_bytes( actor )
+    end
+    return util.strip_control_bytes( ( req and req.token_label ) or "http-api" )
+end
+
 ----------------------------------// PUBLIC INTERFACE //--
 
 return {
 
     http_register_user_action = http_register_user_action,
+    operator_label            = operator_label,
 
 }

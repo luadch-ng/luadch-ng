@@ -43,6 +43,9 @@ local _mock_hub_module = { object = function( ) return _mock_hub_obj end }
 local _real = {
     pairs = pairs, type = type,
     hub   = _mock_hub_module,
+    -- operator_label resolves `use "util"` lazily for strip_control_bytes;
+    -- mirror production semantics (control chars -> '?', non-string -> "").
+    util  = { strip_control_bytes = function( s ) return ( type( s ) == "string" ) and ( s:gsub( "%c", "?" ) ) or "" end },
 }
 _G.use = function( name )
     local v = _real[ name ]
@@ -230,6 +233,29 @@ do
     )
     eq( "fail-soft: returns false when http_register absent", rv, false )
     _mock_hub_obj.http_register = saved
+end
+
+----------------------------------------------------------------------
+-- 9. operator_label: the accountability actor for a WebUI-driven action
+--    (audit / stored records / opchat report) - webui#177 C. Resolves the
+--    real operator asserted in X-Actor (req.actor), falling back to the
+--    token's non-secret label, then "http-api". This is NEVER the
+--    end-user-visible attribution (that is the hubbot).
+----------------------------------------------------------------------
+
+do
+    eq( "operator: req.actor (X-Actor) wins",
+        util_http.operator_label( { actor = "opNick", token_label = "tok (aB..Yz)" } ), "opNick" )
+    eq( "operator: falls back to token_label when actor absent",
+        util_http.operator_label( { token_label = "tok (aB..Yz)" } ), "tok (aB..Yz)" )
+    eq( "operator: falls back to token_label when actor is empty",
+        util_http.operator_label( { actor = "", token_label = "tok" } ), "tok" )
+    eq( "operator: falls back to http-api when neither present",
+        util_http.operator_label( { } ), "http-api" )
+    eq( "operator: nil req -> http-api (no crash)",
+        util_http.operator_label( nil ), "http-api" )
+    eq( "operator: control bytes stripped from actor",
+        util_http.operator_label( { actor = "op\1Nick" } ), "op?Nick" )
 end
 
 ----------------------------------------------------------------------

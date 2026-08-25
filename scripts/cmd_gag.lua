@@ -153,7 +153,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.15"
+local scriptversion = "0.16"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -740,7 +740,10 @@ http_handler_gag = function(req, target)
     end
     local duration_minutes = req.body and req.body.duration_minutes
     local duration_seconds = duration_minutes and ( duration_minutes * 60 ) or nil
-    local actor_label = req.token_label or "http-api"
+    -- The gag target notice names no actor (anonymous by design); the stored
+    -- added_by + opchat report + audit record the real operator (req.actor)
+    -- rather than the API token label (#177 C).
+    local actor_label = util_http.operator_label( req )
     -- add_user fires report.send + persists gag_tbl internally; we
     -- only need the side-effect, not the returned report-message
     -- string (the HTTP audit log already covers the operator trail).
@@ -772,7 +775,7 @@ http_handler_ungag = function(req, target)
             message = "user is not currently gagged" } }
     end
     local previous_mode = entry.mode
-    local actor_label = req.token_label or "http-api"
+    local actor_label = util_http.operator_label( req )
     remove_user(first_nick, target:nick(), target, actor_label)
     audit.fire(audit.build("gag.remove",
         { nick = actor_label, sid = "<http>" }, target, nil,
