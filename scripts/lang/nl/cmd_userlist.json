@@ -1,0 +1,19 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_denied": "",
+    "msg_useramount": "",
+    "msg_userlist": "",
+    "ucmd_menu": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_bydate": [
+        "",
+        "",
+        "",
+        ""
+    ]
+}
