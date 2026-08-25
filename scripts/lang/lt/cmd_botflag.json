@@ -1,0 +1,25 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_denied": "",
+    "msg_nochange": "",
+    "msg_notify": "",
+    "msg_ok": "",
+    "msg_reg": "",
+    "msg_usage": "",
+    "ucmd_menu_off": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_on": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_nick": "",
+    "word_off": "",
+    "word_on": ""
+}
