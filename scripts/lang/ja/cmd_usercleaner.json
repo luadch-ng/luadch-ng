@@ -1,0 +1,107 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_delreg_exception": "",
+    "msg_delreg_exception_level": "",
+    "msg_delreg_expired": "",
+    "msg_delreg_unused": "",
+    "msg_denied": "",
+    "msg_exceptions_add": "",
+    "msg_exceptions_add_taken": "",
+    "msg_exceptions_del": "",
+    "msg_exceptions_del_notfound": "",
+    "msg_exceptions_delall": "",
+    "msg_exceptions_level": "",
+    "msg_exceptions_show": "",
+    "msg_no": "",
+    "msg_nousers": "",
+    "msg_orphan_comments_cleaned": "",
+    "msg_orphan_comments_none": "",
+    "msg_out_all": "",
+    "msg_out_exceptions": "",
+    "msg_out_expired": "",
+    "msg_out_ghosts": "",
+    "msg_settings_setdays": "",
+    "msg_usage": "",
+    "msg_yes": "",
+    "ucmd_days": "",
+    "ucmd_menu_ct1_1": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_10": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_11": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_2": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_3": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_4": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_5": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_6": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_7": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_8": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct1_9": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_nick": ""
+}
