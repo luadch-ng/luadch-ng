@@ -1,0 +1,37 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_already_off": "",
+    "msg_bad_level": "",
+    "msg_badtime": "",
+    "msg_default_kick": "",
+    "msg_denied": "",
+    "msg_disabled": "",
+    "msg_enabled": "",
+    "msg_expired": "",
+    "msg_indefinite": "",
+    "msg_kick": "",
+    "msg_notint": "",
+    "msg_self_lockout": "",
+    "msg_status_off": "",
+    "msg_status_on": "",
+    "msg_usage": "",
+    "ucmd_menu_off": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_on": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_status": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup_level": "",
+    "ucmd_popup_min": "",
+    "ucmd_popup_reason": ""
+}
