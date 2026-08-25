@@ -11,6 +11,13 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.49:
+            - HTTP ban: the banned user (creation kick AND later reconnect) sees the
+              hubbot; the stored by_nick, opchat report, audit, and response `by`
+              record the real operator (req.actor). A persisted `http` origin flag
+              drives the hubbot on the shared onConnect reconnect path; ADC bans keep
+              the OP nick there. (webui#177 C)
+
         v0.48:
             - feat: periodic onTimer sweep prunes expired non-permanent
               bans. Before this, an expired tempban was only removed
@@ -300,7 +307,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.48"
+local scriptversion = "0.49"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -537,7 +544,7 @@ local del = function( target )
     end
 end
 
-local addban = function( by, id, bantime, reason, level, nick, victim, permanent )
+local addban = function( by, id, bantime, reason, level, nick, victim, permanent, http )
     local key = #bans + 1
     if not victim then
         for i, bantbl in ipairs( bans ) do
@@ -563,7 +570,13 @@ local addban = function( by, id, bantime, reason, level, nick, victim, permanent
         start = os.time( os.date( "*t" ) ),
         reason = reason,
         by_nick = nick,
-        by_level = level
+        by_level = level,
+        -- #177 C: marks a WebUI-originated ban so the onConnect reconnect
+        -- message shows the hubbot (not the operator `by_nick`) to the banned
+        -- user, matching the creation-time kick. `by_nick` still records the
+        -- operator for `+ban show` / the /v1/bans list / audit. ADC bans leave
+        -- this nil and keep showing the OP nick on reconnect (unchanged).
+        http = http or nil,
     }
     local n, i = victim and victim:firstnick() or by == "nick" and id or "", nil
     if n ~= "" then
@@ -901,7 +914,10 @@ http_handler_create_ban = function( req )
     local clean_reason = util.strip_control_bytes(
         ( body.reason and body.reason ~= "" ) and body.reason or msg_reason
     )
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- #177 C: the banned user sees the hubbot; the stored by_nick, the opchat
+    -- report, the audit trail, and the response `by` record the real operator.
+    local operator = util_http.operator_label( req )
+    local hubbot = util.strip_control_bytes( hub.getbot():nick() )
 
     -- Resolve target. SID is strictly online-only; nick has an
     -- offline-regged fallback; cid / ip are blind-add (no offline
@@ -945,7 +961,7 @@ http_handler_create_ban = function( req )
     -- gets the highest level so it survives operator-vs-operator
     -- ADC `+unban` attempts (only level >= ban.by_level can lift).
     local new_idx = addban( addban_by, addban_id, bantime, clean_reason,
-                            100, actor_label, addban_victim, permanent )
+                            100, operator, addban_victim, permanent, true )
     local entry = bans[ new_idx ]
 
     -- Caller-invoked report + kill, matching the ADC-path ordering
@@ -954,24 +970,27 @@ http_handler_create_ban = function( req )
                            or ( target_type == "nick" and target_id )
                            or ( entry.nick ~= "" and entry.nick )
                            or target_id
-    local message = utf.format( msg_ok, target_display, actor_label,
-                                ( permanent and msg_permanent or get_bantime( bantime ) ), clean_reason )
-    report.send( report_activate, report_hubbot, report_opchat, llevel, message )
+    local bantime_display = ( permanent and msg_permanent or get_bantime( bantime ) )
+    -- Two renderings of the same banner from one template: the opchat report
+    -- names the operator; the banned user's ISTA message names the hubbot (#177 C).
+    local report_message = utf.format( msg_ok, target_display, operator, bantime_display, clean_reason )
+    report.send( report_activate, report_hubbot, report_opchat, llevel, report_message )
     if victim then
+        local victim_message = utf.format( msg_ok, target_display, hubbot, bantime_display, clean_reason )
         if permanent then
             -- 231 (permanent) + TL-1, matching the ADC `+ban ... permanent` path.
-            victim:kill( "ISTA 231 " .. hub.escapeto( message ) .. "\n", "TL-1" )
+            victim:kill( "ISTA 231 " .. hub.escapeto( victim_message ) .. "\n", "TL-1" )
         else
             -- 232 (temporary ban with TL) per ADC STA semantics; matches
             -- the ADC `+ban` path. The TL value is bantime in seconds.
-            victim:kill( "ISTA 232 " .. hub.escapeto( message ) .. "\n", "TL" .. bantime )
+            victim:kill( "ISTA 232 " .. hub.escapeto( victim_message ) .. "\n", "TL" .. bantime )
         end
     end
     local _audit_target = { }
     _audit_target[ target_type ] = target_id
     if entry.nick and entry.nick ~= "" then _audit_target.nick = entry.nick end
     audit.fire( audit.build( "ban.add",
-        { nick = actor_label, sid = "<http>" }, _audit_target,
+        { nick = operator, sid = "<http>" }, _audit_target,
         ( clean_reason ~= "" and clean_reason or nil ),
         { by = target_type, duration_sec = bantime, permanent = permanent or nil, online = ( victim ~= nil ) } ) )
 
@@ -984,7 +1003,7 @@ http_handler_create_ban = function( req )
         duration_minutes = duration_minutes,
         permanent        = permanent,
         reason           = clean_reason,
-        by               = actor_label,
+        by               = operator,
         expires_at       = ( not permanent ) and os.date( "!%Y-%m-%dT%H:%M:%SZ", entry.start + entry.time ) or nil,
     }
     return { status = 200, data = data }
@@ -1027,7 +1046,9 @@ http_handler_delete_ban = function( req )
         } )
     end
 
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- Unban has no target-facing message; the opchat report + audit + response
+    -- `by` record the real operator (req.actor), not the API token label (#177 C).
+    local actor_label = util_http.operator_label( req )
     -- The ADC `+unban nick|cid|ip X` path picks a target_type
     -- string for msg_ok2; we lift whichever criterion was non-empty
     -- as the display label, preferring nick > cid > ip.
@@ -1293,10 +1314,14 @@ hub.setlistener( "onConnect", {},
             end
         end
         if what then
+            -- #177 C: a WebUI-originated ban (ban.http) shows the hubbot to the
+            -- reconnecting user, never the operator nick - matching the
+            -- creation-time kick. ADC bans keep the OP nick (ban.http nil).
+            local victim_by = ban.http and hub.getbot():nick() or ban.by_nick
             if user:level() >= tonumber( ban.by_level ) then
                 table.remove( bans, key )  -- remove ban entry
                 util.savearray( bans, bans_path )  -- save table
-                user:reply( utf.format( msg_ban_attempt, ban.by_nick, ban.reason ), hub.getbot(), hub.getbot() )  -- and send info
+                user:reply( utf.format( msg_ban_attempt, victim_by, ban.reason ), hub.getbot(), hub.getbot() )  -- and send info
                 return nil  -- user can login without problems
             end
             -- A permanent ban NEVER expires and MUST NOT be pruned:
@@ -1306,7 +1331,7 @@ hub.setlistener( "onConnect", {},
             -- it - a silent unban. The higher-level bypass above still
             -- applies (an op above the banner can log in and lift it).
             if ban.permanent then
-                message = utf.format( msg_ban, ban.by_nick, ban.reason ) .. msg_permanent
+                message = utf.format( msg_ban, victim_by, ban.reason ) .. msg_permanent
                 user:kill( "ISTA 231 " .. hub.escapeto( message ) .. "\n", "TL-1" )
                 return PROCESSED
             end
@@ -1315,7 +1340,7 @@ hub.setlistener( "onConnect", {},
                 table.remove( bans, key )
                 util.savearray( bans, bans_path )
             else
-                message = utf.format( msg_ban, ban.by_nick, ban.reason ) .. get_bantime( remaining )
+                message = utf.format( msg_ban, victim_by, ban.reason ) .. get_bantime( remaining )
                 -- remember: never fire listenter X inside listener X; will cause infinite loop
                 -- also: never fire listener X in listener Y, where listener Y fires listener X; will as well cause a infinite loop.
                 --scripts.firelistener( "onFailedAuth", user:nick( ), user:ip( ), user:cid( ), "Banned for "  .. get_bantime( remaining ) .. " (" .. ban.reason .. ")" )
