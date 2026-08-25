@@ -1,0 +1,21 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_denied": "",
+    "msg_god": "",
+    "msg_isbot": "",
+    "msg_notonline": "",
+    "msg_redirect": "",
+    "msg_report": "",
+    "msg_report_redirect": "",
+    "msg_usage": "",
+    "ucmd_menu_ct2_1": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct2_2": [
+        "",
+        ""
+    ],
+    "ucmd_url": ""
+}
