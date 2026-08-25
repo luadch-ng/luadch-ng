@@ -1,0 +1,43 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_accinfo": "",
+    "msg_blacklist1": "",
+    "msg_blacklist2": "",
+    "msg_blacklist3": "",
+    "msg_blacklist4": "",
+    "msg_denied": "",
+    "msg_desc": "",
+    "msg_error": "",
+    "msg_keyprint": "",
+    "msg_length": "",
+    "msg_level": "",
+    "msg_nocomment": "",
+    "msg_ok": "",
+    "msg_report": "",
+    "msg_unknown": "",
+    "msg_usage": "",
+    "ucmd_desc": "",
+    "ucmd_desc2": "",
+    "ucmd_level": "",
+    "ucmd_menu_ct1_1": "",
+    "ucmd_menu_ct1_2": "",
+    "ucmd_menu_ct1_3": "",
+    "ucmd_menu_ct2": [
+        "",
+        ""
+    ],
+    "ucmd_menu_ct3": [
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_menu_ct4": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_nick": ""
+}
