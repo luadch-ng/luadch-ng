@@ -1,3 +1,3 @@
 {
-  "report_msg":"[ NICK PREFIX ]--> Benutzer: %s | IP: %s | wurde gekickt. Grund: %s"
+    "report_msg": "[ NICK PREFIX ]--> Benutzer: %s | IP-Adresse: %s | wurde gekickt. Grund: %s"
 }
