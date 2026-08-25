@@ -1,0 +1,24 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_days": "",
+    "msg_denied": "",
+    "msg_hours": "",
+    "msg_max_limit": "",
+    "msg_minutes": "",
+    "msg_no_allowed": "",
+    "msg_no_matches": "",
+    "msg_online": "",
+    "msg_redacted": "",
+    "msg_result": "",
+    "msg_result_nick": "",
+    "msg_seconds": "",
+    "msg_unknown": "",
+    "msg_years": "",
+    "ucmd_menu": [
+        "",
+        "",
+        ""
+    ],
+    "ucmd_popup": ""
+}
