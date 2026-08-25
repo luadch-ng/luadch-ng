@@ -1,0 +1,16 @@
+{
+    "help_desc": "",
+    "help_usage": "",
+    "msg_countdown": "",
+    "msg_denied": "",
+    "msg_hub_disabled": "",
+    "msg_ok": "",
+    "msg_restart": "",
+    "ucmd_menu": [
+        "",
+        "",
+        "",
+        ""
+    ],
+    "ucmd_msg": ""
+}
