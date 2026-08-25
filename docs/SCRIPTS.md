@@ -663,7 +663,7 @@ empty so the on-disk shape stays compact.
 `reg.desc.set`, `reg.level.set`, `reg.nickchange`,
 `reg.password.change`, `hub.topic.set`, `hub.topic.reset`,
 `hub.reload`, `hub.restart`, `hub.shutdown`,
-`hub.announce.{all,hub,level}`,
+`hub.announce.{all,hub,level}`, `hub.chat.post`,
 `alias.{add,remove}`, `msgmanager.{block,unblock}`,
 `blacklist.remove`, `log.clear`, `records.reset`,
 `user.cleanup`, `user.cleanup.exception.{add,remove,clear}`,

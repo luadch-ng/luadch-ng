@@ -185,6 +185,12 @@ jobs:
       - name: Run cmd_gag gags-endpoint unit test
         run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
 
+      # cmd_talk POST /v1/chat (webui#177 A): posts to main chat as the
+      # hubbot, mirrors into etc_chatlog's new log_line export, audits
+      # the real operator, response sender = hubbot nick (no token leak).
+      - name: Run cmd_talk chat-endpoint unit test
+        run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
+
       # cmd_ban periodic sweep: an expired non-permanent ban is pruned on
       # a 60s onTimer (not just lazily on the banned user's reconnect);
       # permanent bans are never swept, and a no-op sweep does not save.
@@ -655,6 +661,10 @@ jobs:
       - name: Run cmd_gag gags-endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_gag_endpoint_test.lua
+
+      - name: Run cmd_talk chat-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
 
       - name: Run cmd_ban sweep unit test
         shell: msys2 {0}

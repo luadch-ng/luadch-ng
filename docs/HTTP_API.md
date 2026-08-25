@@ -1267,6 +1267,7 @@ an unknown path).
 | Method | Path | Scope | Plugin |
 |---|---|---|---|
 | POST | `/v1/announce` | admin | `cmd_mass` [^http-announce-1] |
+| POST | `/v1/chat` | admin | `cmd_talk` [^http-chat-1] |
 | POST | `/v1/topic` | admin | `cmd_topic` [^http-topic-1] |
 | GET | `/v1/aliases` | read | `etc_aliases` [^http-aliases-1] |
 | POST | `/v1/aliases` | admin | `etc_aliases` [^http-aliases-2] |
@@ -1276,6 +1277,8 @@ an unknown path).
 | POST | `/v1/shutdown` | admin | `cmd_shutdown` - requires `X-Confirm: yes` (§4.6) [^http-shutdown-1] |
 
 [^http-announce-1]: Body `{message: string required (max 1024 chars, control-byte sanitised), scope: "all"|"hub"|"level" required, level?: integer (REQUIRED when scope="level", must exist in cfg.levels)}`. `scope="all"` broadcasts the banner to all online users with the operator's token-label as the visible sender (= ADC `+mass`); `scope="hub"` broadcasts without sender in the banner (= ADC `+masshub`); `scope="level"` PMs only users at the given level (= ADC `+masslvl N`). Returns 200 with `data: {action:"announce", scope, message, sender, level?, recipients?}` per §7.1.1; `recipients` is the matched-user count for scope="level" (broadcast variants omit it - derive from `/v1/stats`). A single `admin`-scoped token can issue any of the three ADC variants via the structured body.
+
+[^http-chat-1]: #669 (hub side of [webui#177](https://github.com/luadch-ng/webui/issues/177)). Body `{message: string required (max 1024 chars, control-byte sanitised)}`. Posts the message into MAIN CHAT as the hubbot (= ADC `+talk`) - a BMSG from the hub-bot SID, so connected clients see the hubbot nick as the sender, not the token label. Per webui#177 the audit actor is the real operator asserted in `X-Actor` (`req.actor`), falling back to the token label / `"http-api"`. Returns 200 with `data: {action:"chat", message, sender}` per §7.1.1; `sender` is the hubbot nick (NOT the token label - no token-fingerprint leak, unlike the `/v1/announce` banner). The post is also mirrored into `etc_chatlog` (when that plugin is loaded) so it appears in `+history` and `GET /v1/chatlog`; hub-originated broadcasts bypass the onBroadcast chat-filter chain by design (the hubbot is not subject to chat rules / flood limits).
 
 [^http-topic-1]: Body `{topic?: string}` (max 256 chars, control-byte sanitised). Missing OR empty `topic` resets the hub topic to `cfg.hub_description`; non-empty sets it. The ADC `+topic default` magic-keyword does NOT apply on the HTTP path - the structured body expresses "reset" via absence, so HTTP callers CAN literally set the topic to the word "default" via `{"topic": "default"}`. Returns 200 with `data: {action:"topic-set"|"topic-reset", topic, previous}` per §7.1.1. The new topic is broadcast to all connected users via `IINF DE...` and persisted to `scripts/data/cmd_topic.tbl`.
 
@@ -1486,6 +1489,7 @@ the same code path the `+cmd` listener uses.
 > bug that takes months to surface.
 
 - `cmd_mass` → `POST /v1/announce`
+- `cmd_talk` → `POST /v1/chat`
 - `cmd_topic` → `POST /v1/topic`
 - `cmd_ban` → `GET/POST /v1/bans`, `DELETE /v1/bans/{id}`
 - `cmd_disconnect` → `DELETE /v1/users/{sid}`
