@@ -1381,6 +1381,28 @@ an unknown path).
 
 [^http-webhook-1]: One route per operator-configured endpoint (`<name>` is the endpoint's configured path segment). Scope is `none` - the router does NOT gate it; the plugin authenticates each delivery itself via an HMAC-SHA256 signature over the raw body (see [`WEBHOOKS.md`](WEBHOOKS.md)). Signature mismatch returns **401** with the plugin's own `{code:"unauthorized"}` body; a body over the 64 KiB cap returns **413**; a non-JSON content type returns **415**. Registered only when `etc_webhook` is loaded and the endpoint has a resolvable secret - otherwise the path is absent and an unregistered path falls through to the router's generic 401/404.
 
+#### Webhooks (management)
+
+| Method | Path | Scope | Plugin |
+|---|---|---|---|
+| GET | `/v1/webhooks` | read | `etc_webhook` (v0.04) [^http-webhookmgmt-1] |
+| POST | `/v1/webhooks` | admin | `etc_webhook` [^http-webhookmgmt-2] |
+| PUT | `/v1/webhooks` | admin | `etc_webhook` [^http-webhookmgmt-3] |
+| PUT | `/v1/webhooks/{name}` | admin | `etc_webhook` [^http-webhookmgmt-4] |
+| DELETE | `/v1/webhooks/{name}` | admin | `etc_webhook` [^http-webhookmgmt-5] |
+
+Create/edit/delete the endpoints that back the inbound receiver routes above, without shell access (the WebUI Webhooks tab). The plugin owns `cfg/webhooks.tbl`: writes are atomic + `chmod 600`, and since endpoint config is read once at load, every write returns `apply_status: "reload_required"`. Registered whenever `etc_webhook` is whitelisted, independent of `etc_webhook_activate` (so the tab appears before the receiver is on). Secrets are write-only. See [`WEBHOOKS.md`](WEBHOOKS.md) §3.1.
+
+[^http-webhookmgmt-1]: Returns 200 with `data: {activate: bool, tuning: {max_per_minute, dedup_max, field_maxlen}, endpoints: [...]}`. Each endpoint carries its config plus `has_secret` (bool) and `secret_source` (`"inline"` = rotatable by writing the file, `"external"` = an env/cfg override wins on load, `"none"` = unset) and `valid` (+ `invalid_reason` when false) - **the secret value is never returned**. `read` scope matches `GET /v1/config`.
+
+[^http-webhookmgmt-2]: Body is one endpoint (`request_schema`: `name` [A-Za-z0-9_], max 64; `signature_header` required; optional `signature_prefix`, `path`, `event_header`, `id_header`, `bot_nick`, `default_template`, `min_level`, `enabled`, `events[]`, `templates{}`, `conditions[]`, `secret`). Returns 200 `{action: "webhook-created", name, apply_status}`. **400 E_BAD_INPUT** on a bad/duplicate name, missing `signature_header`, or an unresolvable secret (no inline + no env/cfg override). `audit_redact_body` keeps the ingested secret out of `api_audit.log`.
+
+[^http-webhookmgmt-3]: Body `{max_per_minute?, dedup_max?, field_maxlen?}` (positive integers). Returns 200 `{action: "webhook-tuned", apply_status}`. Updates only the global tuning; endpoints are managed via the `{name}` routes.
+
+[^http-webhookmgmt-4]: Full replace of the named endpoint (same schema as POST; `name` is taken from the path). A blank or omitted `secret` **keeps** the current one (rotate-only); a non-empty `secret` rotates it. Returns 200 `{action: "webhook-updated", name, apply_status}`; **404 E_NOT_FOUND** if the name is unknown. `audit_redact_body` set.
+
+[^http-webhookmgmt-5]: No request body. Returns 200 `{action: "webhook-deleted", name, apply_status}`; **404 E_NOT_FOUND** if the name is unknown.
+
 #### Shipped post-Phase-4 (#82 arc closed 2026-05-27)
 
 The four "future-scope" items below were shipped in a single day on

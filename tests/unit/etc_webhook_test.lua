@@ -489,6 +489,7 @@ _chmod_called = false
 r = call( "POST", "/v1/webhooks", NEWEP )
 eq( "POST: status 200", r.status, 200 )
 eq( "POST: apply_status reload_required", r.data.apply_status, "reload_required" )
+eq( "POST: action label", r.data.action, "webhook-created" )
 eq( "POST: writer chmod 600 called", _chmod_called, true )
 eq( "POST: audit action webhook.create", last_audit() and last_audit().action, "webhook.create" )
 eq( "POST: audit target is endpoint name (flat table, not dropped)",
@@ -508,9 +509,13 @@ r = call( "POST", "/v1/webhooks", { name = "discourse", signature_header = "x", 
 eq( "POST dup name: 400", r.status, 400 )
 eq( "POST dup name: E_BAD_INPUT", r.error.code, "E_BAD_INPUT" )
 
--- 16c. POST invalid name -> 400
+-- 16c. POST invalid name -> 400 (bad chars, and overlong)
 r = call( "POST", "/v1/webhooks", { name = "bad name!", signature_header = "x", secret = "k" } )
 eq( "POST bad name: 400", r.status, 400 )
+r = call( "POST", "/v1/webhooks", { name = string.rep( "a", 65 ), signature_header = "x", secret = "k" } )
+eq( "POST overlong name (>64): 400", r.status, 400 )
+r = call( "POST", "/v1/webhooks", { name = "numsec", signature_header = "x", secret = 12345 } )
+eq( "POST non-string secret: 400", r.status, 400 )
 
 -- 16d. POST no resolvable secret -> 400 (never a silently-inert endpoint)
 _overrides = { }
@@ -560,7 +565,7 @@ _config = base_config( ); load_plugin( )
 r = call( "PUT", "/v1/webhooks", { max_per_minute = 42, dedup_max = 999 } )
 eq( "settings: 200", r.status, 200 )
 eq( "settings: reload_required", r.data.apply_status, "reload_required" )
-eq( "settings: audit action", last_audit() and last_audit().action, "webhook.settings" )
+eq( "settings: audit action", last_audit() and last_audit().action, "webhook.tune" )
 truthy( "settings: audit target nil (no endpoint)", last_audit() and last_audit().target == nil )
 r = call( "GET", "/v1/webhooks" )
 eq( "settings: max_per_minute updated", r.data.tuning.max_per_minute, 42 )
@@ -597,6 +602,16 @@ eq( "scalar-safe: string template kept", sv.templates and sv.templates.good, "hi
 truthy( "scalar-safe: function template dropped", sv.templates and sv.templates.bad == nil )
 eq( "scalar-safe: only scalar-valued conditions kept", sv.conditions and #sv.conditions, 1 )
 eq( "scalar-safe: kept condition path", sv.conditions and sv.conditions[ 1 ].path, "p" )
+
+-- 22. path guard: an INVALID endpoint (norm=nil because it has no name) with
+--     a function `path` must NOT leak the function into the wire view - the
+--     raw-path fallback is scalar-guarded (else dkjson.encode crashes the loop).
+_config = { endpoints = { { signature_header = "h", path = function() end } } }
+load_plugin( )
+r = call( "GET", "/v1/webhooks" )
+local iv = r.data.endpoints[ 1 ]
+truthy( "path guard: view.path is a string, not the raw function", type( iv.path ) == "string" )
+eq( "path guard: invalid endpoint flagged valid=false", iv.valid, false )
 
 ----------------------------------------------------------------------
 if failures > 0 then
