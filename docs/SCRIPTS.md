@@ -1288,8 +1288,13 @@ etc).
 
 ### etc_records
 
-Track and display hub records (peak users, largest user share, etc).
-Reset capability for admins.
+Track and display all-time hub records: peak online users, peak total
+hub share, biggest single-user share, plus (since #647) peak total shared-
+file count and biggest single-user file count. Exposed via `+records show`
+and `GET /v1/records`; reset capability for admins. The two filecount
+records are silent (no chat broadcast on a new peak). The record store is
+a named-key table (`scripts/data/etc_records.tbl`); it migrates the legacy
+positional format on load, preserving values across the 3.1 -> 3.2 upgrade.
 
 **Commands:** `+records` / `+records reset`
 

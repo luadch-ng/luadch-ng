@@ -8,7 +8,7 @@
     "help_usageo": "[+!#]records show|reset",
     "msg_hmsg": "Hub Rekorde: Neuer Hubshare Rekord: %s %s",
     "msg_reseted": "Hub Rekorde: Datenbank zurückgesetzt",
-    "msg_rmsg": "\n    \n=== RECORDS ==========================================\n\n    Hub Rekorde:\n\n    Max Users:  %s User, Datum: %s, Zeit: %s Uhr\n    Max Hubshare:  %s %s, Datum: %s, Zeit: %s Uhr\n    Topsharer:  %s mit %s %s\n    \n========================================== RECORDS ===\n\n   ",
+    "msg_rmsg": "\n    \n=== RECORDS ==========================================\n\n    Hub Rekorde:\n\n    Max Users:  %s User, Datum: %s, Zeit: %s Uhr\n    Max Hubshare:  %s %s, Datum: %s, Zeit: %s Uhr\n    Max Hubdateien:  %s Dateien, Datum: %s, Zeit: %s Uhr\n    Topsharer:  %s mit %s %s\n    Top File-Sharer:  %s mit %s Dateien\n    \n========================================== RECORDS ===\n\n   ",
     "msg_tmsg": "Hub Rekorde: User %s hat den Usershare Rekord gebrochen mit: %s %s",
     "msg_umsg": "Hub Rekorde: Neuer Hubuser Rekord: %s",
     "ucmd_menu": [

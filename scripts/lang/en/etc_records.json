@@ -8,7 +8,7 @@
   "help_usageo":"[+!#]records show|reset",
   "msg_hmsg":"Hub Records: New hub share record: %s %s",
   "msg_reseted":"Hub Records: the database was reset successfully.",
-  "msg_rmsg":"\n    \n=== RECORDS ==========================================\n\n    Hub record statistics:\n\n    Max users:  %s User, Date: %s, Time: %s\n    Max hub share:  %s %s, Date: %s, Time: %s\n    Topsharer:  %s with %s %s\n    \n========================================== RECORDS ===\n\n   ",
+  "msg_rmsg":"\n    \n=== RECORDS ==========================================\n\n    Hub record statistics:\n\n    Max users:  %s User, Date: %s, Time: %s\n    Max hub share:  %s %s, Date: %s, Time: %s\n    Max hub files:  %s files, Date: %s, Time: %s\n    Topsharer:  %s with %s %s\n    Top file-sharer:  %s with %s files\n    \n========================================== RECORDS ===\n\n   ",
   "msg_tmsg":"Hub Records: User %s has broken the user share record with: %s %s",
   "msg_umsg":"Hub Records: New user-count record: %s",
   "ucmd_menu":["General","Hub Records"],
