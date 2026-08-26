@@ -72,6 +72,19 @@ That's it. Saving in Weblate is all that is required from a translator.
   the same order).
 - A maintainer reviews and merges that pull request (squash), so translations
   pass the same review as code.
+- After the funnel PR merges, the `weblate-reset` workflow resets Weblate's own
+  git branch back to `dev`. Weblate commits every translation separately, so its
+  branch is permanently ahead of `dev`; left alone that divergence grows until
+  Weblate can no longer merge the next `dev` change and auto-locks ("Could not
+  merge the repository"). The reset runs **only when it is safe** - it refuses
+  unless all three states of Weblate content are clear: no uncommitted units
+  (`needs_commit`), nothing committed-but-unpushed (`needs_push`), and the funnel
+  a no-op (nothing committed-and-pushed left to bring across), all checked under
+  the component lock - so no translation is ever discarded. It ships dormant (dry
+  run, logging its decision); set the repo variable `WEBLATE_AUTORESET_APPLY=1`
+  to arm it. When disarmed, clear the divergence manually: reset Weblate to `dev`
+  from the container after a funnel lands (`git reset --hard origin/dev` in the
+  component checkout, then `create_translations(force=True)` in the Weblate shell).
 
 > **Translate in Weblate, not in `dev`.** Weblate is the source of truth for
 > translations; the funnel overwrites a `dev` language file with Weblate's

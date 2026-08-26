@@ -1,0 +1,76 @@
+# Auto-reset the Weblate repository to `dev` once a funnel has landed, so the
+# Weblate-vs-dev commit divergence never accumulates into the recurring
+# "Could not merge the repository" auto-lock.
+#
+# Weblate commits every translation separately and its branch is permanently
+# ahead of `dev` (the funnel brings only a filtered/squashed version across).
+# That divergence must be cleared by resetting Weblate's git to `dev` whenever
+# `dev` already holds everything Weblate has - the state right after a funnel PR
+# merges. This runs on exactly that push and resets ONLY when it is safe:
+# tools/weblate_reset.py locks the component and, under the lock, refuses unless
+# all three Weblate content states are clear - needs_commit (uncommitted),
+# needs_push (committed but unpushed), and the funnel being a no-op (committed,
+# pushed, but not yet funneled). Any one still holding work -> skip (no loss).
+#
+# SAFE ROLLOUT: dry run unless armed. A push/merge run only actually resets when
+# the repo variable WEBLATE_AUTORESET_APPLY == '1'; otherwise it logs the
+# decision (would RESET / would SKIP). A manual `workflow_dispatch` honours its
+# own `apply` checkbox regardless of the variable. Merge this dormant, watch one
+# real funnel merge log its dry-run decision, then set the variable to arm it.
+#
+# Requires the repo secret WEBLATE_API_TOKEN; optional var WEBLATE_PROJECT
+# (defaults to 'luadch-ng' in the script). Green-skips if the secret is unset.
+# The workflow_dispatch button only appears once this file reaches the default
+# branch (master); the push trigger works as soon as it is on `dev`.
+
+name: Weblate reset
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'lang/**'
+      - 'scripts/lang/**'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Actually reset (leave unchecked for a dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weblate-reset
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # weblate_reset.py fetches origin/weblate + runs the funnel no-op check
+      # itself, so the whole safety decision happens under the component lock.
+      - name: Reset Weblate to dev when fully in sync
+        env:
+          WEBLATE_URL: https://translate.dcvault.net
+          WEBLATE_PROJECT: ${{ vars.WEBLATE_PROJECT }}   # defaults to 'luadch-ng' in the script
+          WEBLATE_API_TOKEN: ${{ secrets.WEBLATE_API_TOKEN }}
+          # Live only when a push run is armed by the repo variable, or a manual
+          # dispatch ticks `apply`; a dispatch always honours its own checkbox.
+          APPLY: ${{ ((github.event_name == 'push' && vars.WEBLATE_AUTORESET_APPLY == '1') || (github.event_name == 'workflow_dispatch' && inputs.apply)) && '1' || '' }}
+        run: |
+          if [ -z "$WEBLATE_API_TOKEN" ]; then
+            echo "::notice::WEBLATE_API_TOKEN secret is not set - skipping."
+            exit 0
+          fi
+          python3 tools/weblate_reset.py
