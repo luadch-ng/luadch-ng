@@ -15,7 +15,7 @@
     "msg_denied_3": "Du kannst dich nicht selbst entfernen.",
     "msg_help_1": "  [+!#]help \t | Listet die in diesem Chat verfügbaren Befehle auf",
     "msg_help_2": "  [+!#]members\t| Listet alle Mitglieder dieses Chats auf",
-    "msg_help_3": "  [+!#]add <NICK>\t| Einen Member hinzufügen",
+    "msg_help_3": "  [+!#]add <NICK>\t| Fügt ein neues Mitglied hinzu",
     "msg_help_4": "  [+!#]del <NICK>\t| Einen Member entfernen",
     "msg_help_member": "\n\n=== MEMBERS HELP =================================\n\nListe aller in-chat Befehle:\n\n%s\n%s\n\n================================= MEMBERS HELP ===\n  ",
     "msg_help_owner": "\n\n=== OWNER HELP ===================================\n\nListe aller in-chat Befehle:\n\n%s\n%s\n%s\n%s\n\n=================================== OWNER HELP ===\n  ",
