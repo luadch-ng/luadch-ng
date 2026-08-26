@@ -1,14 +1,14 @@
 {
-  "msg_days":" Tage, ",
-  "msg_hours":" Stunden, ",
-  "msg_invalid":"Ungültige Hubanzahl.",
-  "msg_max":"\n\n=== USER HUBS CHECK ===================\n\nDu wurdest disconnected weil:\n\nMax User Hubs: %s  |  bei dir: %s\nMax Reg Hubs: %s  |  bei dir: %s\nMax Op Hubs: %s  |  bei dir: %s\n\nMax Hubs: %s  |  bei dir: %s\n\n=================== USER HUBS CHECK ===\n  ",
-  "msg_minutes":" Minuten, ",
-  "msg_reason":"Überschreiten des User Hub Limits",
-  "msg_redirect":"[ USER HUBS ]--> Du wurdest weitergeleitet weil: Überschreiten des User Hub Limits. Hubs: ",
-  "msg_seconds":" Sekunden",
-  "msg_years":" Jahre, ",
-  "report_msg":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde gebannt für:  %s  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)",
-  "report_msg_kick":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde getrennt  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)",
-  "report_msg_redirect":"[ USER HUBS ]--> User:  %s  |  IP:  %s  |  CID:  %s  |  wurde redirected  |  Grund: Überschreiten des User Hub Limits. Hubs:  %s  (Gesamt:  %s Hubs)  |  Erlaubt:  %s  (max.  %s  Hubs gesamt)"
+    "msg_days": " Tage, ",
+    "msg_hours": " Stunden, ",
+    "msg_invalid": "Ungültige Hub-Anzahl.",
+    "msg_max": "\n\n=== USER HUBS CHECK ===================\n\nDu wurdest getrennt, weil:\n\nMax Benutzer Hubs: %s  |  bei dir: %s\nMax Reg Hubs: %s  |  bei dir: %s\nMax OP Hubs: %s  |  bei dir: %s\n\nMax Hubs: %s  |  bei dir: %s\n\n=================== USER HUBS CHECK ===\n  ",
+    "msg_minutes": " Minuten, ",
+    "msg_reason": "Hub-Limit überschritten",
+    "msg_redirect": "[ BENUTZER HUBS ]--> Sie wurden weitergeleitet, weil Sie das Hub-Limit überschritten haben. Hubs: ",
+    "msg_seconds": " Sekunden",
+    "msg_years": " Jahre, ",
+    "report_msg": "[ USER HUBS ]--> Benutzer:  %s  |  IP-Adresse:  %s  |  CID:  %s  |  wurde gebannt für:  %s  |  Grund: Hub-Limit überschritten. Hubs:  %s  (gesamt:  %s Hubs)  |  erlaubt:  %s  (max.  %s  Hubs gesamt)",
+    "report_msg_kick": "[ USER HUBS ]--> Benutzer:  %s  |  IP-Adresse:  %s  |  CID:  %s  |  wurde getrennt  |  Grund: Hub-Limit überschritten. Hubs:  %s  (gesamt:  %s Hubs)  |  erlaubt:  %s  (max.  %s Hubs gesamt)",
+    "report_msg_redirect": "[ USER HUBS ]--> Benutzer:  %s  |  IP-Adresse:  %s  |  CID:  %s  |  wurde umgeleitet  |  Grund: Hub-Limit überschritten. Hubs:  %s  (gesamt:  %s Hubs)  |  erlaubt:  %s  (max.  %s  Hubs gesamt)"
 }
