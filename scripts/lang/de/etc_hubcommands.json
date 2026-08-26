@@ -1,5 +1,5 @@
 {
-  "msg_command_echo":"[command] %s",
-  "msg_did_you_mean":"Meintest du +%s? Hub-Befehle brauchen das [+!#]-Prefix; deine Nachricht wurde NICHT in den Main-Chat gesendet.",
-  "msg_literal_brackets":"Das `[+!#]` in der Doku ist Notation für 'wähle eines von +, !, oder #', keine wörtlichen Klammern. Versuche `+%s` (deine Nachricht wurde NICHT in den Main-Chat gesendet)."
+    "msg_command_echo": "[command] %s",
+    "msg_did_you_mean": "Meinst Du +%s? Hub-Befehle benötigen das Präfix [+!#], daher wurde Deine Nachricht NICHT an den Hauptchat gesendet.",
+    "msg_literal_brackets": "Das `[+!#]` in der Dokumentation ist eine Notation für 'wähle eines von +, ! oder #', keine echten Klammern. Versuche `+%s` (deine Nachricht wurde NICHT in den Hauptchat gesendet)."
 }

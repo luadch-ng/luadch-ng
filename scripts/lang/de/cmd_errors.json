@@ -1,7 +1,12 @@
 {
-  "help_desc":"Zeigt die error.log",
-  "help_usage":"[+!#]errors",
-  "msg_denied":"[ ERRORS ]--> Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_noerrors":"[ ERRORS ]--> Keine Errors.",
-  "ucmd_menu":["Hub","Logs","zeige","error.log"]
+    "help_desc": "Zeigt das Fehlerprotokoll an.",
+    "help_usage": "[+!#]errors",
+    "msg_denied": "[ ERRORS ]--> Du bist nicht berechtigt, diesen Befehl zu verwenden.",
+    "msg_noerrors": "[ ERRORS ]--> Keine Fehler.",
+    "ucmd_menu": [
+        "Hub",
+        "Logs",
+        "Anzeigen",
+        "error.log"
+    ]
 }

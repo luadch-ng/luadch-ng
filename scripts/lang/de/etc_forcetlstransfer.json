@@ -1,4 +1,4 @@
 {
-  "msg_block":"[ FORCE TLS ]--> Ein unverschluesselter Transfer wurde blockiert - dieser Hub verlangt verschluesselte ( ADCS ) Transfers. Bitte aktiviere die erzwungene ( \"forced\" ) Transfer-Verschluesselung in deinem Client und leite deinen TLS-Port weiter. Anleitung: https://dcvault.net/docs/clients/installation-setup#connection",
-  "msg_warn":"[ FORCE TLS ]--> Ein unverschluesselter Transfer wurde erkannt - dieser Hub bittet um verschluesselte ( ADCS ) Transfers. Bitte aktiviere die erzwungene ( \"forced\" ) Transfer-Verschluesselung in deinem Client und leite deinen TLS-Port weiter. Anleitung: https://dcvault.net/docs/clients/installation-setup#connection"
+    "msg_block": "[ FORCE TLS ]--> Eine unverschlüsselte Übertragung wurde blockiert. Dieser Hub erfordert verschlüsselte (ADCS) Übertragungen. Bitte aktiviere erzwungene Übertragungsverschlüsselung in deinem Client und leite den TLS-Port weiter. Einrichtungsanleitung: https://dcvault.net/docs/clients/installation-setup#connection",
+    "msg_warn": "[ FORCE TLS ]--> Eine unverschlüsselte Übertragung wurde erkannt. Dieser Hub verlangt verschlüsselte (ADCS) Übertragungen. Bitte aktiviere die erzwungene Übertragungsverschlüsselung in Deinem Client und leite Deinen TLS‑Port weiter. Einrichtungsanleitung: https://dcvault.net/docs/clients/installation-setup#connection"
 }

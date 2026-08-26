@@ -1,8 +1,14 @@
 {
-  "help_desc":"Zeigt client INF von einem User oder dir selbst",
-  "help_usage":"[+!#]myinf [<NICK>]",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_inf":"\n\n=== USER CLIENT INF ===============================================================\n\nUser: %s\n\n%s\n=============================================================== USER CLIENT INF ===\n      ",
-  "ucmd_menu_ct1":["Über Dich","zeige Client INF"],
-  "ucmd_menu_ct2":["Anzeigen","Client INF"]
+    "help_desc": "Zeigt den Client-INF eines Benutzers oder deinen eigenen.",
+    "help_usage": "[+!#]myinf [<NICK>]",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_inf": "\n\n=== BENUTZER CLIENT INF ===========================================================\n\nBenutzer: %s\n\n%s\n=========================================================== BENUTZER CLIENT INF ===\n      ",
+    "ucmd_menu_ct1": [
+        "Über Dich",
+        "Client-INF anzeigen"
+    ],
+    "ucmd_menu_ct2": [
+        "Anzeigen",
+        "Client INF"
+    ]
 }
