@@ -85,6 +85,7 @@ return {
     endpoints = {
         {
             name             = "discourse",       -- [A-Za-z0-9_]; used in the path + env-var name
+            enabled          = true,               -- optional; default true. false = pause this endpoint without deleting it (or its secret)
             path             = "/v1/webhook/discourse",   -- default: /v1/webhook/<name>
             signature_header = "x-discourse-event-signature",  -- required
             signature_prefix = "sha256=",          -- stripped before compare ("" if the header is raw hex)
@@ -110,6 +111,11 @@ return {
 Header names are matched case-insensitively (the hub lowercases them).
 Any number of endpoints is supported; edit the file and `+reload` to add
 more.
+
+**`enabled`** (optional, default `true`) pauses one endpoint without
+deleting it or its secret: `enabled = false` makes the hub skip it (no
+route, no bot) on load, while the entry (and its config) stays in the
+file. Omitting the field means enabled.
 
 **Templates** use `{dotted.path}` placeholders resolved against the
 decoded JSON body, plus `{event}` (the value of the header named by
@@ -138,6 +144,39 @@ event the endpoint accepts). Two common uses:
   `post_created` (its auto opening post). `{ path = "post.post_number",
   not_equals = 1 }` drops that duplicate opening post while still announcing
   the topic (which carries no `post.post_number`) and real replies (>= 2).
+
+### 3.1 Managing endpoints via the WebUI / HTTP API
+
+`cfg/webhooks.tbl` can be edited by hand (above) OR managed over the HTTP
+API - the WebUI's **Webhooks** tab is the front end for it. The routes
+(admin scope for writes, `read` for the list) are:
+
+| Route | Does |
+|---|---|
+| `GET /v1/webhooks` | list endpoints + tuning; **secrets are redacted** (`has_secret` + `secret_source`, never the value) |
+| `POST /v1/webhooks` | create an endpoint |
+| `PUT /v1/webhooks/{name}` | replace an endpoint (a blank/omitted `secret` keeps the current one) |
+| `DELETE /v1/webhooks/{name}` | delete an endpoint |
+| `PUT /v1/webhooks` | update the global tuning (`max_per_minute` / `dedup_max` / `field_maxlen`) |
+
+Notes:
+
+- **The plugin owns the file.** A save through the API regenerates
+  `cfg/webhooks.tbl` (an atomic write, then `chmod 600`): a header banner
+  is kept, but hand-written comments and layout are **not** preserved, and
+  inline secrets are rewritten. Hand-editing still works; the two just do
+  not co-exist losslessly.
+- **A write needs a `+reload` to take effect.** Endpoint config is read
+  once at load, so every write returns `apply_status = "reload_required"`;
+  the WebUI shows a pending-reload banner.
+- **Secrets are write-only.** The API never returns a secret. A secret set
+  via env var / cfg key (`secret_source = "external"`) cannot be rotated by
+  writing the file (the override wins on load) - the WebUI marks it as
+  externally managed. WebUI-created endpoints store their secret inline.
+- **The management routes register whenever the plugin is whitelisted**
+  (`enabled = true` in `cfg.scripts`), independent of
+  `etc_webhook_activate`. So the Webhooks tab appears - and can flip the
+  master switch - even before the receiver is turned on.
 
 ---
 

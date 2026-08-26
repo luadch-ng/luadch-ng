@@ -166,6 +166,15 @@ def override_test_ports(staging_dir: Path):
         # daily_at schedule stays at 04:00, so no scheduled backup fires
         # during the run; only the explicit +backup now does.
         (r'etc_backup_passphrase\s*=\s*""', 'etc_backup_passphrase = "smoke-backup-pass"'),
+        # etc_webhook v0.04: whitelist the plugin (ships enabled=false) so its
+        # management API (GET/POST/PUT/DELETE /v1/webhooks) registers and
+        # test_http_webhooks_management can drive the real config writer.
+        # etc_webhook_activate stays false: the mgmt routes register
+        # independent of it, so no receiver/bot is created and no webhooks.tbl
+        # is needed at boot (the test creates one). Also exercises the
+        # plugin's real-sandbox load path on every smoke boot.
+        (r'\{\s*"etc_webhook\.lua",\s*enabled\s*=\s*false\s*\}',
+         '{ "etc_webhook.lua", enabled = true }'),
     ]
     for pattern, replacement in rewrites:
         new_text, count = re.subn(pattern, replacement, text, count=1)
@@ -5903,6 +5912,183 @@ def test_http_phase4_etc_records(staging_dir: Path, proc=None):
     b = body_of(r)
     if '"/v1/records"' not in b:
         raise TestFailure(f"catalog missing /v1/records; body={b!r}")
+
+
+def test_http_webhooks_management(staging_dir: Path, proc=None):
+    """etc_webhook v0.04: HTTP management API for cfg/webhooks.tbl.
+
+    The plugin is whitelisted in the smoke config (enabled=true) but the
+    receiver stays OFF (etc_webhook_activate=false, no webhooks.tbl on
+    boot). The management routes register regardless, so this exercises
+    the REAL writer end to end: a POST serialises cfg/webhooks.tbl via
+    util.tabletostring + atomic_write + chmod 600, and the NEXT GET reads
+    it back through the real loadfile - so if the written file were not
+    valid, reloadable Lua the endpoint would not reappear.
+
+    Coverage:
+    - Anonymous GET -> 401; authed GET -> 200 + {activate, tuning, endpoints}.
+    - POST create -> 200 + apply_status=reload_required; then GET lists it
+      with the secret REDACTED (has_secret + secret_source, never a value).
+    - The on-disk cfg/webhooks.tbl exists, carries the header + the name,
+      and (POSIX) is mode 0600.
+    - PUT rotate -> 200; PUT unknown -> 404; DELETE -> 200 (then gone).
+    - POST invalid name -> 400; PUT /v1/webhooks tuning -> 200 + reflected.
+    - /v1/endpoints lists the collection + {name} routes.
+    """
+    import json as _json
+    import os as _os
+    import stat as _stat
+
+    token_path = staging_dir / "cfg" / "api_token.first"
+    bootstrap_token = None
+    for line in token_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            bootstrap_token = line
+            break
+    if not bootstrap_token:
+        raise TestFailure(f"could not parse token from {token_path}")
+    auth = b"Authorization: Bearer " + bootstrap_token.encode("ascii") + b"\r\n"
+
+    def status(resp):
+        return resp.split("\r\n", 1)[0]
+
+    def body_of(resp):
+        return resp.split("\r\n\r\n", 1)[1] if "\r\n\r\n" in resp else ""
+
+    def send(method, path, body_json=None):
+        req = method.encode("ascii") + b" " + path.encode("ascii") + b" HTTP/1.1\r\n" + auth
+        if body_json is not None:
+            body = body_json.encode("utf-8")
+            req += (b"Content-Type: application/json\r\n"
+                    + b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n\r\n"
+                    + body)
+        else:
+            req += b"\r\n"
+        return _http_roundtrip(req)
+
+    def data_of(resp, label):
+        if "200 OK" not in status(resp):
+            raise TestFailure(f"{label}: expected 200, got {status(resp)!r}; body={body_of(resp)!r}")
+        parsed = _json.loads(body_of(resp))
+        if not parsed.get("ok"):
+            raise TestFailure(f"{label}: ok=false; body={body_of(resp)!r}")
+        return parsed.get("data") or {}
+
+    # 1. Anonymous GET -> 401.
+    r = _http_roundtrip(b"GET /v1/webhooks HTTP/1.1\r\n\r\n")
+    if "401" not in status(r):
+        raise TestFailure(f"anonymous GET /v1/webhooks: expected 401, got {status(r)!r}")
+
+    # 2. Authed GET -> envelope shape; receiver off, zero endpoints on boot.
+    d = data_of(send("GET", "/v1/webhooks"), "GET /v1/webhooks")
+    if d.get("activate") is not False:
+        raise TestFailure(f"GET /v1/webhooks: expected activate=false on boot; data={d!r}")
+    if not isinstance(d.get("tuning"), dict) or not isinstance(d["tuning"].get("max_per_minute"), int):
+        raise TestFailure(f"GET /v1/webhooks: missing tuning.max_per_minute; data={d!r}")
+    if not isinstance(d.get("endpoints"), list):
+        raise TestFailure(f"GET /v1/webhooks: endpoints not a list; data={d!r}")
+
+    # 3. POST create -> 200 + reload_required. The template carries a quote,
+    # a backslash, a `]]` and a newline so the real util.tabletostring %q
+    # escaping is exercised end to end (serialise -> file -> loadfile -> GET);
+    # a broken escape would corrupt the file and drop the endpoint at step 4.
+    tricky_template = 'built "{status}" \\o/ ]] end\nline2'
+    create = _json.dumps({
+        "name": "smoketest",
+        "signature_header": "x-smoke-sig",
+        "signature_prefix": "sha256=",
+        "event_header": "x-smoke-event",
+        "events": ["build"],
+        "templates": {"build": tricky_template},
+        "secret": "smoke-secret-value-01",
+    })
+    d = data_of(send("POST", "/v1/webhooks", create), "POST /v1/webhooks")
+    if d.get("apply_status") != "reload_required":
+        raise TestFailure(f"POST /v1/webhooks: expected reload_required; data={d!r}")
+
+    # 4. GET reflects it (proves the written file is valid, reloadable Lua),
+    #    with the secret redacted.
+    d = data_of(send("GET", "/v1/webhooks"), "GET /v1/webhooks (post-create)")
+    ep = next((e for e in d["endpoints"] if e.get("name") == "smoketest"), None)
+    if ep is None:
+        raise TestFailure(f"POST then GET: 'smoketest' not listed (bad file write?); data={d!r}")
+    if "secret" in ep:
+        raise TestFailure(f"GET /v1/webhooks: secret value leaked in endpoint; ep={ep!r}")
+    if ep.get("has_secret") is not True or ep.get("secret_source") != "inline":
+        raise TestFailure(f"GET /v1/webhooks: expected has_secret+inline; ep={ep!r}")
+    if ep.get("enabled") is not True or ep.get("valid") is not True:
+        raise TestFailure(f"GET /v1/webhooks: expected enabled+valid; ep={ep!r}")
+    if ep.get("templates", {}).get("build") != tricky_template:
+        raise TestFailure(
+            f"template with quote/backslash/]]/newline did not round-trip through "
+            f"the real writer (%q escaping); got {ep.get('templates')!r}")
+
+    # 5. The real on-disk file: header + name present, and 0600 on POSIX.
+    whooks = staging_dir / "cfg" / "webhooks.tbl"
+    if not whooks.exists():
+        raise TestFailure("POST /v1/webhooks: cfg/webhooks.tbl was not written")
+    ftext = whooks.read_text(encoding="utf-8")
+    if "managed by etc_webhook" not in ftext:
+        raise TestFailure(f"cfg/webhooks.tbl missing header; content={ftext[:200]!r}")
+    # util.tabletostring serialises keys as `[ "name" ] = "smoketest"`, so
+    # match the quoted name value rather than an assumed `name = ` form.
+    if '"smoketest"' not in ftext:
+        raise TestFailure(f"cfg/webhooks.tbl missing endpoint name; content={ftext!r}")
+    if sys.platform != "win32":
+        mode = _stat.S_IMODE(_os.stat(whooks).st_mode)
+        if mode != 0o600:
+            raise TestFailure(f"cfg/webhooks.tbl mode should be 0600, got {oct(mode)}")
+
+    # 5b. enabled=false round-trips through the real writer (boolean serialise
+    #     + reload), then clean it up.
+    data_of(send("POST", "/v1/webhooks", _json.dumps(
+        {"name": "pausedhook", "signature_header": "x-p", "secret": "p-secret-03", "enabled": False})),
+        "POST /v1/webhooks (paused)")
+    d = data_of(send("GET", "/v1/webhooks"), "GET /v1/webhooks (paused)")
+    pep = next((e for e in d["endpoints"] if e.get("name") == "pausedhook"), None)
+    if pep is None or pep.get("enabled") is not False:
+        raise TestFailure(f"enabled=false did not round-trip through the writer; ep={pep!r}")
+    data_of(send("DELETE", "/v1/webhooks/pausedhook"), "DELETE /v1/webhooks/pausedhook")
+
+    # 6. PUT rotate secret -> 200; PUT unknown -> 404.
+    d = data_of(send("PUT", "/v1/webhooks/smoketest",
+                     '{"name":"smoketest","signature_header":"x-smoke-sig","secret":"rotated-secret-02"}'),
+                "PUT /v1/webhooks/smoketest")
+    if d.get("apply_status") != "reload_required":
+        raise TestFailure(f"PUT /v1/webhooks/smoketest: expected reload_required; data={d!r}")
+    r = send("PUT", "/v1/webhooks/ghost",
+             '{"name":"ghost","signature_header":"x","secret":"k"}')
+    if "404" not in status(r):
+        raise TestFailure(f"PUT /v1/webhooks/ghost: expected 404, got {status(r)!r}")
+
+    # 7. POST invalid name -> 400.
+    r = send("POST", "/v1/webhooks", '{"name":"bad name","signature_header":"x","secret":"k"}')
+    if "400" not in status(r):
+        raise TestFailure(f"POST bad name: expected 400, got {status(r)!r}")
+
+    # 8. PUT /v1/webhooks (global tuning) -> 200 + reflected in GET.
+    d = data_of(send("PUT", "/v1/webhooks", '{"max_per_minute":25}'), "PUT /v1/webhooks (tuning)")
+    if d.get("apply_status") != "reload_required":
+        raise TestFailure(f"PUT /v1/webhooks tuning: expected reload_required; data={d!r}")
+    d = data_of(send("GET", "/v1/webhooks"), "GET /v1/webhooks (post-tuning)")
+    if d["tuning"].get("max_per_minute") != 25:
+        raise TestFailure(f"PUT tuning not reflected; tuning={d.get('tuning')!r}")
+
+    # 9. DELETE -> 200, then gone.
+    d = data_of(send("DELETE", "/v1/webhooks/smoketest"), "DELETE /v1/webhooks/smoketest")
+    if d.get("apply_status") != "reload_required":
+        raise TestFailure(f"DELETE /v1/webhooks/smoketest: expected reload_required; data={d!r}")
+    d = data_of(send("GET", "/v1/webhooks"), "GET /v1/webhooks (post-delete)")
+    if any(e.get("name") == "smoketest" for e in d["endpoints"]):
+        raise TestFailure(f"DELETE then GET: 'smoketest' still present; data={d!r}")
+
+    # 10. /v1/endpoints catalog lists the management routes.
+    r = _http_roundtrip(b"GET /v1/endpoints HTTP/1.1\r\n" + auth + b"\r\n")
+    b = body_of(r)
+    for route in ('"/v1/webhooks"', '"/v1/webhooks/{name}"'):
+        if route not in b:
+            raise TestFailure(f"catalog missing {route}; body={b!r}")
 
 
 def test_http_phase4_etc_blacklist(staging_dir: Path, proc=None):
@@ -13821,6 +14007,18 @@ def main():
             failed.append("HTTP API Phase 4 etc_records (#82 / #249)")
         else:
             log("PASS  HTTP API Phase 4 etc_records (#82 / #249)")
+
+        # etc_webhook v0.04: HTTP management API for cfg/webhooks.tbl
+        # (create/edit/delete endpoints). Exercises the real config
+        # writer (util.tabletostring + atomic_write + chmod 600) end to
+        # end - the post-POST GET re-reads the written file via loadfile.
+        try:
+            test_http_webhooks_management(staging_dir, proc=proc)
+        except Exception as e:
+            log(f"FAIL  HTTP API etc_webhook management: {e}")
+            failed.append("HTTP API etc_webhook management")
+        else:
+            log("PASS  HTTP API etc_webhook management")
 
         # Phase 4 PR-3 of #82 / #249: etc_blacklist plugin migrated to
         # GET /v1/blacklist + DELETE /v1/blacklist/{nick}. Self-seeds
