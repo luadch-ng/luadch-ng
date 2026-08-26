@@ -1,19 +1,19 @@
 {
-    "help_desc": "Anzeigen der Hub Rekorde",
-    "help_desco": "Anzeigen der Hub Rekorde|zurücksetzen der Datenbank",
-    "help_err": "Du bist nicht befugt diesen Befehl zu nutzen.",
-    "help_err_wrong_id_o": "\n\t\t Falsche Eingabe, versuch es mal hiermit: \n\n\t\t %s \n\t\t %s \n\n\t\t %s \n\t\t %s ",
-    "help_err_wrong_id_reg": "\n\t\t Falsche Eingabe, versuch es mal hiermit: \n\n\t\t %s \n\t\t %s ",
+    "help_desc": "Zeigt die Hub-Rekorde an.",
+    "help_desco": "Zeigt die Hub-Rekorde an oder setzt die Rekord-Datenbank zurück.",
+    "help_err": "Du darfst diesen Befehl nicht benutzen.",
+    "help_err_wrong_id_o": "\n\t\t Ungültige Eingabe. Bitte versuche es erneut mit: \n\n\t\t %s \n\t\t %s \n\n\t\t %s \n\t\t %s ",
+    "help_err_wrong_id_reg": "\n\t\t Ungültige Eingabe. Bitte versuche es erneut mit: \n\n\t\t %s \n\t\t %s ",
     "help_usage": "[+!#]records show",
     "help_usageo": "[+!#]records show|reset",
-    "msg_hmsg": "Hub Rekorde: Neuer Hubshare Rekord: %s %s",
-    "msg_reseted": "Hub Rekorde: Datenbank zurückgesetzt",
-    "msg_rmsg": "\n    \n=== RECORDS ==========================================\n\n    Hub Rekorde:\n\n    Max Users:  %s User, Datum: %s, Zeit: %s Uhr\n    Max Hubshare:  %s %s, Datum: %s, Zeit: %s Uhr\n    Topsharer:  %s mit %s %s\n    \n========================================== RECORDS ===\n\n   ",
-    "msg_tmsg": "Hub Rekorde: User %s hat den Usershare Rekord gebrochen mit: %s %s",
-    "msg_umsg": "Hub Rekorde: Neuer Hubuser Rekord: %s",
+    "msg_hmsg": "Hub-Rekorde: Neuer Hub-Share-Rekord: %s %s",
+    "msg_reseted": "Hub-Datensätze: Die Datenbank wurde erfolgreich zurückgesetzt.",
+    "msg_rmsg": "\n    \n=== REKORDE ==========================================\n\n    Hub-Rekordstatistiken:\n\n    Max. Benutzer:  %s Benutzer, Datum: %s, Zeit: %s\n    Max. Hub-Share:  %s %s, Datum: %s, Zeit: %s\n    Topsharer:  %s mit %s %s\n    \n========================================== REKORDE ===\n\n   ",
+    "msg_tmsg": "Hub Rekorde: Benutzer %s hat den Benutzer-Share-Rekord gebrochen mit: %s %s",
+    "msg_umsg": "Hub-Rekorde: Neuer Benutzeranzahl-Rekord: %s",
     "ucmd_menu": [
         "Allgemein",
-        "Hub Rekorde"
+        "Hub-Rekorde"
     ],
     "ucmd_menu_reset": [
         "Hub",
