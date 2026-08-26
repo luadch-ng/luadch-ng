@@ -4,7 +4,13 @@
 
     Copy this file to  cfg/webhooks.tbl  and edit it. It is plain Lua
     (same as cfg.tbl). If you put secrets inline (see below), chmod it
-    600 - it is NOT exposed via the HTTP API, but treat it like cfg.tbl.
+    600 - treat it like cfg.tbl.
+
+    You can manage endpoints by hand here OR through the WebUI's Webhooks
+    tab / the HTTP API (GET/POST/PUT/DELETE /v1/webhooks*). A save through
+    the API regenerates this file (atomic write + chmod 600): a header
+    banner is kept, but comments and layout are NOT preserved and inline
+    secrets are rewritten. The API never returns a secret on read.
 
     The master switch etc_webhook_activate lives in cfg.tbl; everything
     else is here. After editing, run  +reload .
@@ -45,6 +51,7 @@ return {
         -- ============================ Discourse forum ============================
         {
             name             = "discourse",
+            enabled          = true,                       -- optional (default true); set false to pause this endpoint without deleting it
             path             = "/v1/webhook/discourse",   -- the Payload URL you configure in Discourse (via your reverse proxy)
             signature_header = "x-discourse-event-signature",
             signature_prefix = "sha256=",
