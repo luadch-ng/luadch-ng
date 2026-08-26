@@ -1,15 +1,15 @@
 {
-    "help_desc": "Zeigt IP eines Users oder dir selbst",
+    "help_desc": "Zeigt die IP-Adresse eines Benutzers oder deine eigene.",
     "help_usage": "[+!#]myip [<NICK>]",
-    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
-    "msg_ip": "Deine IP ist: ",
-    "msg_targetip": "Benutzername: %s  |  IP: %s",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_ip": "Deine IP-Adresse ist: ",
+    "msg_targetip": "Benutzername: %s  |  IP-Adresse: %s",
     "ucmd_menu_ct1": [
         "Über Dich",
-        "zeige IP"
+        "IP-Adresse anzeigen"
     ],
     "ucmd_menu_ct2": [
         "Anzeigen",
-        "IP"
+        "IP-Adresse"
     ]
 }
