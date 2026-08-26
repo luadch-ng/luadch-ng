@@ -1,6 +1,9 @@
 {
-  "help_desc":"Zeigt die Hubregeln",
-  "help_usage":"[+!#]rules",
-  "msg_rules":"\n\n=== RULES =======================================================================================\n\n                                                                                                  no rules atm.\n\n======================================================================================= RULES ===\n    ",
-  "ucmd_menu":["Allgemein","Hubregeln"]
+    "help_desc": "Zeigt die Hub-Regeln an.",
+    "help_usage": "[+!#]rules",
+    "msg_rules": "\n\n=== REGELN =====================================================================================\n\n                                                                                                  Keine Regeln festgelegt.\n\n======================================================================================= REGELN ===\n    ",
+    "ucmd_menu": [
+        "Allgemein",
+        "Regeln"
+    ]
 }

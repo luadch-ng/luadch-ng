@@ -1,24 +1,24 @@
 {
-    "help_desc": "Disconnected einen User",
+    "help_desc": "Trennt die Verbindung eines Users",
     "help_usage": "[+!#]disconnect <NICK> <GRUND>",
-    "msg_bot": "Fehler: User ist ein Bot.",
-    "msg_denied1": "Du bist nicht befugt diesen Befehl zu nutzen.",
-    "msg_denied2": "Du kannst keinen disconnecten der ein höheres Level hat als du.",
-    "msg_denied3": "Du kannst dich nicht selbst disconnecten.",
+    "msg_bot": "Benutzer ist ein Bot.",
+    "msg_denied1": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_denied2": "Du kannst keinen Benutzer mit einem höheren Level vom Hub trennen.",
+    "msg_denied3": "Du kannst dich nicht selbst trennen.",
     "msg_denied4": "Der User ist offline.",
-    "msg_usage": "Gebrauch: [+!#]disconnect <NICK> <GRUND>",
-    "report_msg": "[ DISCONNECT ]--> User  %s  wurde disconnected von  %s  |  Grund: %s",
+    "msg_usage": "Verwendung: [+!#]disconnect <NICK> <GRUND>",
+    "report_msg": "[ DISCONNECT ]--> Benutzer  %s  wurde getrennt von  %s  |  Grund: %s",
     "ucmd_menu1": [
-        "User",
-        "Control",
-        "Disconnecten",
-        "nach NICK"
+        "Benutzer",
+        "Steuerung",
+        "Trennen",
+        "nach Nick"
     ],
     "ucmd_menu2": [
-        "Disconnecten",
+        "Trennen",
         "OK"
     ],
-    "ucmd_reason": "Begründung",
+    "ucmd_reason": "Grund",
     "ucmd_target": "Benutzername",
     "user_msg": "[ DISCONNECT ]--> Du wurdest disconnected von: %s  |  Grund: %s"
 }

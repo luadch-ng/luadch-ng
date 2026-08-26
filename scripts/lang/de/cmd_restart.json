@@ -1,8 +1,8 @@
 {
-    "help_desc": "Neustart des Hubs",
+    "help_desc": "Startet den Hub neu.",
     "help_usage": "[+!#]restart [<MSG>]",
     "msg_countdown": "*** Hub startet neu in ***",
-    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
     "msg_hub_disabled": "Hub startet neu.",
     "msg_ok": "Hub wird neu gestartet...",
     "msg_restart": "\n\n=== HUB RESTART ======================================================================================================\n\n  %s\n\n====================================================================================================== HUB RESTART ===\n\n  ",

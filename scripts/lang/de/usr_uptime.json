@@ -1,21 +1,43 @@
 {
-  "help_desc":"Zeigt die Uptime Statistik eines Users",
-  "help_desc_op":"Zeigt deine Uptime Statistik",
-  "help_usage":"[+!#]useruptime",
-  "help_usage_op":"[+!#]useruptime",
-  "month_name":["Januar\t","Februar\t","März\t","April\t","Mai\t","Juni\t","Juli\t","August\t","September","Oktober\t","November","Dezember"],
-  "msg_days":" Tage, ",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_err":"usr_uptime.lua: error: Datenbank-Datei (usr_uptime.tbl) fehlerhaft oder nicht gefunden, eine neue Datei wurde erstellt.",
-  "msg_hours":" Stunden, ",
-  "msg_label":"\tJAHR\tMONAT\t\tUPTIME",
-  "msg_minutes":" Minuten, ",
-  "msg_notfound":"User nicht gefunden.",
-  "msg_seconds":" Sekunden",
-  "msg_uptime":"\n\n=== USER UPTIME ========================================================================\n\n        Uptime Statistik von:  %s\n\n%s\n%s\n%s\n======================================================================== USER UPTIME ===\n  ",
-  "msg_usage":"[+!#]useruptime CT1 <FIRSTNICK> | CT2 <NICK>",
-  "ucmd_desc":"Users Nick ohne Nicktag:",
-  "ucmd_menu_ct1":["User","Uptime Statistik"],
-  "ucmd_menu_ct1_2":["Über Dich","zeige Uptime Statistik"],
-  "ucmd_menu_ct2":["Anzeigen","Uptime Statistik"]
+    "help_desc": "Zeigt deine Uptime-Statistiken.",
+    "help_desc_op": "Zeigt die Uptime-Statistiken eines Benutzers an.",
+    "help_usage": "[+!#]useruptime",
+    "help_usage_op": "[+!#]useruptime CT1 <NICK> | CT2 <NICK>",
+    "month_name": [
+        "Januar\t",
+        "Februar\t",
+        "März\t",
+        "April\t",
+        "Mai\t",
+        "Juni\t",
+        "Juli\t",
+        "August\t",
+        "September",
+        "Oktober\t",
+        "November",
+        "Dezember"
+    ],
+    "msg_days": " Tage, ",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_err": "usr_uptime.lua: error: Datenbank-Datei (usr_uptime.tbl) fehlerhaft oder nicht gefunden, eine neue Datei wurde erstellt.",
+    "msg_hours": " Stunden, ",
+    "msg_label": "\tJAHR\tMONAT\t\tUPTIME",
+    "msg_minutes": " Minuten, ",
+    "msg_notfound": "User nicht gefunden.",
+    "msg_seconds": " Sekunden",
+    "msg_uptime": "\n\n=== USER UPTIME ========================================================================\n\n        Uptime Statistik von:  %s\n\n%s\n%s\n%s\n======================================================================== USER UPTIME ===\n  ",
+    "msg_usage": "[+!#]useruptime CT1 <FIRSTNICK> | CT2 <NICK>",
+    "ucmd_desc": "Users Nick ohne Nicktag:",
+    "ucmd_menu_ct1": [
+        "User",
+        "Uptime Statistik"
+    ],
+    "ucmd_menu_ct1_2": [
+        "Über Dich",
+        "zeige Uptime Statistik"
+    ],
+    "ucmd_menu_ct2": [
+        "Anzeigen",
+        "Uptime Statistik"
+    ]
 }

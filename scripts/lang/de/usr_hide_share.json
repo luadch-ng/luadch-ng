@@ -1,14 +1,18 @@
 {
-  "help_desc":"Den Share von Usern verbergen",
-  "help_usage":"[+!#]hideshare <NICK>",
-  "msg_default":"Der Share dieses Users wurde levelspezifisch unterdrückt.",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_hide_target":"Dein Share wurde unsichtbar gemacht von: %s",
-  "msg_hide_user":"Share unsichtbar gemacht von: %s",
-  "msg_isbot":"User ist ein Bot.",
-  "msg_notonline":"User ist offline.",
-  "msg_unhide_target":"Dein Share wurde wieder sichtbar gemacht von: %s  |  Deswegen wirst du nun getrennt",
-  "msg_unhide_user":"Share wieder sichtbar gemacht für: %s  |  User wurde getrennt",
-  "msg_usage":"Gebrauch: [+!#]hideshare <NICK>",
-  "ucmd_menu_ct2_1":["Ändern","Share","sichtbar//unsichtbar"]
+    "help_desc": "Blendet den Share eines Benutzers aus oder ein.",
+    "help_usage": "[+!#]hideshare <NICK>",
+    "msg_default": "Der Share dieses Users wurde levelspezifisch unterdrückt.",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_hide_target": "Dein Share wurde unsichtbar gemacht von: %s",
+    "msg_hide_user": "Share unsichtbar für: %s",
+    "msg_isbot": "Benutzer ist ein Bot.",
+    "msg_notonline": "Benutzer ist offline.",
+    "msg_unhide_target": "Dein Share wurde wiederhergestellt von: %s  |  du wirst jetzt getrennt.",
+    "msg_unhide_user": "Share wieder sichtbar gemacht für: %s  |  Benutzer wurde getrennt",
+    "msg_usage": "Verwendung: [+!#]hideshare <NICK>",
+    "ucmd_menu_ct2_1": [
+        "Ändern",
+        "Share",
+        "Ausblenden oder einblenden"
+    ]
 }

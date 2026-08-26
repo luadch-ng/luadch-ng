@@ -1,21 +1,45 @@
 {
-  "help_desc":"Chat für Operatoren",
-  "msg_clear":"Chat history wurde gelöscht.",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_denied_2":"Du bist nicht befugt diesen Chat zu nutzen.",
-  "msg_help_1":"  [+!#]help \t | Liste aller verfügbaren Befehle",
-  "msg_help_2":"  [+!#]history \t | Die letzten Posts anzeigen",
-  "msg_help_3":"  [+!#]historyall \t | Alle gespeicherten Posts anzeigen",
-  "msg_help_4":"  [+!#]opchat help",
-  "msg_help_5":"  [+!#]opchat history",
-  "msg_help_6":"  [+!#]opchat historyall",
-  "msg_help_7":"  [+!#]historyclear \t | Chat History löschen",
-  "msg_help_8":"  [+!#]opchat historyclear",
-  "msg_help_op":"\n\n                                === HELP ==========================================\n\n                                Liste aller in-Chat Befehle:\n\n                                %s\n                                %s\n                                %s\n                                %s\n\n                                Liste aller Main Befehle:\n\n                                %s\n                                %s\n                                %s\n                                %s\n\n                                ========================================== HELP ===\n  ",
-  "msg_history":"\n\n=== CHATLOG =====================================================================================\n%s\n%s\n===================================================================================== CHATLOG ===\n  ",
-  "msg_intro":"\t\t\t\t Die letzten %s Posts aus dem Chat:",
-  "ucmd_menu_ct1_help":["User","Messages","Chats","OpChat","zeige Hilfe"],
-  "ucmd_menu_ct1_history":["User","Messages","Chats","OpChat","zeige Chat History (die letzten)"],
-  "ucmd_menu_ct1_historyall":["User","Messages","Chats","OpChat","zeige Chat History (alle gespeicherten)"],
-  "ucmd_menu_ct1_historyclear":["User","Messages","Chats","OpChat","lösche Chat History"]
+    "help_desc": "Ein privater Chat für Operatoren.",
+    "msg_clear": "Der Chatverlauf wurde gelöscht.",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_denied_2": "Du bist nicht befugt, diesen Chat zu nutzen.",
+    "msg_help_1": "  [+!#]help \t | Listet die in diesem Chat verfügbaren Befehle auf",
+    "msg_help_2": "  [+!#]history \t | Zeigt die neuesten Beiträge in diesem Chat",
+    "msg_help_3": "  [+!#]historyall \t | Zeigt alle gespeicherten Beiträge in diesem Chat an",
+    "msg_help_4": "  [+!#]opchat help",
+    "msg_help_5": "  [+!#]opchat history",
+    "msg_help_6": "  [+!#]opchat historyall",
+    "msg_help_7": "  [+!#]historyclear \t | Löscht den Chatverlauf",
+    "msg_help_8": "  [+!#]opchat historyclear",
+    "msg_help_op": "\n\n                                === HILFE =========================================\n\n                                Befehle im Chat:\n\n                                %s\n                                %s\n                                %s\n                                %s\n\n                                Hauptchat-Befehle:\n\n                                %s\n                                %s\n                                %s\n                                %s\n\n                                ========================================== HILFE ===\n  ",
+    "msg_history": "\n\n=== CHATLOG =====================================================================================\n%s\n%s\n===================================================================================== CHATLOG ===\n  ",
+    "msg_intro": "\t\t\t\t   Die letzten %s Beiträge in diesem Chat:",
+    "ucmd_menu_ct1_help": [
+        "Benutzer",
+        "Nachrichten",
+        "Chats",
+        "OpChat",
+        "zeige Hilfe"
+    ],
+    "ucmd_menu_ct1_history": [
+        "User",
+        "Messages",
+        "Chats",
+        "OpChat",
+        "zeige Chat History (die letzten)"
+    ],
+    "ucmd_menu_ct1_historyall": [
+        "User",
+        "Messages",
+        "Chats",
+        "OpChat",
+        "zeige Chat History (alle gespeicherten)"
+    ],
+    "ucmd_menu_ct1_historyclear": [
+        "User",
+        "Messages",
+        "Chats",
+        "OpChat",
+        "lösche Chat History"
+    ]
 }

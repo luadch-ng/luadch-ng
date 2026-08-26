@@ -1,11 +1,16 @@
 {
-  "help_desc":"Zeigt den Inhalt von Logdateien",
-  "help_usage":"[+!#]cmdlog show",
-  "msg1":"   |   Befehl: [+!#]",
-  "msg2":"   |   benutzt von: ",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_nofile":"Keine 'cmd.log' Datei gefunden",
-  "msg_out":"\n    \n=== COMMAND LOGGER ========================================================================================\n\n%s\n======================================================================================== COMMAND LOGGER ===\n\n      ",
-  "msg_usage":"Gebrauch: [+!#]cmdlog show",
-  "ucmd_menu":["Hub","Logs","zeige","cmd.log"]
+    "help_desc": "Zeigt das Befehlsprotokoll an.",
+    "help_usage": "[+!#]cmdlog show",
+    "msg1": "   |   Befehl: [+!#]",
+    "msg2": "   |   benutzt von: ",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_nofile": "Keine cmd.log-Datei gefunden.",
+    "msg_out": "\n    \n=== COMMAND LOGGER ========================================================================================\n\n%s\n======================================================================================== COMMAND LOGGER ===\n\n      ",
+    "msg_usage": "Verwendung: [+!#]cmdlog show",
+    "ucmd_menu": [
+        "Hub",
+        "Logs",
+        "Anzeigen",
+        "cmd.log"
+    ]
 }

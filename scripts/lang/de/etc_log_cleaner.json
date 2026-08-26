@@ -1,12 +1,22 @@
 {
-  "activate_cmd_msg":"Der 'cmd.log' Cleaner ist deaktiviert",
-  "activate_error_msg":"Der 'error.log' Cleaner ist deaktiviert",
-  "failmsg":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "help_desc":"Löscht den Inhalt von Logdateien",
-  "help_usage":"[+!#]cleanlog error|cmd",
-  "logfile_cmd_msg":"Der Inhalt der 'cmd.log' wurde gelöscht",
-  "logfile_error_msg":"Der Inhalt der 'error.log' wurde gelöscht",
-  "msg_usage":"Gebrauch: [+!#]cleanlog error|cmd",
-  "ucmd_menu_cmd":["Hub","Logs","lösche","cmd.log"],
-  "ucmd_menu_error":["Hub","Logs","lösche","error.log"]
+    "activate_cmd_msg": "Der 'cmd.log' Cleaner ist deaktiviert.",
+    "activate_error_msg": "Der 'error.log' Cleaner ist deaktiviert.",
+    "failmsg": "Du darfst diesen Befehl nicht benutzen.",
+    "help_desc": "Bereinigt die Protokolldateien.",
+    "help_usage": "[+!#]cleanlog error|cmd",
+    "logfile_cmd_msg": "Das 'cmd.log' wurde geleert.",
+    "logfile_error_msg": "Die 'error.log' wurde geleert.",
+    "msg_usage": "Verwendung: [+!#]cleanlog error|cmd",
+    "ucmd_menu_cmd": [
+        "Hub",
+        "Logs",
+        "Bereinigen",
+        "cmd.log"
+    ],
+    "ucmd_menu_error": [
+        "Hub",
+        "Logs",
+        "Bereinigen",
+        "error.log"
+    ]
 }
