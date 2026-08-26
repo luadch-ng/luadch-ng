@@ -5810,7 +5810,9 @@ def test_http_phase4_etc_records(staging_dir: Path, proc=None):
     if not parsed.get("ok"):
         raise TestFailure(f"GET /v1/records: ok=false; body={body_of(r)!r}")
     data = parsed.get("data") or {}
-    for top in ("hub_share", "max_users", "top_sharer"):
+    # hub_files + top_file_sharer added in #647 (filecount partners to
+    # hub_share / top_sharer).
+    for top in ("hub_share", "max_users", "top_sharer", "hub_files", "top_file_sharer"):
         if not isinstance(data.get(top), dict):
             raise TestFailure(
                 f"GET /v1/records: missing/non-object {top!r}; body={body_of(r)!r}"
@@ -5830,6 +5832,18 @@ def test_http_phase4_etc_records(staging_dir: Path, proc=None):
     if not isinstance(data["top_sharer"].get("share_bytes"), int):
         raise TestFailure(
             f"GET /v1/records: top_sharer.share_bytes not int; body={body_of(r)!r}"
+        )
+    if not isinstance(data["hub_files"].get("count"), int):
+        raise TestFailure(
+            f"GET /v1/records: hub_files.count not int; body={body_of(r)!r}"
+        )
+    if not isinstance(data["top_file_sharer"].get("nick"), str):
+        raise TestFailure(
+            f"GET /v1/records: top_file_sharer.nick not str; body={body_of(r)!r}"
+        )
+    if not isinstance(data["top_file_sharer"].get("file_count"), int):
+        raise TestFailure(
+            f"GET /v1/records: top_file_sharer.file_count not int; body={body_of(r)!r}"
         )
 
     # 3. Anonymous DELETE -> 401.

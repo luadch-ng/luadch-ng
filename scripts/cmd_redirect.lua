@@ -4,6 +4,11 @@
 
         usage: [+!#]redirect <NICK> <URL>
 
+        v0.9:
+            - HTTP redirect: the opchat report + audit record the real operator
+              (req.actor), not the token label; the redirected user still sees no
+              actor. (webui#177 C)
+
         v0.8:
             - resolve an online target by firstnick when a nick-prefix is
               active: usr_nick_prefix re-keys the hub's nick table to the
@@ -48,7 +53,7 @@
 --------------
 
 local scriptname = "cmd_redirect"
-local scriptversion = "0.8"
+local scriptversion = "0.9"
 
 local cmd = "redirect"
 
@@ -230,7 +235,10 @@ local http_handler_redirect = function( req, target )
         return nil, { status = 400, error = { code = "E_BAD_INPUT",
             message = "no url given and cfg cmd_redirect_url is unset" } }
     end
-    local actor_label = req.token_label or "http-api"
+    -- The redirected user sees no actor (bare IQUI, no quitmsg), so there is
+    -- nothing end-user-facing to attribute; the operator report + audit record
+    -- the real operator (req.actor) rather than the API token label (#177 C).
+    local actor_label = util_http.operator_label( req )
     local msg_report_str, _t_nick, clean_url = do_redirect( target, url, actor_label )
     -- HTTP path has no operator-chat to echo into; fire the opchat
     -- report directly so an opchat watcher sees a consistent line

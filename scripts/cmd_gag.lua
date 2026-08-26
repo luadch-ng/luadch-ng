@@ -5,6 +5,11 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.16:
+                - HTTP gag/ungag: the stored added_by + opchat report + audit
+                  record the real operator (req.actor), not the token label; the
+                  gag target notice stays anonymous. (webui#177 C)
+
             v0.15: by Aybo
                 - new GET /v1/gags read endpoint (feeds the WebUI's
                   status-aware Gag/Ungag toggle). Lists every gag the
@@ -153,7 +158,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.15"
+local scriptversion = "0.16"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -740,7 +745,10 @@ http_handler_gag = function(req, target)
     end
     local duration_minutes = req.body and req.body.duration_minutes
     local duration_seconds = duration_minutes and ( duration_minutes * 60 ) or nil
-    local actor_label = req.token_label or "http-api"
+    -- The gag target notice names no actor (anonymous by design); the stored
+    -- added_by + opchat report + audit record the real operator (req.actor)
+    -- rather than the API token label (#177 C).
+    local actor_label = util_http.operator_label( req )
     -- add_user fires report.send + persists gag_tbl internally; we
     -- only need the side-effect, not the returned report-message
     -- string (the HTTP audit log already covers the operator trail).
@@ -772,7 +780,7 @@ http_handler_ungag = function(req, target)
             message = "user is not currently gagged" } }
     end
     local previous_mode = entry.mode
-    local actor_label = req.token_label or "http-api"
+    local actor_label = util_http.operator_label( req )
     remove_user(first_nick, target:nick(), target, actor_label)
     audit.fire(audit.build("gag.remove",
         { nick = actor_label, sid = "<http>" }, target, nil,

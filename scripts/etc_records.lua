@@ -2,6 +2,28 @@
 
     etc_records.lua by Motnahp
 
+        v0.11: by Aybo (#647)
+            - two new all-time peak records, mirroring the two share-based
+              ones: peak hub filecount (sum of SF across users, partner to
+              hub_share) and top file-sharer (biggest single-user SF,
+              partner to top_sharer). Both are SILENT (endpoint + `+records
+              show` + WebUI only, no chat broadcast on a new peak) to avoid
+              main-chat noise; the three legacy records keep their
+              broadcasts.
+            - the record store migrates from the fragile positional 8-slot
+              table to a named-key table ({ hub_share={bytes,date,time},
+              max_users={count,date,time}, top_sharer={nick,bytes},
+              hub_files={count,date,time}, top_file_sharer={nick,count},
+              _fmt=2 }).
+              load_records() detects the legacy positional format and
+              migrates it once, preserving every existing value, so a
+              3.1.x operator keeps their records across the 3.1 -> 3.2
+              upgrade (etc_records.tbl lives in scripts/data/, upgrade-safe).
+              Persistence switched from util.savearray to util.savetable.
+            - GET /v1/records gains hub_files {count, recorded_at} and
+              top_file_sharer {nick, file_count}; `+records show` gains the
+              two matching lines (msg_rmsg template extended, en/de lang).
+
         v0.9:
             - fix #465: seed the positional records table's slots at load
               so a missing / empty / corrupt etc_records.tbl no longer
@@ -51,7 +73,7 @@
 --------------
 
 local scriptname = "etc_records"
-local scriptversion = "0.10"
+local scriptversion = "0.11"
 
 local cmd = "records"
 local prm1 = "show"
@@ -70,7 +92,7 @@ local hub_getbot = hub.getbot( )
 local hub_import = hub.import
 local hub_getusers = hub.getusers
 local util_loadtable = util.loadtable
-local util_savearray = util.savearray
+local util_savetable = util.savetable
 local util_formatbytes = util.formatbytes
 local utf_match = utf.match
 local utf_format = utf.format
@@ -132,7 +154,9 @@ local msg_rmsg = lang.msg_rmsg or [[
 
     Max users:  %s User, Date: %s, Time: %s
     Max hub share:  %s %s, Date: %s, Time: %s
+    Max hub files:  %s files, Date: %s, Time: %s
     Topsharer:  %s with %s %s
+    Top file-sharer:  %s with %s files
 
 ========================================== RECORDS ===
 
@@ -148,28 +172,118 @@ local ucmd_menu_reset = lang.ucmd_menu_reset or { "Hub", "etc", "Hub Records", "
 
 local start = os_time( )
 local records_path = "scripts/data/etc_records.tbl"
-local records = util_loadtable( records_path ) or { }  -- load the left ones
 
--- #465: `records` is a positional 8-slot table. A missing / empty /
--- truncated / corrupt file leaves the numeric max-slots nil, and the
--- onLogin + onTimer max-tracking comparisons (`> tonumber(records[3|6|8])`
--- in hubshare / onliners / topshare) then crash with "attempt to compare
--- nil with number" on EVERY login until the file is restored. `or { }`
--- above only guards a nil TABLE, not nil slots. Seed any absent / non-
--- numeric slot to the same default shape reset() builds, so the plugin
--- degrades gracefully on a missing / corrupt file (DEVELOPMENT.md §5).
--- Existing values are preserved; `tonumber(...) or N` also repairs a slot
--- that somehow persisted as a non-numeric string. The date / time / nick
--- reads are already nil-tolerant downstream (format_recorded_at, `or
--- "none"`) but are defaulted here too so the table is always well-formed.
-records[ 1 ] = records[ 1 ] or os_date( "%Y-%m-%d" )  -- share record date
-records[ 2 ] = records[ 2 ] or os_date( "%H:%M:%S" )  -- share record time
-records[ 3 ] = tonumber( records[ 3 ] ) or 0          -- max total hubshare (bytes); #618 seed 0, not 1
-records[ 4 ] = records[ 4 ] or os_date( "%Y-%m-%d" )  -- user-count record date
-records[ 5 ] = records[ 5 ] or os_date( "%H:%M:%S" )  -- user-count record time
-records[ 6 ] = tonumber( records[ 6 ] ) or 0          -- max online users
-records[ 7 ] = records[ 7 ] or "none"                 -- top-share nick
-records[ 8 ] = tonumber( records[ 8 ] ) or 0          -- max single-user share (bytes)
+-- v0.11 (#647): the record store is a NAMED-KEY table. The three legacy
+-- records keep their meaning; two new silent peaks (hub_files, top_file_sharer)
+-- are added. `_fmt = 2` marks the named format so load_records() can tell
+-- it apart from the legacy positional 8-slot table and migrate once.
+--
+--   hub_share       = { bytes, date, time }  -- peak total share (broadcast)
+--   max_users       = { count, date, time }  -- peak online humans (broadcast)
+--   top_sharer      = { nick, bytes }         -- biggest single share (broadcast)
+--   hub_files       = { count, date, time }  -- peak total filecount (silent)
+--   top_file_sharer = { nick, count }         -- biggest single filecount (silent)
+-- Each store key maps 1:1 to the wire object of the same name in GET
+-- /v1/records; the wire field names differ only where the legacy contract
+-- already did (top_sharer.bytes -> share_bytes, top_file_sharer.count ->
+-- file_count), see http_handler_get_records.
+local function default_records( )
+    return {
+        _fmt            = 2,
+        hub_share       = { bytes = 0, date = os_date( "%Y-%m-%d" ), time = os_date( "%H:%M:%S" ) },
+        max_users       = { count = 0, date = os_date( "%Y-%m-%d" ), time = os_date( "%H:%M:%S" ) },
+        top_sharer      = { nick = "none", bytes = 0 },
+        hub_files       = { count = 0, date = os_date( "%Y-%m-%d" ), time = os_date( "%H:%M:%S" ) },
+        top_file_sharer = { nick = "none", count = 0 },
+    }
+end
+
+-- Migrate the legacy positional 8-slot table (v<=0.10) to the named
+-- format, PRESERVING every existing value so a 3.1.x operator keeps
+-- their records across the 3.1 -> 3.2 upgrade. The legacy layout was:
+--   [1] share_date  [2] share_time  [3] hub_share_bytes
+--   [4] users_date  [5] users_time  [6] users_count
+--   [7] top_nick    [8] top_share_bytes
+-- The two new records seed to their default (0 / "none") - no backfill
+-- is possible from the old file. `tonumber(...) or 0` also repairs a
+-- numeric slot that persisted as a non-numeric string (the #465 case).
+local function migrate_positional( old )
+    local r = default_records( )
+    r.hub_share.date   = old[ 1 ] or r.hub_share.date
+    r.hub_share.time   = old[ 2 ] or r.hub_share.time
+    r.hub_share.bytes  = tonumber( old[ 3 ] ) or 0
+    r.max_users.date   = old[ 4 ] or r.max_users.date
+    r.max_users.time   = old[ 5 ] or r.max_users.time
+    r.max_users.count  = tonumber( old[ 6 ] ) or 0
+    r.top_sharer.nick  = old[ 7 ] or "none"
+    r.top_sharer.bytes = tonumber( old[ 8 ] ) or 0
+    return r
+end
+
+-- Coerce a loaded value to the same shape as its default: a numeric
+-- field falls back to its default when missing / non-numeric, a string
+-- field when missing / non-string. Keeps a corrupt slot from crashing a
+-- later max-comparison (the #465 lesson, generalised to the named store).
+local function coerce_like( val, default )
+    if type( default ) == "number" then return tonumber( val ) or default end
+    if type( default ) == "string" then
+        if type( val ) == "string" then return val end
+        return default
+    end
+    return val
+end
+
+-- Fill any missing / mistyped key in `t` from `d` (one level of nested
+-- tables, which is all the store uses). So a store written by an older
+-- named-format version that lacks a newer key gets it seeded.
+local function seed_missing( t, d )
+    for k, dv in pairs( d ) do
+        if type( dv ) == "table" then
+            if type( t[ k ] ) ~= "table" then t[ k ] = { } end
+            for kk, dvv in pairs( dv ) do
+                t[ k ][ kk ] = coerce_like( t[ k ][ kk ], dvv )
+            end
+        else
+            t[ k ] = coerce_like( t[ k ], dv )
+        end
+    end
+end
+
+-- True if `t` carries any legacy positional slot. A named store has no
+-- integer keys at all, so probing ALL of 1..8 (not just the numeric
+-- max-slots) also catches a pathologically truncated pre-v0.9 file whose
+-- only survivor is a date / nick slot - it still migrates rather than
+-- silently degrading to fresh defaults with the stray slot left as cruft.
+local function looks_positional( t )
+    for i = 1, 8 do
+        if t[ i ] ~= nil then return true end
+    end
+    return false
+end
+
+-- Load the persisted store defensively: a missing / corrupt file
+-- degrades to fresh defaults; a legacy positional file migrates once;
+-- a named file gets any absent key seeded. Always returns a well-formed
+-- named table so no downstream max-comparison can hit a nil.
+local function load_records( )
+    local t = util_loadtable( records_path )
+    if type( t ) ~= "table" then
+        return default_records( )
+    end
+    if t._fmt == nil and looks_positional( t ) then
+        -- legacy positional format: migrate once, preserving values.
+        t = migrate_positional( t )
+    end
+    seed_missing( t, default_records( ) )
+    t._fmt = 2
+    return t
+end
+
+local records = load_records( )
+
+local function save_records( )
+    util_savetable( records, scriptname, records_path )
+end
 
 local onbmsg = function( user, adccmd, parameters )
     local id = utf_match( parameters, "^(%S+)$" )
@@ -214,29 +328,22 @@ local format_recorded_at = function( date, time )
     return ( date or "" ) .. " / " .. ( time or "" )
 end
 
--- HTTP handler: GET /v1/records (#82 Phase 4 PR-2). Read scope.
--- Returns the current hub records snapshot as structured rows.
--- Raw byte counts are returned (no `shareoptimize` formatting)
--- so the API caller decides display units.
+-- HTTP handler: GET /v1/records (#82 Phase 4 PR-2, extended #647).
+-- Read scope. Returns the current hub records snapshot as named
+-- objects. Raw byte / file counts are returned (no `shareoptimize`
+-- formatting) so the API caller decides display units.
 --
--- `records` is an 8-key flat table persisted by the legacy ADC
--- path. The fields are:
---   [1] share_date  [2] share_time  [3] hub_share_bytes
---   [4] users_date  [5] users_time  [6] users_count
---   [7] top_nick    [8] top_share_bytes
--- These are wrapped in named objects on the wire; clients should
--- NOT rely on the array shape (which is a persistence-format
--- detail, not the API contract).
+-- `records` is the named store (see default_records above); the wire
+-- objects are a stable API contract independent of the persistence
+-- shape. `recorded_at` strings are `YYYY-MM-DD / HH:MM:SS` (hub local
+-- time), collapsed to `""` when both halves are missing. On a fresh
+-- hub before any sample every counter is 0 and every nick is "none"
+-- (#618: 0 unambiguously means "no record yet"; the `>` max-trackers
+-- increment identically from a 0 seed).
 --
--- `recorded_at` strings are `YYYY-MM-DD / HH:MM:SS` (hub local
--- time, matches `cmd_reg`'s persistence format), collapsed to
--- `""` when both halves are missing. On a fresh hub before any
--- sample has been taken all three seed to 0: `hub_share.total_bytes`
--- = 0, `max_users.count` = 0, `top_sharer.share_bytes` = 0
--- (`top_sharer.nick` = "none"). #618 normalised the hub_share seed
--- from a vestigial `1` to `0` so a value of 0 unambiguously means
--- "no record yet"; the `> records[3]` max-tracker in `hubshare()`
--- increments identically from a 0 seed (no real hub totals 1 byte).
+-- #647 added hub_files {count, recorded_at} (peak total filecount,
+-- partner to hub_share) and top_file_sharer {nick, file_count}
+-- (biggest single filecount, partner to top_sharer).
 --
 -- The ADC-side `etc_records_min_level` gate does NOT apply on
 -- the HTTP path: the bearer token's `read` scope IS the
@@ -244,16 +351,24 @@ end
 local http_handler_get_records = function( req )
     return { status = 200, data = {
         hub_share = {
-            total_bytes = tonumber( records[ 3 ] ) or 0,
-            recorded_at = format_recorded_at( records[ 1 ], records[ 2 ] ),
+            total_bytes = records.hub_share.bytes,
+            recorded_at = format_recorded_at( records.hub_share.date, records.hub_share.time ),
         },
         max_users = {
-            count       = tonumber( records[ 6 ] ) or 0,
-            recorded_at = format_recorded_at( records[ 4 ], records[ 5 ] ),
+            count       = records.max_users.count,
+            recorded_at = format_recorded_at( records.max_users.date, records.max_users.time ),
         },
         top_sharer = {
-            nick        = records[ 7 ] or "none",
-            share_bytes = tonumber( records[ 8 ] ) or 0,
+            nick        = records.top_sharer.nick,
+            share_bytes = records.top_sharer.bytes,
+        },
+        hub_files = {
+            count       = records.hub_files.count,
+            recorded_at = format_recorded_at( records.hub_files.date, records.hub_files.time ),
+        },
+        top_file_sharer = {
+            nick        = records.top_file_sharer.nick,
+            file_count  = records.top_file_sharer.count,
         },
     } }
 end
@@ -310,11 +425,13 @@ hub.setlistener( "onStart", { },
         if hub.http_register then
             hub.http_register( "GET", "/v1/records", "read", http_handler_get_records, {
                 plugin = scriptname,
-                description = "hub records snapshot (= ADC `+records show`): hub_share, max_users, top_sharer",
+                description = "hub records snapshot (= ADC `+records show`): hub_share, max_users, top_sharer, hub_files, top_file_sharer",
                 response_schema = {
-                    hub_share  = { type = "object", required = true },
-                    max_users  = { type = "object", required = true },
-                    top_sharer = { type = "object", required = true },
+                    hub_share       = { type = "object", required = true },
+                    max_users       = { type = "object", required = true },
+                    top_sharer      = { type = "object", required = true },
+                    hub_files       = { type = "object", required = true },
+                    top_file_sharer = { type = "object", required = true },
                 },
             } )
             hub.http_register( "DELETE", "/v1/records", "admin", http_handler_reset_records, {
@@ -349,7 +466,7 @@ hub.setlistener( "onTimer", { },
 
 hub.setlistener( "onExit", { },
     function( )
-        util_savearray( records, records_path )
+        save_records( )
     end
 )
 
@@ -380,34 +497,40 @@ function shareoptimize( share )  -- optimizes the share and shareunit for the ou
     return ushare, uunit
 end
 
-function hubshare( )  -- checks if there is a bigger total hubshare
-    local new_hubshare = 0  -- hubshare
-    local new_hubshareunit  -- unit of hubshare
+function hubshare( )  -- checks for a bigger total hubshare / total filecount
+    local new_hubshare = 0  -- summed share (bytes)
+    local new_hubfiles = 0  -- summed filecount (SF)
     for sid, user in pairs( hub_getusers( ) ) do
         if not user:isbot( ) then
-            -- Phase 8a F-INF-1: user:share() is nil for clients that
-            -- did not send SS in BINF. Treat missing as zero contribution.
+            -- Phase 8a F-INF-1: user:share() / user:files() are nil for
+            -- clients that did not send SS / SF in BINF. Treat missing as
+            -- zero contribution.
             new_hubshare = new_hubshare + ( user:share( ) or 0 )
+            new_hubfiles = new_hubfiles + ( user:files( ) or 0 )
         end
     end
-    if new_hubshare > tonumber( records[3] ) then
-        local old = util_formatbytes( tonumber( records[3] ) )
+    local dirty = false
+    -- peak total share: broadcast on a new record (legacy behaviour).
+    if new_hubshare > records.hub_share.bytes then
+        local old = util_formatbytes( records.hub_share.bytes )
         local new = util_formatbytes( new_hubshare )
         if new ~= old then
             local share, unit = shareoptimize( new_hubshare )
             bcSharerecord( share, unit )
         end
-
-        --put the new details in--
-        records[3] = new_hubshare
-        records[2] = os_date( "%H:%M:%S" )
-        records[1] = os_date( "%Y-%m-%d" )
-        --save and broadcast--
-        util_savearray( records, records_path )
-        
-        --new_hubshare, new_hubshareunit = shareoptimize( new_hubshare )
-        --bcSharerecord( new_hubshare, new_hubshareunit )
+        records.hub_share.bytes = new_hubshare
+        records.hub_share.time  = os_date( "%H:%M:%S" )
+        records.hub_share.date  = os_date( "%Y-%m-%d" )
+        dirty = true
     end
+    -- #647 peak total filecount: silent (endpoint / show only, no broadcast).
+    if new_hubfiles > records.hub_files.count then
+        records.hub_files.count = new_hubfiles
+        records.hub_files.time  = os_date( "%H:%M:%S" )
+        records.hub_files.date  = os_date( "%Y-%m-%d" )
+        dirty = true
+    end
+    if dirty then save_records( ) end  -- one write even if both peaks fire
 end
 
 function onliners( )  -- checks if there are more users online then ever
@@ -417,68 +540,77 @@ function onliners( )  -- checks if there are more users online then ever
             onlineusers = onlineusers + 1
         end
     end
-    if onlineusers > tonumber( records[6] ) then
+    if onlineusers > records.max_users.count then
         --put the new details in--
-        records[6] = onlineusers
-        records[5] = os_date( "%H:%M:%S" )
-        records[4] = os_date( "%Y-%m-%d" )
+        records.max_users.count = onlineusers
+        records.max_users.time  = os_date( "%H:%M:%S" )
+        records.max_users.date  = os_date( "%Y-%m-%d" )
         --save and broadcast--
-        util_savearray( records, records_path )
+        save_records( )
         bcUserrecord( onlineusers )
     end
 end
 
-function topshare( user )  -- checks if the target user gots the most share in the hub ( ever )
+function topshare( user )  -- checks if the target user has the most share / files in the hub ( ever )
     local target_nick = user:firstnick( )
-    local tbl_nick = records[7]
-    -- Phase 8a F-INF-1: user:share() is nil for clients that did not
-    -- send SS in BINF. Treat missing as 0 - they cannot win the
-    -- top-share record with no declared share, but the listener must
-    -- not crash either.
+    -- Phase 8a F-INF-1: user:share() / user:files() are nil for clients
+    -- that did not send SS / SF in BINF. Treat missing as 0 - they cannot
+    -- win a top record with nothing declared, but the listener must not
+    -- crash either.
     local target_usershare = user:share( ) or 0
-    local target_shareunit  -- targets share unit
+    local target_userfiles = user:files( ) or 0
 
-    if target_usershare > tonumber( records[8] ) then
-        local old = util_formatbytes( tonumber( records[8] ) )
+    local dirty = false
+    -- biggest single share: broadcast on a new record (legacy behaviour).
+    if target_usershare > records.top_sharer.bytes then
+        local old = util_formatbytes( records.top_sharer.bytes )
         local new = util_formatbytes( target_usershare )
         if new ~= old then
             local share, unit = shareoptimize( target_usershare )
             bcTopshare( target_nick, share, unit )
         end
-
-        --put the new details in--
-        records[7] = target_nick
-        records[8] = target_usershare
-        --save and broadcast--
-        util_savearray( records, records_path )
-        
-        --target_usershare, target_shareunit = shareoptimize( target_usershare )
-        --bcTopshare( target_nick, target_usershare, target_shareunit )
+        records.top_sharer.nick  = target_nick
+        records.top_sharer.bytes = target_usershare
+        dirty = true
     end
+    -- #647 biggest single filecount: silent (endpoint / show only).
+    if target_userfiles > records.top_file_sharer.count then
+        records.top_file_sharer.nick  = target_nick
+        records.top_file_sharer.count = target_userfiles
+        dirty = true
+    end
+    if dirty then save_records( ) end  -- one write even if both peaks fire
 end
 
 function buildrecords( )  -- builds msg for command show
-    local rmsg = ""
-
     -- getting all informations of table --
     --sharestats--
-    local s = records[3] or 0  -- total-share-amount (#618: 0 = no record; never fires post-init)
-    local share, shareunit = shareoptimize( s )
-    local sharedate = records[1] or os_date( "%Y-%m-%d" )  -- date
-    local sharetime = records[2] or os_date( "%H:%M:%S" )  -- time
+    local share, shareunit = shareoptimize( records.hub_share.bytes )
+    local sharedate = records.hub_share.date
+    local sharetime = records.hub_share.time
     --userstats--
-    local users = records[6] or 0  -- user-amount (never fires post-init)
-    local usersdate = records[4] or os_date( "%Y-%m-%d" )  -- date
-    local userstime = records[5] or os_date( "%H:%M:%S" )  -- time
-    --topuser--
-    local topuser = records[7] or "none"  -- nick
-    local tus = records[8] or 0  -- share-amount (never fires post-init)
-    local topuser_share, topuser_shareunit = shareoptimize( tus )
+    local users = records.max_users.count
+    local usersdate = records.max_users.date
+    local userstime = records.max_users.time
+    --filestats (#647)--
+    local hubfiles = records.hub_files.count
+    local hubfilesdate = records.hub_files.date
+    local hubfilestime = records.hub_files.time
+    --topuser (share)--
+    local topuser = records.top_sharer.nick
+    local topuser_share, topuser_shareunit = shareoptimize( records.top_sharer.bytes )
+    --topuser (files, #647)--
+    local topfiles_nick = records.top_file_sharer.nick
+    local topfiles_count = records.top_file_sharer.count
 
+    -- Argument order must match msg_rmsg's %s order (see the lang files):
+    -- users(3), share(4), hub files(3), top sharer(3), top file-sharer(2).
     local rmsg = utf_format( msg_rmsg,
                        users, usersdate, userstime,
                        share, shareunit, sharedate, sharetime,
-                       topuser, topuser_share, topuser_shareunit )
+                       hubfiles, hubfilesdate, hubfilestime,
+                       topuser, topuser_share, topuser_shareunit,
+                       topfiles_nick, topfiles_count )
 
     return rmsg
 end
@@ -526,24 +658,17 @@ tryagain = function( user_level )  -- sends the cmd-using-user the alternativ co
 end
 
 function reset( )
-    -- new 'init' --
-    records = {
-        -- sharestats --
-        [1] = os_date( "%Y-%m-%d" ),  -- date
-        [2] = os_date( "%H:%M:%S" ),  -- time
-        [3] = 0,  -- total-share-amount (#618: 0 = no record yet, matches [6]/[8])
-        -- userstats --
-        [4] = os_date( "%Y-%m-%d" ),  -- date
-        [5] = os_date( "%H:%M:%S" ),  -- time
-        [6] = 0,  -- user-amount
-        -- topuser --
-        [7] = "none",  -- nick
-        [8] = 0  -- share-amount
-    }
-    -- fill up with new items --
+    -- new 'init': rebind `records` to a fresh named store. Every closure
+    -- in this file captures `records` as an upvalue, so they all see the
+    -- new table after the reset (the GET handler included - the plugin
+    -- exports no direct table ref, so no importer holds a stale one).
+    records = default_records( )
+    -- fill up with live state - hubshare() re-samples share AND filecount,
+    -- onliners() the user count. topshare() needs a login user, so the two
+    -- top-* records stay "none" until the next login (legacy behaviour).
     hubshare( )
     onliners( )
-    util_savearray( records, records_path )
+    save_records( )
 end
 
 hub_debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )

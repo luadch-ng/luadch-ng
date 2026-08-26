@@ -5,6 +5,11 @@
         - this script adds commands to send pm mass messages
         - usage: [+!#]mass <MSG> / [+!#]masslvl <LEVEL> <MSG> / [+!#]masshub <MSG>
 
+        v0.21:
+            - HTTP announce: the banner "Sender:" line no longer leaks the token
+              fingerprint - it shows the hubbot nick; the audit records the real
+              operator (req.actor). (webui#177 C)
+
         v0.20:
             - route the "  |  allowed levels: " help-desc appender
               through lang (msg_allowed_levels). Part of #301 i18n cleanup.
@@ -74,7 +79,7 @@
 --------------
 
 local scriptname = "cmd_mass"
-local scriptversion = "0.20"
+local scriptversion = "0.21"
 
 local cmd = "mass"
 local cmd_lvl = "masslvl"
@@ -339,7 +344,12 @@ local http_handler_announce = function( req )
             message = "scope must be 'all', 'hub', or 'level'" } }
     end
     local clean_msg = util.strip_control_bytes( message )
-    local sender = util.strip_control_bytes( req.token_label or "http-api" )
+    -- #177 C: the banner's "Sender:" line was embedding a token fingerprint
+    -- (the token's comment + first4...last4) and broadcasting it to every
+    -- recipient on scope=all/level. Show the hubbot nick instead - the
+    -- announce already goes out from the hub bot, so recipients see the
+    -- hubbot, never a token label. The audit trail records the real operator.
+    local sender = util.strip_control_bytes( hub.getbot():nick() )
 
     local data = {
         action  = "announce",
@@ -348,7 +358,7 @@ local http_handler_announce = function( req )
         sender  = sender,
     }
 
-    local actor_for_audit = { nick = sender, sid = "<http>" }
+    local actor_for_audit = { nick = util_http.operator_label( req ), sid = "<http>" }
     if scope == "all" then
         do_announce_all( clean_msg, sender )
         audit.fire( audit.build( "hub.announce.all", actor_for_audit, nil, clean_msg, nil ) )
