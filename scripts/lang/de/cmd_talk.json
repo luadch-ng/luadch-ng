@@ -1,8 +1,12 @@
 {
-  "help_desc":"Chatten ohne Nick",
-  "help_usage":"[+!#]talk <MSG>",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_usage":"Gebrauch: [+!#]talk <MSG>",
-  "ucmd_menu":["User","Messages","Talk"],
-  "ucmd_what":"Nachricht:"
+    "help_desc": "Sendet eine Nachricht in den Hauptchat, ohne deinen Nick anzuzeigen.",
+    "help_usage": "[+!#]talk <MSG>",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_usage": "Verwendung: [+!#]talk <MSG>",
+    "ucmd_menu": [
+        "User",
+        "Nachrichten",
+        "Talk"
+    ],
+    "ucmd_what": "Nachricht:"
 }

@@ -1,10 +1,10 @@
 {
-    "help_desc": "Hub herunterfahren",
+    "help_desc": "Fährt den Hub herunter.",
     "help_usage": "[+!#]shutdown [<MSG>]",
     "msg_countdown": "*** Hub wird heruntergefahren in ***",
-    "msg_denied": "Du bist nicht befugt diesen Befehl zu nutzen.",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
     "msg_hub_disabled": "Hub fährt herunter.",
-    "msg_ok": "Fahre Hub runter...",
+    "msg_ok": "Hub wird heruntergefahren...",
     "msg_shutdown": "\n\n=== HUB SHUTDOWN ======================================================================================================\n\n  %s\n\n====================================================================================================== HUB SHUTDOWN ===\n\n  ",
     "ucmd_menu": [
         "Hub",

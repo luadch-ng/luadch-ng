@@ -1,23 +1,35 @@
 {
-  "help_desc":"Ändern des Passworts",
-  "help_usage":"[+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_god":"Du bist nicht befugt das Passwort dieses Users zu ändern.",
-  "msg_max_length":"Die maximale Passwortlänge ist: %s",
-  "msg_min_length":"Die minimale Passwortlänge ist: %s",
-  "msg_nochange":"Es sind keine Änderungen notwendig.",
-  "msg_ok":"Passwort wurde geändert.",
-  "msg_ok2":"Dein Passwort wurde geändert zu: ",
-  "msg_reg":"User ist nicht gereggt oder ein Bot.",
-  "msg_usage":"Gebrauch: [+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>",
-  "ucmd_menu_ct1_0":["User","Control","Ändern","Passwort","von NICK"],
-  "ucmd_menu_ct1_1":["Über Dich","Passwort ändern"],
-  "ucmd_menu_ct1_2":"User",
-  "ucmd_menu_ct1_3":"Control",
-  "ucmd_menu_ct1_4":"Ändern",
-  "ucmd_menu_ct1_5":"Passwort",
-  "ucmd_menu_ct1_6":"von NICK aus Liste",
-  "ucmd_menu_ct2_1":["Ändern","Passwort"],
-  "ucmd_nick":"Nickname:",
-  "ucmd_pass":"Passwort:"
+    "help_desc": "Setzt das Passwort eines Benutzers oder euer eigenes.",
+    "help_usage": "[+!#]setpass nick <NICK> <PASSWORT>  /  [+!#]setpass nick myself <PASSWORT>",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_god": "Du darfst das Passwort dieses Benutzers nicht ändern.",
+    "msg_max_length": "Die maximale Passwortlänge beträgt %s Zeichen.",
+    "msg_min_length": "Die Mindestlänge für Passwörter beträgt %s Zeichen.",
+    "msg_nochange": "Keine Änderung erforderlich.",
+    "msg_ok": "Das Passwort wurde geändert.",
+    "msg_ok2": "Dein Passwort wurde geändert in: ",
+    "msg_reg": "Benutzer ist nicht registriert oder ist ein Bot.",
+    "msg_usage": "Verwendung: [+!#]setpass nick <NICK> <PASS>  /  [+!#]setpass nick myself <PASS>",
+    "ucmd_menu_ct1_0": [
+        "Benutzer",
+        "Steuerung",
+        "Ändern",
+        "Passwort",
+        "nach NICK"
+    ],
+    "ucmd_menu_ct1_1": [
+        "Über Dich",
+        "Passwort ändern"
+    ],
+    "ucmd_menu_ct1_2": "User",
+    "ucmd_menu_ct1_3": "Control",
+    "ucmd_menu_ct1_4": "Ändern",
+    "ucmd_menu_ct1_5": "Passwort",
+    "ucmd_menu_ct1_6": "von NICK aus Liste",
+    "ucmd_menu_ct2_1": [
+        "Ändern",
+        "Passwort"
+    ],
+    "ucmd_nick": "Nickname:",
+    "ucmd_pass": "Passwort:"
 }

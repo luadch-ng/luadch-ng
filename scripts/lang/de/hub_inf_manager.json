@@ -1,4 +1,4 @@
 {
-  "msg_failedauth_reason":"User sendet unzulässige Flag in INF: ",
-  "msg_invalid":"Ungültiger Parameter in Inf: "
+    "msg_failedauth_reason": "Benutzer hat ein unzulässiges Flag im INF gesendet: ",
+    "msg_invalid": "Ungültiger Parameter im INF: "
 }

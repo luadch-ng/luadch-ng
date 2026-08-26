@@ -1,32 +1,54 @@
 {
-  "help_desc":"Mute, kennylize, shadowmute oder normalisiere einen User (mit optionaler Dauer); oder Liste anzeigen",
-  "help_usage":"[+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DAUER>]",
-  "msg_add_user":"[ GAG ]--> User:  %s  wurde gegaggt im Modus:  %s  | von:  %s",
-  "msg_add_user_with_duration":"[ GAG ]--> User:  %s  wurde gegaggt im Modus:  %s  für  %s  | von:  %s",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_error_in":"User ist bereits gegaggt.",
-  "msg_error_out":"User %s ist nicht gegaggt.",
-  "msg_expired":"[ GAG ]--> User:  %s  Restriktion (%s) automatisch abgelaufen.",
-  "msg_god":"Dein Level reicht nicht aus um diesen User zu gaggen.",
-  "msg_invalid_duration":"Ungültige Dauer. Z.B. 30s / 10m / 2h / 1d / 1w (kombinierbar: 1h30m). Leer = dauerhaft.",
-  "msg_isbot":"User ist ein Bot.",
-  "msg_off":"User nicht gefunden/gereggt.",
-  "msg_remove_user":"[ GAG ]--> User:  %s  wurde ungagged von:  %s",
-  "msg_show_users":"\n=== GAG =========================\n\nMuted User: (%s)\n%s\n\nKennylized User: (%s)\n%s\n\nShadowmuted User: (%s)\n%s\n\n========================= GAG ===\n  ",
-  "msg_unit_day":"d ",
-  "msg_unit_hour":"h ",
-  "msg_unit_minute":"m ",
-  "msg_unit_second":"s",
-  "msg_unit_year":"y ",
-  "msg_usage":"Gebrauch: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DAUER>]",
-  "msg_user_restriction_added":"Du wurdest gegaggt im Modus: %s",
-  "msg_user_restriction_removed":"Deine Chat-Restriktionen (gag-mode) wurden aufgehoben.",
-  "ucmd_duration":"Dauer (z.B. 1h30m, leer = dauerhaft):",
-  "ucmd_menu_ct0":["Gag","User muten"],
-  "ucmd_menu_ct1":["Gag","User kennylizen"],
-  "ucmd_menu_ct1b":["Gag","User shadowmuten"],
-  "ucmd_menu_ct2":["User","Control","Gag","Users anzeigen"],
-  "ucmd_menu_ct3":["User","Control","Gag","User ungaggen nach NICK"],
-  "ucmd_menu_ct4":["Gag","User ungaggen"],
-  "ucmd_nick":"Nick:"
+    "help_desc": "Muted, kennylized, shadowmuted oder hebt die Einschränkung eines Benutzers auf (mit optionaler Dauer) oder zeigt die eingeschränkten Benutzer an.",
+    "help_usage": "[+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DAUER>]",
+    "msg_add_user": "[ GAG ]--> Benutzer:  %s  wurde gegaggt im Modus:  %s  |  von:  %s",
+    "msg_add_user_with_duration": "[ GAG ]--> Benutzer:  %s  wurde gegaggt im Modus:  %s  für  %s  |  von:  %s",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_error_in": "Benutzer ist bereits stummgeschaltet. Entferne die aktuelle Einschränkung, bevor Du eine weitere hinzufügst.",
+    "msg_error_out": "Bei Benutzer %s sind keine Einschränkungen gesetzt.",
+    "msg_expired": "[ GAG ]--> Benutzer:  %s  Einschränkung (%s) automatisch abgelaufen.",
+    "msg_god": "Du darfst diesen Benutzer nicht stumm schalten.",
+    "msg_invalid_duration": "Ungültige Dauer. Verwende z.B. 30s / 10m / 2h / 1d / 1w (kombinierbar: 1h30m). Leer = dauerhaft.",
+    "msg_isbot": "Benutzer ist ein Bot.",
+    "msg_off": "Benutzer nicht gefunden oder nicht registriert.",
+    "msg_remove_user": "[ GAG ]--> Benutzer:  %s  wurde ungagged von:  %s",
+    "msg_show_users": "\n=== GAG =========================\n\nStummgeschaltete Benutzer: (%s)\n%s\n\nKennylized-Benutzer: (%s)\n%s\n\nShadowmuted-Benutzer: (%s)\n%s\n\n========================= GAG ===\n  ",
+    "msg_unit_day": "d ",
+    "msg_unit_hour": "h ",
+    "msg_unit_minute": "m ",
+    "msg_unit_second": "s",
+    "msg_unit_year": "y ",
+    "msg_usage": "Gebrauch: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DAUER>]",
+    "msg_user_restriction_added": "Du wurdest gegaggt im Modus: %s",
+    "msg_user_restriction_removed": "Deine Chat-Restriktionen (gag-mode) wurden aufgehoben.",
+    "ucmd_duration": "Dauer (z.B. 1h30m, leer = dauerhaft):",
+    "ucmd_menu_ct0": [
+        "Gag",
+        "User muten"
+    ],
+    "ucmd_menu_ct1": [
+        "Gag",
+        "User kennylizen"
+    ],
+    "ucmd_menu_ct1b": [
+        "Gag",
+        "User shadowmuten"
+    ],
+    "ucmd_menu_ct2": [
+        "User",
+        "Control",
+        "Gag",
+        "Users anzeigen"
+    ],
+    "ucmd_menu_ct3": [
+        "User",
+        "Control",
+        "Gag",
+        "User ungaggen nach NICK"
+    ],
+    "ucmd_menu_ct4": [
+        "Gag",
+        "User ungaggen"
+    ],
+    "ucmd_nick": "Nick:"
 }

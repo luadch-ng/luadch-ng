@@ -1,9 +1,19 @@
 {
-  "help_desc":"Sendet Liste von gereggten Usern",
-  "help_usage":"[+!#]userlist [bydate]",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_useramount":"Useranzahl in den Levels:\n",
-  "msg_userlist":"Userliste:",
-  "ucmd_menu":["Hub","etc","Userliste","sortiert nach LEVEL"],
-  "ucmd_menu_bydate":["Hub","etc","Userliste","sortiert nach DATUM"]
+    "help_desc": "Zeigt eine Liste der registrierten Benutzer an.",
+    "help_usage": "[+!#]userlist [bydate]",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_useramount": "Anzahl der Benutzer pro Level:\n",
+    "msg_userlist": "Userliste:",
+    "ucmd_menu": [
+        "Hub",
+        "etc",
+        "Benutzerliste",
+        "sortiert nach Level"
+    ],
+    "ucmd_menu_bydate": [
+        "Hub",
+        "etc",
+        "Benutzerliste",
+        "nach DATUM"
+    ]
 }

@@ -1,11 +1,21 @@
 {
-  "help_desc":"Ändert die Hub Topic (Hub Description) oder setzt sie auf default zurück",
-  "help_usage":"[+!#]topic <NEW-TOPIC>|default",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_topic_changed":"%s  ändert Hub Topic zu: %s   |   alte Topic war: %s",
-  "msg_topic_reset":"%s  hat die Hub Topic auf default zurückgesetzt: %s",
-  "msg_usage":"Gebrauch: [+!#]topic <NEW-TOPIC>|default",
-  "ucmd_menu":["Hub","Core","Hub Topic","ändern"],
-  "ucmd_menu2":["Hub","Core","Hub Topic","zurücksetzen auf default"],
-  "ucmd_popup":"Neue Topic:"
+    "help_desc": "Setzt ein neues Hub-Thema oder setzt es auf den Standard zurück.",
+    "help_usage": "[+!#]topic <NEUES-THEMA>|default",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_topic_changed": "%s hat das Hub-Thema geändert zu: %s   |   altes Thema war: %s",
+    "msg_topic_reset": "%s hat das Hub-Thema auf die Standardeinstellung zurückgesetzt: %s",
+    "msg_usage": "Verwendung: [+!#]topic <NEW-TOPIC>|default",
+    "ucmd_menu": [
+        "Hub",
+        "Core",
+        "Hub-Thema",
+        "Neues Thema festlegen"
+    ],
+    "ucmd_menu2": [
+        "Hub",
+        "Core",
+        "Hub-Thema",
+        "Auf Standard setzen"
+    ],
+    "ucmd_popup": "Neues Thema:"
 }

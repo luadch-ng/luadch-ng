@@ -1,12 +1,12 @@
 {
-  "help_desc":"Zeigt die Uptime von dir und die des Hubs",
-  "help_usage":"[+!#]uptime",
-  "msg_days":" Tage, ",
-  "msg_denied":"Du bist nicht befugt diesen Befehl zu nutzen.",
-  "msg_hours":" Std, ",
-  "msg_minutes":" Min, ",
-  "msg_seconds":" Sek",
-  "msg_unknown":"<UNBEKANNT>",
-  "msg_uptime":"\n    \n=== UPTIME ==========================================================\n\n                  Hub Uptime (kompl.):  %s\n                  Hub Uptime (Session):  %s\n                  \n                  Deine Uptime:  %s\n\n========================================================== UPTIME ===\n  ",
-  "msg_years":" Jahre, "
+    "help_desc": "Zeigt die Uptime von dir und die des Hubs an.",
+    "help_usage": "[+!#]uptime",
+    "msg_days": " Tage, ",
+    "msg_denied": "Du darfst diesen Befehl nicht benutzen.",
+    "msg_hours": " Stunden, ",
+    "msg_minutes": " Minuten, ",
+    "msg_seconds": " Sekunden",
+    "msg_unknown": "<UNBEKANNT>",
+    "msg_uptime": "\n    \n=== UPTIME ==========================================================\n\n                  Hub-Uptime (komplett):  %s\n                  Hub-Uptime (Sitzung):  %s\n                  \n                  Deine Uptime:  %s\n\n========================================================== UPTIME ===\n  ",
+    "msg_years": " Jahre, "
 }
