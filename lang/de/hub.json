@@ -15,7 +15,7 @@
     "hub_max_bad_password": "Zu viele fehlgeschlagene Passwortversuche. Versuche es in %d Sekunden erneut.",
     "hub_nick_or_cid_taken": "Nick/CID vergeben.",
     "hub_nick_taken": "Dein Nick ist vergeben.",
-    "hub_no_base_support": "Dein Client unterstützt kein BASE.",
+    "hub_no_base_support": "Dein Client unterstützt die BASE-Erweiterung nicht.",
     "hub_no_cid_nick_found": "Keine CID/PID/NICK/IP in deiner INF gefunden.",
     "hub_reg_already_inserted": "User bereits im Hub eingefügt",
     "hub_reg_invalid_profile": "Ungültiges Profil",
