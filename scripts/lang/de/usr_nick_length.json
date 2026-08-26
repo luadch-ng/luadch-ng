@@ -1,4 +1,4 @@
 {
-  "msg_failedauth_reason":"Ungültige Nick-Länge: ",
-  "msg_invalid_length":"Ungültige Nick-Länge."
+    "msg_failedauth_reason": "Ungültige Nick-Länge: ",
+    "msg_invalid_length": "Ungültige Nick-Länge."
 }
