@@ -6006,6 +6006,19 @@ def test_http_webhooks_management(staging_dir: Path, proc=None):
     d = data_of(send("POST", "/v1/webhooks", create), "POST /v1/webhooks")
     if d.get("apply_status") != "reload_required":
         raise TestFailure(f"POST /v1/webhooks: expected reload_required; data={d!r}")
+    if d.get("action") != "webhook-created":
+        raise TestFailure(f"POST /v1/webhooks: expected action=webhook-created; data={d!r}")
+
+    # The ingested secret must be REDACTED in api_audit.log (the route sets
+    # audit_redact_body), never written verbatim - it is the sole credential
+    # guarding the scope=none receiver and api_audit.log is not 0600.
+    alines = data_of(send("GET", "/v1/log/api?lines=50"), "GET /v1/log/api").get("lines") or []
+    joined = "\n".join(alines)
+    if "smoke-secret-value-01" in joined:
+        raise TestFailure("POST /v1/webhooks: secret leaked verbatim into api_audit.log")
+    post_line = next((l for l in alines if "POST /v1/webhooks " in l and "/v1/webhooks/" not in l), None)
+    if not post_line or "body=[redacted]" not in post_line:
+        raise TestFailure(f"POST /v1/webhooks: audit body not redacted; line={post_line!r}")
 
     # 4. GET reflects it (proves the written file is valid, reloadable Lua),
     #    with the secret redacted.

@@ -466,6 +466,14 @@ local function is_scalar( v )
     return t == "string" or t == "number" or t == "boolean"
 end
 
+-- Derived per-endpoint secret key (single source of truth): the cfg.tbl
+-- key AND, upper-cased, the env var LUADCH_ETC_WEBHOOK_<NAME>_SECRET.
+-- Kept in one place so the module-load resolver and the two mgmt readers
+-- cannot drift on the key format.
+local function secret_key( name )
+    return "etc_webhook_" .. name .. "_secret"
+end
+
 local function err_resp( status, code, msg )
     return { status = status, error = { code = code, message = msg } }
 end
@@ -510,8 +518,7 @@ end
 -- inert, so writes reject it rather than silently creating a dead route.
 local function endpoint_has_secret( e )
     if type( e.secret ) == "string" and e.secret ~= "" then return true end
-    local key = "etc_webhook_" .. e.name .. "_secret"
-    local override = secrets and secrets.lookup and secrets.lookup( key )
+    local override = secrets and secrets.lookup and secrets.lookup( secret_key( e.name ) )
     return type( override ) == "string" and override ~= ""
 end
 
@@ -525,6 +532,7 @@ local function sanitise_endpoint_body( b, keep_secret )
     if type( b.name ) ~= "string" or not b.name:match( "^[%a%d_]+$" ) then
         return nil, "invalid or missing 'name' (need [A-Za-z0-9_])"
     end
+    if #b.name > 64 then return nil, "'name' too long (max 64)" end
     e.name = b.name
     if type( b.signature_header ) ~= "string" or b.signature_header == "" then
         return nil, "missing 'signature_header'"
@@ -628,7 +636,7 @@ local function endpoint_public_view( raw_e )
     local inline = ( type( raw_e.secret ) == "string" and raw_e.secret ~= "" ) or false
     local has_secret, secret_source = false, "none"
     if name ~= "" then
-        local override = secrets and secrets.lookup and secrets.lookup( "etc_webhook_" .. name .. "_secret" )
+        local override = secrets and secrets.lookup and secrets.lookup( secret_key( name ) )
         if type( override ) == "string" and override ~= "" then
             has_secret, secret_source = true, "external"
         elseif inline then
@@ -640,7 +648,10 @@ local function endpoint_public_view( raw_e )
     local view = {
         name             = name,
         enabled          = ( raw_e.enabled ~= false ),
-        path             = ( norm and norm.path ) or raw_e.path or ( "/v1/webhook/" .. name ),
+        -- path must be scalar-guarded like every other field below: when the
+        -- endpoint is invalid (norm=nil), the raw fallback would otherwise
+        -- pass a hand-edited function/cycle straight to dkjson.encode.
+        path             = ( norm and norm.path ) or ( type( raw_e.path ) == "string" and raw_e.path ) or ( "/v1/webhook/" .. name ),
         signature_header = ( type( raw_e.signature_header ) == "string" and raw_e.signature_header ) or "",
         signature_prefix = ( type( raw_e.signature_prefix ) == "string" and raw_e.signature_prefix ) or "",
         event_header     = ( type( raw_e.event_header ) == "string" and raw_e.event_header ) or "",
@@ -737,7 +748,7 @@ local function http_create_webhook( req )
     local ok, werr = write_config_raw( raw )
     if not ok then return internal( werr ) end
     audit_mutation( req, "webhook.create", e.name )
-    return { status = 200, data = { name = e.name, apply_status = "reload_required" } }
+    return { status = 200, data = { action = "webhook-created", name = e.name, apply_status = "reload_required" } }
 end
 
 -- PUT /v1/webhooks/{name} (admin): replace an existing endpoint. A blank
@@ -762,7 +773,7 @@ local function http_update_webhook( req )
     local ok, werr = write_config_raw( raw )
     if not ok then return internal( werr ) end
     audit_mutation( req, "webhook.update", name )
-    return { status = 200, data = { name = name, apply_status = "reload_required" } }
+    return { status = 200, data = { action = "webhook-updated", name = name, apply_status = "reload_required" } }
 end
 
 -- DELETE /v1/webhooks/{name} (admin): remove an endpoint.
@@ -776,7 +787,7 @@ local function http_delete_webhook( req )
     local ok, werr = write_config_raw( raw )
     if not ok then return internal( werr ) end
     audit_mutation( req, "webhook.delete", name )
-    return { status = 200, data = { name = name, apply_status = "reload_required" } }
+    return { status = 200, data = { action = "webhook-deleted", name = name, apply_status = "reload_required" } }
 end
 
 -- PUT /v1/webhooks (admin): update the global tuning (flood cap, dedup
@@ -794,8 +805,8 @@ local function http_update_settings( req )
     end
     local ok, werr = write_config_raw( raw )
     if not ok then return internal( werr ) end
-    audit_mutation( req, "webhook.settings", "-" )
-    return { status = 200, data = { apply_status = "reload_required" } }
+    audit_mutation( req, "webhook.tune", "-" )
+    return { status = 200, data = { action = "webhook-tuned", apply_status = "reload_required" } }
 end
 
 
@@ -818,11 +829,11 @@ if type( config ) == "table" then
                 -- GET /v1/config), then env-var-first, then the inline
                 -- secret in cfg/webhooks.tbl. Registration happens for
                 -- every configured endpoint, before the activate gate.
-                local secret_key = "etc_webhook_" .. entry.name .. "_secret"
-                if secrets and secrets.register then secrets.register( secret_key ) end
-                local resolved = ( secrets and secrets.lookup and secrets.lookup( secret_key ) ) or entry.inline_secret
+                local skey = secret_key( entry.name )
+                if secrets and secrets.register then secrets.register( skey ) end
+                local resolved = ( secrets and secrets.lookup and secrets.lookup( skey ) ) or entry.inline_secret
                 if type( resolved ) ~= "string" or resolved == "" then
-                    hub_debug( scriptname .. ": endpoint '" .. entry.name .. "' has no secret (env LUADCH_" .. string.upper( secret_key ) .. " / cfg / inline) - skipped" )
+                    hub_debug( scriptname .. ": endpoint '" .. entry.name .. "' has no secret (env LUADCH_" .. string.upper( skey ) .. " / cfg / inline) - skipped" )
                 else
                     entry.secret = resolved
                     endpoints[ #endpoints + 1 ] = entry
@@ -863,24 +874,72 @@ hub.setlistener( "onStart", { },
         end
         -- The router unregister_all's on every +reload before this fires,
         -- so a straight re-register is safe (no duplicate-path throw). Each
-        -- register is pcall'd so one bad route never aborts the rest.
-        local function reg( method, path, scope, handler, desc )
-            local ok, reg_err = pcall( hub.http_register, method, path, scope, handler, {
-                plugin = scriptname, description = desc,
-            } )
+        -- register is pcall'd so one bad route never aborts the rest. `extras`
+        -- merges request/response_schema + audit_redact_body into the meta.
+        local function reg( method, path, scope, handler, desc, extras )
+            local meta = { plugin = scriptname, description = desc }
+            if extras then for k, v in pairs( extras ) do meta[ k ] = v end end
+            local ok, reg_err = pcall( hub.http_register, method, path, scope, handler, meta )
             if not ok then
                 hub_debug( scriptname .. ": could not register route " .. method .. " " .. path .. ": " .. tostring( reg_err ) )
             end
         end
+        -- One endpoint request schema for POST + PUT/{name} (surfaced in
+        -- /v1/endpoints for WebUI form rendering; the router pre-validates
+        -- top-level types before the handler's fuller sanitise). `name` is
+        -- required on create but path-sourced on update, so it is not
+        -- required here - the create handler enforces it.
+        local endpoint_req = {
+            name             = { type = "string",  required = false, max_length = 64 },
+            signature_header = { type = "string",  required = true },
+            signature_prefix = { type = "string",  required = false },
+            path             = { type = "string",  required = false },
+            event_header     = { type = "string",  required = false },
+            id_header        = { type = "string",  required = false },
+            bot_nick         = { type = "string",  required = false },
+            default_template = { type = "string",  required = false },
+            min_level        = { type = "integer", required = false, min = 0 },
+            enabled          = { type = "boolean", required = false },
+            events           = { type = "array",   required = false },
+            templates        = { type = "object",  required = false },
+            conditions       = { type = "array",   required = false },
+            secret           = { type = "string",  required = false },
+        }
+        local write_resp = {
+            action       = { type = "string", required = true },
+            apply_status = { type = "string", required = true },
+            name         = { type = "string", required = false },
+        }
         -- Management API: registered whenever the plugin is loaded, even
         -- when inert (activate=false / no endpoints yet), so the WebUI tab
         -- (gated on GET /v1/webhooks being present) shows up and can create
-        -- the first endpoint + flip the master switch. Writes are admin.
-        reg( "GET",    "/v1/webhooks",        "read",  http_get_webhooks,   "list webhook endpoints + tuning (secrets redacted)" )
-        reg( "POST",   "/v1/webhooks",        "admin", http_create_webhook, "create a webhook endpoint (needs +reload)" )
-        reg( "PUT",    "/v1/webhooks",        "admin", http_update_settings,"update global webhook tuning (needs +reload)" )
-        reg( "PUT",    "/v1/webhooks/{name}", "admin", http_update_webhook, "update a webhook endpoint (needs +reload)" )
-        reg( "DELETE", "/v1/webhooks/{name}", "admin", http_delete_webhook, "delete a webhook endpoint (needs +reload)" )
+        -- the first endpoint + flip the master switch. Writes are admin, and
+        -- the two routes that ingest a plaintext `secret` (POST + PUT/{name})
+        -- set audit_redact_body so the secret never lands in api_audit.log.
+        reg( "GET",    "/v1/webhooks",        "read",  http_get_webhooks,   "list webhook endpoints + tuning (secrets redacted)", {
+            response_schema = {
+                activate  = { type = "boolean", required = true },
+                tuning    = { type = "object",  required = true },
+                endpoints = { type = "array",   required = true },
+            },
+        } )
+        reg( "POST",   "/v1/webhooks",        "admin", http_create_webhook, "create a webhook endpoint (needs +reload)", {
+            request_schema = endpoint_req, response_schema = write_resp, audit_redact_body = true,
+        } )
+        reg( "PUT",    "/v1/webhooks",        "admin", http_update_settings,"update global webhook tuning (needs +reload)", {
+            request_schema = {
+                max_per_minute = { type = "integer", required = false, min = 1 },
+                dedup_max      = { type = "integer", required = false, min = 1 },
+                field_maxlen   = { type = "integer", required = false, min = 1 },
+            },
+            response_schema = write_resp,
+        } )
+        reg( "PUT",    "/v1/webhooks/{name}", "admin", http_update_webhook, "update a webhook endpoint (needs +reload)", {
+            request_schema = endpoint_req, response_schema = write_resp, audit_redact_body = true,
+        } )
+        reg( "DELETE", "/v1/webhooks/{name}", "admin", http_delete_webhook, "delete a webhook endpoint (needs +reload)", {
+            response_schema = write_resp,
+        } )
         -- Receiver routes: one scope="none" POST per LIVE endpoint, only
         -- when active with >=1 valid endpoint (the HMAC-authed inbound path).
         if receiver_active then
