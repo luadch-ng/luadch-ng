@@ -6029,8 +6029,12 @@ def test_http_webhooks_management(staging_dir: Path, proc=None):
     if not whooks.exists():
         raise TestFailure("POST /v1/webhooks: cfg/webhooks.tbl was not written")
     ftext = whooks.read_text(encoding="utf-8")
-    if "managed by etc_webhook" not in ftext or 'name = "smoketest"' not in ftext:
-        raise TestFailure(f"cfg/webhooks.tbl missing header/name; content={ftext[:200]!r}")
+    if "managed by etc_webhook" not in ftext:
+        raise TestFailure(f"cfg/webhooks.tbl missing header; content={ftext[:200]!r}")
+    # util.tabletostring serialises keys as `[ "name" ] = "smoketest"`, so
+    # match the quoted name value rather than an assumed `name = ` form.
+    if '"smoketest"' not in ftext:
+        raise TestFailure(f"cfg/webhooks.tbl missing endpoint name; content={ftext!r}")
     if sys.platform != "win32":
         mode = _stat.S_IMODE(_os.stat(whooks).st_mode)
         if mode != 0o600:
