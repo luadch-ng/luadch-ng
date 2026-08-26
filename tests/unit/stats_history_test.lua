@@ -2,7 +2,7 @@
 
     tests/unit/stats_history_test.lua
 
-    Feature contract for scripts/etc_stats_history.lua v0.1 (#665): the
+    Feature contract for scripts/etc_stats_history.lua (#665): the
     multi-tier RRD-style consolidation (`_record_tier`) + the sampler fan-out
     + the GET /v1/stats/history handler.
 
