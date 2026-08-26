@@ -651,8 +651,11 @@ chain-of-custody).
 
 `actor.nick` is the canonical firstnick (prefix-less); the visible
 form (e.g. `[OP]op`) lands in optional `display_nick` when it
-differs. `actor.sid = "<http>"` for events fired via the HTTP API
-(actor_label = the bearer token's `comment`). Optional fields
+differs. `actor.sid = "<http>"` for events fired via the HTTP API;
+`actor.nick` there is the real operator asserted in `X-Actor`
+(`req.actor`), falling back to the bearer token's non-secret label
+(#177 C - moderation/announce audit records the operator, while end
+users see the hubbot). Optional fields
 (`target`, `reason`, `meta`, `display_nick`) are dropped when
 empty so the on-disk shape stays compact.
 
@@ -663,7 +666,7 @@ empty so the on-disk shape stays compact.
 `reg.desc.set`, `reg.level.set`, `reg.nickchange`,
 `reg.password.change`, `hub.topic.set`, `hub.topic.reset`,
 `hub.reload`, `hub.restart`, `hub.shutdown`,
-`hub.announce.{all,hub,level}`,
+`hub.announce.{all,hub,level}`, `hub.chat.post`,
 `alias.{add,remove}`, `msgmanager.{block,unblock}`,
 `blacklist.remove`, `log.clear`, `records.reset`,
 `user.cleanup`, `user.cleanup.exception.{add,remove,clear}`,

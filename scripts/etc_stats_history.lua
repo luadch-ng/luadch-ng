@@ -8,7 +8,7 @@
 
         Endpoint-only: no ADC command, no report, no lang file.
 
-        Three round-robin tiers consolidate the SAME 10-minute samples into
+        Three round-robin tiers consolidate the SAME 60-second samples into
         progressively wider buckets, each keeping the MAX online count seen in
         the bucket (peak concurrent). The tiers ARE the resolutions, so the
         endpoint just returns the one matching the requested range - no
@@ -22,6 +22,12 @@
         owned, survives +reload and restart, upgrade-safe). No backfill is
         possible - the graph accumulates from first enable.
 
+        v0.2:
+            - sample every 60s (was every 10 min = tier1's slot): the current
+              bucket now reflects a just-connected user within ~60s instead of
+              lagging the live tile by up to a full slot (webui#183 follow-up).
+              Tier slots / windows / interval_sec unchanged.
+
         v0.1:
             - initial: 3-tier sampler + GET /v1/stats/history (#665)
 
@@ -33,16 +39,16 @@
 --------------
 
 local scriptname = "etc_stats_history"
-local scriptversion = "0.1"
+local scriptversion = "0.2"
 
 
 --// imports
 local hub_getusers = hub.getusers
 local data_file = "scripts/data/etc_stats_history.tbl"
 
--- Tier config: the base sample interval is tier1's slot (10 min); the coarser
--- tiers consolidate those samples into wider buckets. cap * slot gives exactly
--- the documented window. Ordered fine -> coarse.
+-- Tier config: samples are taken every SAMPLE_INTERVAL (60s) and consolidated
+-- into these buckets (each tier keeps the peak per slot). cap * slot gives
+-- exactly the documented window. Ordered fine -> coarse.
 local TIERS = {
     { key = "tier1", slot = 600,   cap = 144, range = "24h" }, -- 10 min * 144 = 24 h
     { key = "tier2", slot = 3600,  cap = 168, range = "7d"  }, --  1 h  * 168 =  7 d
@@ -53,7 +59,14 @@ local DEFAULT_RANGE = "24h"
 local RANGE_TO_TIER = { } -- "24h" -> TIERS entry
 for _, ti in ipairs( TIERS ) do RANGE_TO_TIER[ ti.range ] = ti end
 
-local SAMPLE_INTERVAL = TIERS[ 1 ].slot -- base tick = tier1's slot (10 min); one source of truth
+-- Base sample rate. Kept well BELOW tier1's 10-min slot so the current
+-- (rightmost) bucket reflects a just-connected user within ~60s via
+-- record_tier's same-bucket max, instead of lagging the live /v1/stats tile by
+-- up to a full 10-min slot (webui#183 follow-up: the dashboard tile showed 1
+-- online while the graph still read 0). The tier SLOTS are unchanged, so the
+-- window sizes / point counts / interval_sec the WebUI plots are unaffected -
+-- only the peak-consolidation now has multiple samples per bucket to work with.
+local SAMPLE_INTERVAL = 60
 
 
 ----------
