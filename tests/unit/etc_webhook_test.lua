@@ -55,6 +55,7 @@ local CONFIG_FILE = "cfg/webhooks.tbl"
 local DEDUP_FILE  = "scripts/data/etc_webhook.tbl"
 local _now, _activate, _config, _dedup, _users
 local _listeners, _routes, _announced
+local _written, _chmod_called          -- mgmt writer round-trip capture (v0.04)
 
 local SECRET = "s3cr3t-webhook-key"
 
@@ -100,13 +101,38 @@ _G.util = {
     end,
     savetable = function( t, _name, p ) if p == DEDUP_FILE then _dedup = t end end,
     strip_control_bytes = function( s ) if type( s ) ~= "string" then return "" end return ( s:gsub( "%c", "?" ) ) end,
+    -- mgmt writer (v0.04): tabletostring captures the raw table it is asked
+    -- to serialise; atomic_write "commits" it back to _config so a write
+    -- then a read round-trips (mirrors the on-disk file). The real
+    -- util.tabletostring output is exercised by the smoke test.
+    tabletostring = function( tbl, _name ) _written = tbl; return "SERIALISED\n" end,
+    atomic_write  = function( p, _content ) if p == CONFIG_FILE then _config = _written end return true end,
+    chmod_secret  = function( _p ) _chmod_called = true end,
 }
-_G.secrets = { register = function( ) end, lookup = function( ) return nil end }   -- force inline-secret path
+-- secrets.lookup returns an env/cfg override for a key iff seeded in
+-- _overrides (default: none -> inline-secret path). Lets a test exercise
+-- secret_source = "external".
+local _overrides = { }
+_G.secrets = { register = function( ) end, lookup = function( k ) return _overrides[ k ] end }
+
+-- audit stub: capture fired events so a test can assert the endpoint name
+-- reaches audit as a flat-table target (a bare-string target is dropped to
+-- nil by the real audit.build - the v0.04 bug this guards).
+local _audit_events = { }
+_G.audit = {
+    build = function( action, actor, target, reason, meta )
+        return { action = action, actor = actor, target = target, reason = reason, meta = meta }
+    end,
+    fire  = function( ev ) _audit_events[ #_audit_events + 1 ] = ev end,
+}
+local function last_audit( ) return _audit_events[ #_audit_events ] end
 
 _G.hub = {
     setlistener   = function( ev, _opts, fn ) _listeners[ ev ] = fn end,
+    -- key by "METHOD path": v0.04 registers GET/POST/PUT on the same
+    -- /v1/webhooks path, so a path-only key would clobber siblings.
     http_register = function( method, path, scope, handler, meta )
-        _routes[ path ] = { method = method, scope = scope, handler = handler, meta = meta }
+        _routes[ method .. " " .. path ] = { method = method, scope = scope, handler = handler, meta = meta }
     end,
     regbot   = function( p ) return { nick = function( ) return p.nick end } end,
     getbot   = function( ) return { hubbot = true } end,
@@ -135,10 +161,13 @@ end
 -- sign the body the way the plugin verifies it
 local function sig_for( body ) return "sha256=" .. hmac.sha256( SECRET, body ) end
 
-local function post( path, body, headers )
-    local route = _routes[ path ]
-    if not route then return nil end
-    return route.handler( { headers = headers, raw_body = body, body = nil } )
+local function route( method, path ) return _routes[ method .. " " .. path ] end
+
+-- invoke a management handler with a synthetic admin request
+local function call( method, path, body, path_vars )
+    local r = route( method, path )
+    if not r then return nil end
+    return r.handler( { body = body, path_vars = path_vars, token_label = "op1" } )
 end
 
 -- convenience: a Discourse-style post_created request with a decoded body
@@ -174,7 +203,7 @@ local function base_config( )
 end
 
 local function fire_handler( req )
-    return _routes[ "/v1/webhook/discourse" ].handler( req )
+    return route( "POST", "/v1/webhook/discourse" ).handler( req )
 end
 
 ----------------------------------------------------------------------
@@ -184,9 +213,15 @@ _now = 1000; _activate = true; _dedup = nil; _users = { }
 _config = base_config( )
 load_plugin( )
 
-truthy( "route registered for the discourse endpoint", _routes[ "/v1/webhook/discourse" ] ~= nil )
-eq( "route is POST",  _routes[ "/v1/webhook/discourse" ].method, "POST" )
-eq( "route scope is none", _routes[ "/v1/webhook/discourse" ].scope, "none" )
+truthy( "route registered for the discourse endpoint", route( "POST", "/v1/webhook/discourse" ) ~= nil )
+eq( "route is POST",  route( "POST", "/v1/webhook/discourse" ).method, "POST" )
+eq( "route scope is none", route( "POST", "/v1/webhook/discourse" ).scope, "none" )
+-- v0.04: management routes register alongside the receiver
+truthy( "mgmt GET /v1/webhooks registered",    route( "GET", "/v1/webhooks" ) ~= nil )
+eq( "mgmt GET scope is read",                  route( "GET", "/v1/webhooks" ).scope, "read" )
+eq( "mgmt POST scope is admin",                route( "POST", "/v1/webhooks" ).scope, "admin" )
+eq( "mgmt PUT {name} scope is admin",          route( "PUT", "/v1/webhooks/{name}" ).scope, "admin" )
+eq( "mgmt DELETE {name} scope is admin",       route( "DELETE", "/v1/webhooks/{name}" ).scope, "admin" )
 
 local BODY = '{"post":{"username":"alice","topic_title":"Hello"}}'
 local BTBL = { post = { username = "alice", topic_title = "Hello" } }
@@ -317,15 +352,20 @@ _users = { }
 _config = base_config( )
 _config.endpoints[ 1 ].secret = nil    -- no inline; secrets.lookup returns nil
 load_plugin( )
-truthy( "no-secret endpoint: route NOT registered", _routes[ "/v1/webhook/discourse" ] == nil )
+truthy( "no-secret endpoint: receiver route NOT registered", route( "POST", "/v1/webhook/discourse" ) == nil )
+truthy( "no-secret endpoint: mgmt API still registered", route( "GET", "/v1/webhooks" ) ~= nil )
 
 ----------------------------------------------------------------------
--- 12. activate = false -> inert (no routes)
+-- 12. activate = false -> receiver inert, but mgmt API still present
+--     (v0.04: the WebUI tab must be reachable to flip the switch on)
 ----------------------------------------------------------------------
 _activate = false
 _config = base_config( )
 load_plugin( )
-truthy( "activate=false: no routes registered", next( _routes ) == nil )
+truthy( "activate=false: receiver route NOT registered", route( "POST", "/v1/webhook/discourse" ) == nil )
+truthy( "activate=false: mgmt GET still registered",     route( "GET", "/v1/webhooks" ) ~= nil )
+r = call( "GET", "/v1/webhooks" )
+eq( "activate=false: GET reports activate=false", r.data.activate, false )
 _activate = true
 
 ----------------------------------------------------------------------
@@ -404,6 +444,174 @@ _announced = { }
 local B_RELEASED = '{"action":"released"}'
 fire_handler( discourse_req( "e2", "post_created", sig_for( B_RELEASED ), B_RELEASED, { action = "released" } ) )
 eq( "conditions equals: action=released announced", #_announced, 1 )
+
+----------------------------------------------------------------------
+-- 15. HTTP management API (v0.04). The routes are net-new (absent on
+--     v0.03), and the enabled-skip case (20) is a provable RED on v0.03:
+--     normalise ignored `enabled`, so a disabled endpoint still got a
+--     receiver route.
+----------------------------------------------------------------------
+local NEWEP = {
+    name = "ci", signature_header = "x-ci-signature", signature_prefix = "sha256=",
+    event_header = "x-ci-event", events = { "build" }, id_header = "x-ci-id",
+    bot_nick = "CI", min_level = 0,
+    templates = { build = "build {status}" },
+    conditions = { { path = "branch", equals = "main" } },
+    secret = "ci-secret",
+}
+
+-- 15. GET: shape + secret redaction (inline source)
+_overrides = { }
+_config = base_config( ); _activate = true; _dedup = nil; _users = { }
+load_plugin( )
+r = call( "GET", "/v1/webhooks" )
+eq( "GET: status 200", r.status, 200 )
+eq( "GET: one endpoint listed", #r.data.endpoints, 1 )
+local d = r.data.endpoints[ 1 ]
+eq( "GET: endpoint name", d.name, "discourse" )
+eq( "GET: secret value NOT present", d.secret, nil )
+eq( "GET: has_secret true (inline)", d.has_secret, true )
+eq( "GET: secret_source = inline", d.secret_source, "inline" )
+eq( "GET: enabled defaults true", d.enabled, true )
+eq( "GET: valid true", d.valid, true )
+eq( "GET: tuning max_per_minute from file", r.data.tuning.max_per_minute, 3 )
+eq( "GET: activate reported true", r.data.activate, true )
+
+-- 15b. GET: secret_source=external when an env/cfg override exists
+_overrides = { [ "etc_webhook_discourse_secret" ] = "env-value" }
+r = call( "GET", "/v1/webhooks" )
+eq( "GET: secret_source = external with env/cfg override", r.data.endpoints[ 1 ].secret_source, "external" )
+_overrides = { }
+
+-- 16. POST create -> 200 reload_required, chmod 600 on write, then listed
+_config = base_config( ); load_plugin( )
+_chmod_called = false
+r = call( "POST", "/v1/webhooks", NEWEP )
+eq( "POST: status 200", r.status, 200 )
+eq( "POST: apply_status reload_required", r.data.apply_status, "reload_required" )
+eq( "POST: action label", r.data.action, "webhook-created" )
+eq( "POST: writer chmod 600 called", _chmod_called, true )
+eq( "POST: audit action webhook.create", last_audit() and last_audit().action, "webhook.create" )
+eq( "POST: audit target is endpoint name (flat table, not dropped)",
+    last_audit() and last_audit().target and last_audit().target.nick, "ci" )
+r = call( "GET", "/v1/webhooks" )
+eq( "POST: endpoint count now 2", #r.data.endpoints, 2 )
+local ci
+for _, e in ipairs( r.data.endpoints ) do if e.name == "ci" then ci = e end end
+truthy( "POST: created endpoint present in GET", ci ~= nil )
+eq( "POST: created has_secret", ci and ci.has_secret, true )
+eq( "POST: created events preserved", ci and ci.events and ci.events[ 1 ], "build" )
+eq( "POST: created path defaulted", ci and ci.path, "/v1/webhook/ci" )
+
+-- 16b. POST duplicate name -> 400
+_config = base_config( ); load_plugin( )
+r = call( "POST", "/v1/webhooks", { name = "discourse", signature_header = "x", secret = "k" } )
+eq( "POST dup name: 400", r.status, 400 )
+eq( "POST dup name: E_BAD_INPUT", r.error.code, "E_BAD_INPUT" )
+
+-- 16c. POST invalid name -> 400 (bad chars, and overlong)
+r = call( "POST", "/v1/webhooks", { name = "bad name!", signature_header = "x", secret = "k" } )
+eq( "POST bad name: 400", r.status, 400 )
+r = call( "POST", "/v1/webhooks", { name = string.rep( "a", 65 ), signature_header = "x", secret = "k" } )
+eq( "POST overlong name (>64): 400", r.status, 400 )
+r = call( "POST", "/v1/webhooks", { name = "numsec", signature_header = "x", secret = 12345 } )
+eq( "POST non-string secret: 400", r.status, 400 )
+
+-- 16d. POST no resolvable secret -> 400 (never a silently-inert endpoint)
+_overrides = { }
+r = call( "POST", "/v1/webhooks", { name = "nosec", signature_header = "x-sig" } )
+eq( "POST no secret: 400", r.status, 400 )
+
+-- 17. PUT full-replace, blank secret keeps the current inline secret
+_config = base_config( ); load_plugin( )
+r = call( "PUT", "/v1/webhooks/{name}",
+    { name = "discourse", signature_header = "x-new-sig", min_level = 50 }, { name = "discourse" } )
+eq( "PUT: status 200", r.status, 200 )
+eq( "PUT keep-secret: inline secret unchanged", _config.endpoints[ 1 ].secret, SECRET )
+r = call( "GET", "/v1/webhooks" )
+local pu = r.data.endpoints[ 1 ]
+eq( "PUT: signature_header updated", pu.signature_header, "x-new-sig" )
+eq( "PUT: min_level updated", pu.min_level, 50 )
+eq( "PUT: still has_secret", pu.has_secret, true )
+eq( "PUT full-replace: events dropped (not in body)", pu.events, nil )
+
+-- 17b. PUT with a secret rotates the inline secret
+_config = base_config( ); load_plugin( )
+r = call( "PUT", "/v1/webhooks/{name}",
+    { name = "discourse", signature_header = "x", secret = "rotated-key" }, { name = "discourse" } )
+eq( "PUT rotate: 200", r.status, 200 )
+eq( "PUT rotate: new inline secret stored", _config.endpoints[ 1 ].secret, "rotated-key" )
+
+-- 17c. PUT unknown name -> 404
+r = call( "PUT", "/v1/webhooks/{name}",
+    { name = "ghost", signature_header = "x", secret = "k" }, { name = "ghost" } )
+eq( "PUT unknown: 404", r.status, 404 )
+eq( "PUT unknown: E_NOT_FOUND", r.error.code, "E_NOT_FOUND" )
+
+-- 18. DELETE -> gone from GET
+_config = base_config( ); load_plugin( )
+r = call( "DELETE", "/v1/webhooks/{name}", nil, { name = "discourse" } )
+eq( "DELETE: 200", r.status, 200 )
+eq( "DELETE: audit target name", last_audit() and last_audit().target and last_audit().target.nick, "discourse" )
+r = call( "GET", "/v1/webhooks" )
+eq( "DELETE: endpoint removed", #r.data.endpoints, 0 )
+
+-- 18b. DELETE unknown -> 404
+r = call( "DELETE", "/v1/webhooks/{name}", nil, { name = "ghost" } )
+eq( "DELETE unknown: 404", r.status, 404 )
+
+-- 19. PUT /v1/webhooks (global tuning)
+_config = base_config( ); load_plugin( )
+r = call( "PUT", "/v1/webhooks", { max_per_minute = 42, dedup_max = 999 } )
+eq( "settings: 200", r.status, 200 )
+eq( "settings: reload_required", r.data.apply_status, "reload_required" )
+eq( "settings: audit action", last_audit() and last_audit().action, "webhook.tune" )
+truthy( "settings: audit target nil (no endpoint)", last_audit() and last_audit().target == nil )
+r = call( "GET", "/v1/webhooks" )
+eq( "settings: max_per_minute updated", r.data.tuning.max_per_minute, 42 )
+eq( "settings: dedup_max updated", r.data.tuning.dedup_max, 999 )
+eq( "settings: field_maxlen untouched", r.data.tuning.field_maxlen, 20 )
+r = call( "PUT", "/v1/webhooks", { max_per_minute = 0 } )
+eq( "settings: reject <= 0", r.status, 400 )
+
+-- 20. enabled=false: receiver route skipped, but still listed in GET.
+--     RED on v0.03 (enabled ignored -> receiver route WAS registered).
+_config = base_config( )
+_config.endpoints[ 1 ].enabled = false
+load_plugin( )
+truthy( "enabled=false: receiver route NOT registered", route( "POST", "/v1/webhook/discourse" ) == nil )
+r = call( "GET", "/v1/webhooks" )
+eq( "enabled=false: still listed in GET", #r.data.endpoints, 1 )
+eq( "enabled=false: GET reports enabled=false", r.data.endpoints[ 1 ].enabled, false )
+
+-- 21. GET view is scalar-safe: a hand-edited file with non-scalar junk in
+--     events/templates/conditions is FILTERED (the GET data is dkjson-
+--     encoded outside the handler guard, so raw passthrough of a function/
+--     cycle would crash the hub loop). RED pre-fix (raw passthrough).
+_overrides = { }
+_config = base_config( )
+_config.endpoints[ 1 ].events     = { "ok", function() end, { nested = 1 } }
+_config.endpoints[ 1 ].templates  = { good = "hi", bad = function() end }
+_config.endpoints[ 1 ].conditions = { { path = "p", equals = "v" }, { path = "q", equals = function() end } }
+load_plugin( )
+r = call( "GET", "/v1/webhooks" )
+local sv = r.data.endpoints[ 1 ]
+eq( "scalar-safe: only string events kept", sv.events and #sv.events, 1 )
+eq( "scalar-safe: string event value", sv.events and sv.events[ 1 ], "ok" )
+eq( "scalar-safe: string template kept", sv.templates and sv.templates.good, "hi" )
+truthy( "scalar-safe: function template dropped", sv.templates and sv.templates.bad == nil )
+eq( "scalar-safe: only scalar-valued conditions kept", sv.conditions and #sv.conditions, 1 )
+eq( "scalar-safe: kept condition path", sv.conditions and sv.conditions[ 1 ].path, "p" )
+
+-- 22. path guard: an INVALID endpoint (norm=nil because it has no name) with
+--     a function `path` must NOT leak the function into the wire view - the
+--     raw-path fallback is scalar-guarded (else dkjson.encode crashes the loop).
+_config = { endpoints = { { signature_header = "h", path = function() end } } }
+load_plugin( )
+r = call( "GET", "/v1/webhooks" )
+local iv = r.data.endpoints[ 1 ]
+truthy( "path guard: view.path is a string, not the raw function", type( iv.path ) == "string" )
+eq( "path guard: invalid endpoint flagged valid=false", iv.valid, false )
 
 ----------------------------------------------------------------------
 if failures > 0 then
