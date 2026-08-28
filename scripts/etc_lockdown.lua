@@ -1,6 +1,10 @@
 --[[
 
-    etc_lockdown.lua v0.01 by Aybo ( #501 )
+    etc_lockdown.lua v0.02 by Aybo ( #501 )
+
+        v0.02 - probe io.open before util.loadtable at load, so a fresh /
+                never-activated hub ( no state file yet ) no longer logs a
+                `checkfile: No such file` line into error.log every boot.
 
         Transient "maintenance mode": temporarily admit only users at or
         above a chosen level, kick everyone below, and refuse new logins
@@ -57,7 +61,7 @@
 --------------
 
 local scriptname    = "etc_lockdown"
-local scriptversion = "0.01"
+local scriptversion = "0.02"
 
 local cmd_main = "lockdown"
 
@@ -155,8 +159,20 @@ end
 -- Persisted lockdown state. Shape ( when active ):
 --   { active=true, level=N, message=<str|nil>, expires_at=<abs os.time|nil>,
 --     by_nick=<str>, by_level=<int>, started_at=<abs os.time> }
--- Loaded once at module load; util.loadtable returns nil on a fresh hub.
-local state = sane_state( util.loadtable( store_path ) )
+-- Loaded once at module load. Probe with io.open FIRST so a missing store
+-- ( the normal case until the first activation writes it - lockdown ships
+-- off ) does not log a `checkfile: No such file` line on every boot / +reload,
+-- which the dashboard's Recent-errors tile would then surface. Same io.open
+-- peek etc_stats_history / etc_geoip / etc_blocklist_feeds use ( hub_runtime
+-- #445 first-run-noise lesson ). sane_state coerces a corrupt / nil load to a
+-- safe inactive record.
+local function load_state( )
+    local f = io.open( store_path, "r" )
+    if not f then return { active = false } end
+    f:close( )
+    return sane_state( util.loadtable( store_path ) )
+end
+local state = load_state( )
 
 local function persist( )
     util.savetable( state, "etc_lockdown_state", store_path )
