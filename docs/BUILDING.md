@@ -499,13 +499,15 @@ or migrate `user.tbl` to a new install, repeat the `icacls` command.
 
 ## Known cosmetic build warnings
 
-The Linux build emits 5 deprecation warnings from the bundled `luasec/` C
-sources against system OpenSSL 3.x (`EC_KEY_*`, `PEM_read_bio_DHparams`,
-`SSL_CTX_set_tmp_dh_callback`, `EC_KEY_free`, `DH_free`). These are
+The Linux build emits a handful of deprecation warnings from the bundled
+`luasec/` C sources against system OpenSSL 3.x (`EC_KEY_*`,
+`PEM_read_bio_DHparams`, `SSL_CTX_set_tmp_dh_callback`, `EC_KEY_free`,
+`DH_free`). These are
 cosmetic — the functions still work in current OpenSSL. The negotiated
 TLS session is modern (TLS 1.3 + AES-256-GCM verified). Tracked in
 [issue #3](https://github.com/luadch-ng/luadch-ng/issues/3) as
 `upstream-blocked` / `wontfix`.
 
-The Windows build (gcc 16+) emits 2 stylistic `-Wparentheses` warnings
-from the third-party Tiger hash code in `adclib/tiger.cpp`. Same category.
+The Windows build (gcc 16+) emits a couple of stylistic `-Wparentheses`
+warnings from the third-party Tiger hash code in `adclib/tiger.cpp`. Same
+category (also tracked under [issue #3](https://github.com/luadch-ng/luadch-ng/issues/3)).

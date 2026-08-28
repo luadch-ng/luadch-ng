@@ -36,7 +36,7 @@ Help us translate Luadch-ng into your language. Visit our [Translation Hub](http
 
 
 ## ToDo
-- 🌐 Web interface for hub management
+- 🌐 Web interface for hub management (in progress in the companion repo `luadch-ng-webui`; backed by this hub's HTTP + webhook management API, but not part of this repo's release)
 
 ## Quick Start
 

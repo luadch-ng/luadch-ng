@@ -35,7 +35,7 @@ the code wins.
 |---|---|
 | Lua language basics | `assert`, `error`, `pairs`, `ipairs`, `next`, `pcall`, `xpcall`, `select`, `setmetatable`, `getmetatable`, `tonumber`, `tostring`, `type`, `print`, `collectgarbage`, `PROCESSED` |
 | Lua stdlib (full) | `table`, `math`, `coroutine` |
-| Lua stdlib (curated) | `os` (only `time`, `date`, `difftime`), `io` (only `open`, path-restricted) |
+| Lua stdlib (curated) | `os` (only `time`, `date`, `difftime`, `clock`), `io` (only `open`, path-restricted) |
 | String lib | `string` (= `utf`, UTF-8-aware), `utf` (alias for the same) |
 | luadch core | `hub`, `cfg`, `util`, `util_http`, `http_filter`, `http_events`, `http_client`, `adc`, `adclib`, `signal`, `out`, `unicode`, `sysinfo`, `const`, `audit`, `secrets`, `whitelist`, `blocklist`, `mmdb`, `geoip_update`, `hmac`, `backup` |
 | Optional libs | `ssl` (with `.x509` pre-attached as a field), `socket`, `basexx`, `zlib_stream`, `dkjson` |
@@ -157,12 +157,13 @@ local loaded = package.loaded["foo"]
 | `package.loaded` lookup | not supported |
 | `package.loadlib` | not supported (was a sandbox escape) |
 
-### `os.execute` / `os.remove` / `os.rename` / `os.exit` / `os.setlocale` / `os.tmpname` / `os.tmpfile` / `os.getenv` / `os.clock`
+### `os.execute` / `os.remove` / `os.rename` / `os.exit` / `os.setlocale` / `os.tmpname` / `os.tmpfile` / `os.getenv`
 
-These were all blocked in Tier-2 Sub-PR-2 (#212).
+These were all blocked in Tier-2 Sub-PR-2 (#212). (`os.clock` was blocked
+there too but later re-exposed as a read-only time accessor in #325/#326.)
 
 **Replacement:** None for most. The plugin sandbox exposes only
-`os.time`, `os.date`, `os.difftime`. If your plugin shells out to
+`os.time`, `os.date`, `os.difftime`, `os.clock`. If your plugin shells out to
 system commands, that work must move into a luadch core helper (the
 canonical example: cmd_hubinfo's OS / CPU / RAM detection moved into
 `core/sysinfo.lua` in #213, accessed by the plugin via

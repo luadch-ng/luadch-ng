@@ -16,10 +16,10 @@ build/install/luadch/
 ├── luadch          (Linux) or Luadch.exe (Windows) — the hub binary
 ├── liblua.so       (Linux) or lua.dll (Windows)
 ├── libssl-3-x64.dll, libcrypto-3-x64.dll        (Windows only)
-├── lib/                                          shared plugins (.so/.dll + .lua)
+├── lib/                                          bundled Lua/C dependency modules
 ├── core/           Lua core modules
 ├── scripts/        bundled command / bot / utility scripts
-├── cfg/            cfg.tbl + user.tbl (default templates)
+├── cfg/            cfg.tbl, user.tbl, and other default templates
 ├── certs/          TLS cert generation helpers
 ├── lang/           hub-side language files
 ├── docs/           embedded docs
@@ -198,7 +198,7 @@ What is worth backing up:
 | Path                       | Why                                    |
 |----------------------------|----------------------------------------|
 | `cfg/cfg.tbl`              | hub configuration, edited by you       |
-| `cfg/user.tbl`             | registered users + hashed credentials  |
+| `cfg/user.tbl`             | registered users + password-equivalents (cleartext-equivalent as ADC requires; encrypted at rest - see SECURITY.md) |
 | `cfg/user.tbl.bak`         | rolling backup the hub maintains itself|
 | `scripts/data/*.tbl`       | per-script state (bans, chatlog, etc.) |
 | `certs/cacert.pem`, `serverkey.pem`, `servercert.pem` | TLS keys; users will see a different keyprint after a regen |
@@ -239,10 +239,11 @@ cmake --install build              # writes to build/install/luadch/
 # 2. Stop the running hub
 sudo systemctl stop luadch
 
-# 3. Replace the read-only parts only — keep cfg/, certs/, scripts/data/, log/
+# 3. Replace the read-only parts only - keep cfg/, certs/, scripts/data/,
+#    scripts/lang/, log/
 sudo rsync -a --delete \
     --exclude='/cfg/' --exclude='/certs/' --exclude='/log/' \
-    --exclude='/scripts/data/' \
+    --exclude='/scripts/data/' --exclude='/scripts/lang/' \
     build/install/luadch/ /opt/luadch/
 
 # 4. Restart
@@ -251,7 +252,14 @@ sudo systemctl start luadch
 
 The exclude list is the contract: those are the directories the
 running hub considers state, and the new build's defaults must not
-clobber them.
+clobber them. `scripts/lang/` holds operator-editable translations and
+MOTD text (owned by you / Weblate post-migration), so it is excluded too.
+
+> **⚠️ `--delete` removes any custom plugin under `scripts/` that is not
+> present in the new build.** If you drop your own `.lua` files into
+> `scripts/`, either add an `--exclude` for each, or exclude `scripts/`
+> wholesale and hand-merge bundled-plugin updates - the same auto-sync
+> contract the Docker image follows (see [DOCKER.md](DOCKER.md)).
 
 If a release notes mentions a `cfg/cfg.tbl` migration, copy any new
 keys from `build/install/luadch/cfg/cfg.tbl` into `/opt/luadch/cfg/cfg.tbl`

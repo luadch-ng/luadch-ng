@@ -103,6 +103,8 @@ dependency updates are manual.
 | LuaSec      | **1.3.2**       | `luasec/`      | TLS support, links against OpenSSL; upstream-blocked for OpenSSL-3 API (Phase 4, #3) |
 | LuaSocket   | **3.1.0**       | `luasocket/`   | TCP/UDP, IPv6 capable                |
 | basexx      | (no version)    | `basexx/`      | Pure Lua, base32/64 encoding         |
+| dkjson      | (no version)    | `dkjson/`      | Pure Lua, JSON encode/decode; load-bearing for the HTTP API + the lang JSON loader (`util.loadjsontable`) |
+| slaxml      | (no version)    | `slaxml/`      | Pure Lua, XML parser                  |
 | unicode     | shim            | `slnunicode/unicode.lua` | ~40-line Lua shim that replaces the unmaintained slnunicode C module; uses `string.X` and Lua 5.4 builtin `utf8` |
 | adclib      | (no version)    | `adclib/`      | C module: ADC hashing & escaping     |
 | zlib_stream | (own binding)   | `zlib_stream/` | C binding for ZLIF stream compression (Phase 8 S4b); links the **system** zlib (`find_package(ZLIB REQUIRED)`) - the one dependency NOT bundled |
@@ -131,7 +133,7 @@ order (its inline comments explain each ordering constraint).
 
 | Subsystem | Modules | Responsibility |
 |---|---|---|
-| Boot + config | `init`, `const`, `cfg`, `cfg_defaults`, `cfg_users`, `cfg_lang`, `cfg_secret`, `secrets`, `cfg_write` | Restricted env + module loader; program constants; settings/user.tbl/language handling; AES-256-GCM at-rest crypto; env-var-first secret lookup; comment/layout-preserving single-key cfg.tbl writer (#644) |
+| Boot + config | `init`, `const`, `cfg`, `cfg_defaults`, `cfg_users`, `cfg_lang`, `cfg_secret`, `secrets`, `cfg_write` | Restricted env + module loader; program constants; settings/user.tbl handling; `cfg_lang` language handling - on-disk lang layout is now JSON in per-language subdirs (`lang/<lng>/hub.json`, `scripts/lang/<lng>/<name>.json`; en/de/nl/sv), loaded JSON-first via `cfg_lang.loadlanguage`, Weblate-managed (see [`docs/TRANSLATING.md`](docs/TRANSLATING.md)); AES-256-GCM at-rest crypto; env-var-first secret lookup; comment/layout-preserving single-key cfg.tbl writer (#644) |
 | Network + ADC | `server`, `iostream`, `adc`, `hub`, `hub_dispatch`, `hub_user_object`, `hub_bot_object`, `hbri`, `ratelimit`, `blocklist`, `whitelist`, `ipmatch` | event loop + SSL (poll on POSIX / select on Windows, #310); framing pipeline; ADC parse/escape/format; main loop + login; command dispatch; user/bot objects; dual-stack secondary-IP verification; DoS limits; pre-handshake IP/CIDR blocklist; global allowlist (whitelist beats automated blocks, not manual pins); IP/CIDR primitives |
 | HTTP API | `http`, `http_router`, `http_client`, `http_filter`, `http_events`, `util_http` | Inbound HTTP/JSON API + router + auth; non-blocking OUTBOUND client; filter/sort/paginate helper; deferred-event endpoints; plugin endpoint helper |
 | Crypto + boot trust | `sha256`, `hmac`, `cert_bootstrap`, `cacert_bootstrap`, `backup_archive` | Pure-Lua SHA-256; HMAC-SHA256 (RFC 2104, sandbox-exposed for signed-webhook auth, #398); first-boot TLS-cert auto-gen (#77); CA-bundle reconciliation; LDBK1 encrypted backup archive format (tar + AES-256-GCM, PBKDF2, #480) |
@@ -387,7 +389,7 @@ contract, preflight): see [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) §3 and
   **this file**, not in memory, because they belong with the code. Durable
   engineering patterns belong in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) so
   they reach every assistant and contributor, not just one memory owner.
-- **Releases** - this fork's latest release is `v3.1.14` (see §2 and §8); UPSTREAM
+- **Releases** - this fork's latest release is `v3.1.15` (see §2 and §8); UPSTREAM
   `luadch/luadch` last released v2.23 back in 2022-04-02 (see Upstream policy below).
 
 ### Upstream policy
@@ -437,7 +439,7 @@ open a fresh issue here that references the upstream one in its body.
   source of truth (`wc -l`, `gh issue list`, CI) instead. Two exemptions, because
   they do NOT drift: (a) frozen historical facts about a CLOSED phase (e.g. "24
   findings / 22 closed" in the §5 table); (b) release/version/"verified-on"
-  markers (e.g. "latest release v3.1.14", the deps-table verified date). A live
+  markers (e.g. "latest release v3.1.15", the deps-table verified date). A live
   status line (like §5 "In flight") must name the tracker as its source of truth.
 
 ### Tooling gotchas (these have already burned us)
