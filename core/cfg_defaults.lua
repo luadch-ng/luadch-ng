@@ -1061,6 +1061,38 @@ local defaults = {
         end
     },
 
+    ---------------------------------------------------------------------------------------------------------------------------------
+    --// cmd_botflag.lua settings
+
+    cmd_botflag_permission = { {
+
+        [ 0 ] = false,
+        [ 10 ] = false,
+        [ 20 ] = false,
+        [ 30 ] = false,
+        [ 40 ] = false,
+        [ 50 ] = false,
+        [ 55 ] = false,
+        [ 60 ] = false,
+        [ 70 ] = false,
+        [ 80 ] = false,
+        [ 100 ] = true,  -- default = only the hubowner may flag accounts
+
+    },
+        function( value )
+            if not types_table( value ) then
+                return false
+            else
+                for i, k in pairs( value ) do
+                    if not ( types_boolean( k, nil, true ) and types_number( i, nil, true ) ) then
+                        return false
+                    end
+                end
+            end
+            return true
+        end
+    },
+
     -- Shared by cmd_accinfo (+accinfo / +accinfoop) and cmd_usersearch:
     -- when true, those commands echo a registered user's stored password
     -- in their chat/PM reply instead of "<REDACTED>". Default false keeps
