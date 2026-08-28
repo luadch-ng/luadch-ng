@@ -168,7 +168,7 @@ end
 -- safe inactive record.
 local function load_state( )
     local f = io.open( store_path, "r" )
-    if not f then return { active = false } end
+    if not f then return sane_state( nil ) end    -- one source of truth for the inactive default
     f:close( )
     return sane_state( util.loadtable( store_path ) )
 end
