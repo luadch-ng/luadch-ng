@@ -44,7 +44,7 @@ end
 -- Controllable clock + capture state
 ----------------------------------------------------------------------
 local _now = 1000000
-local _cfg, _persisted, _saved, _save_count, _reports, _audit, _online, _wl
+local _cfg, _persisted, _saved, _save_count, _reports, _audit, _online, _wl, _loadtable_called
 
 local function reset_cfg( )
     _cfg = {
@@ -61,6 +61,7 @@ end
 local function fresh( )
     _saved = nil; _save_count = 0; _reports = { }; _audit = { }
     _online = { }; _wl = { }
+    _loadtable_called = false
 end
 
 ----------------------------------------------------------------------
@@ -75,8 +76,20 @@ _G.tonumber, _G.tostring, _G.pcall = tonumber, tostring, pcall
 local _real_os = os
 _G.os = setmetatable( { time = function( ) return _now end }, { __index = _real_os } )
 
+-- io stub: override open() to simulate the store file's existence - it exists
+-- iff there is persisted state to load (mirrors reality; the .tbl is written
+-- only on the first state change), so the fresh-hub path exercises the plugin's
+-- io.open peek. Everything else (stderr, write) falls through to the real io.
+local _real_io = io
+_G.io = setmetatable( {
+    open = function( path )
+        if _persisted ~= nil then return { close = function( ) end } end
+        return nil, tostring( path ) .. ": No such file or directory"
+    end,
+}, { __index = _real_io } )
+
 _G.util = {
-    loadtable = function( ) return _persisted end,
+    loadtable = function( ) _loadtable_called = true; return _persisted end,
     savetable = function( t, name, path ) _saved = t; _save_count = _save_count + 1 end,
 }
 _G.cfg = {
@@ -360,6 +373,27 @@ do
     -- non-numeric expires_at is likewise coerced
     local p2, L2 = load_plugin( nil, { active = true, level = 60, expires_at = "soon" } )
     falsy( "corrupt: bad expires_at coerced to inactive", p2._state( ).active )
+end
+
+----------------------------------------------------------------------
+-- fresh hub ( no store file ): the io.open peek short-circuits so
+-- util.loadtable ( and thus util.checkfile ) is NOT called, and no
+-- "No such file" checkfile line is logged on every boot / +reload.
+-- Proven RED on the pre-fix load that called util.loadtable directly.
+----------------------------------------------------------------------
+do
+    local p = load_plugin( )                        -- persisted nil -> store "missing"
+    falsy( "fresh-hub: util.loadtable NOT called ( no checkfile noise )", _loadtable_called )
+    falsy( "fresh-hub: state inactive", p._state( ).active )
+end
+
+do
+    -- when the store DOES exist, loadtable is still consulted and the
+    -- persisted lockdown loads ( the peek only skips the missing-file case )
+    local p = load_plugin( nil, { active = true, level = 60, expires_at = _now + 600,
+        by_nick = "op", by_level = 60, started_at = _now } )
+    truthy( "existing-store: util.loadtable consulted", _loadtable_called )
+    truthy( "existing-store: persisted lockdown active", p._state( ).active )
 end
 
 ----------------------------------------------------------------------
