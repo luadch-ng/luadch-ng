@@ -325,10 +325,11 @@ rules don't get involved).
 
 ## Updating
 
-> **⚠️ Always back up first.** Operator-owned state lives in `cfg/`,
-> `scripts/lang/`, `scripts/data/`, `scripts/cfg/`, `certs/`, and
-> `secrets/`. None of these are touched by an image upgrade, but a
-> clean snapshot is the safety net for any production hub.
+> **⚠️ Always back up first.** Operator-owned state lives in `cfg/`
+> (including per-plugin config `cfg/<name>.tbl`, e.g. `cfg/webhooks.tbl`),
+> `scripts/lang/`, `scripts/data/`, `certs/`, and `secrets/`. None of
+> these are touched by an image upgrade, but a clean snapshot is the
+> safety net for any production hub.
 >
 > ```sh
 > tar -czf "luadch-backup-$(date +%F).tar.gz" cfg scripts certs secrets
@@ -371,7 +372,7 @@ What is **not** touched:
 | `cfg/user.tbl`, `cfg/user.tbl.bak` | User database |
 | `scripts/lang/<lng>/*.json` (existing) | Your translations / MOTD customizations stay; only NEW bundled language files are added |
 | `scripts/data/*.tbl` | Plugin runtime state (bans, regs, caches) |
-| `scripts/cfg/*.tbl` | Per-plugin operator settings |
+| `cfg/<name>.tbl` (e.g. `cfg/webhooks.tbl`) | Per-plugin operator settings |
 | `scripts/<your-custom>.lua` | Custom plugins keep their distinct filenames - the auto-sync only touches files that exist in the image's `/defaults/scripts/` |
 | `certs/*` | TLS keys |
 | `secrets/master.key` | AES master key |
