@@ -9,7 +9,7 @@ if(NOT IS_MULTI_CONFIG AND NOT CMAKE_BUILD_TYPE)
 endif()
 
 project(luadch
-    VERSION 2.24.0
+    VERSION 3.2.0
     DESCRIPTION "luadch — DC++ ADC hub server"
     LANGUAGES C CXX
 )
