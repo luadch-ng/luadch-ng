@@ -84,8 +84,9 @@ that environment:
     `pcall`, `xpcall`, `select`, `setmetatable`, `getmetatable`,
     `tonumber`, `tostring`, `type`, `print`, `collectgarbage`
   - Full stdlib: `table`, `math`, `coroutine`
-  - **Curated stdlib**: `os` (only `time` / `date` / `difftime`), `io`
-    (only `open`, with absolute paths and `..` traversal rejected)
+  - **Curated stdlib**: `os` (only `time` / `date` / `difftime` /
+    `clock`), `io` (only `open`, with absolute paths and `..` traversal
+    rejected)
   - UTF-8 string lib: `string` is replaced with `utf` (a UTF-8-aware
     wrapper); plain Lua `string.*` byte methods are not directly
     reachable
@@ -938,10 +939,21 @@ needed for the first table, only harmless.)
 ### 10.6 Forbidden post-login INF fields
 
 A normal-state user cannot mutate `I4`, `I6`, `PD`, `ID`, `HI`, `CT`,
-`OP`, `RG`, `HU`, `BO` via `onInf`. The post-login INF guard in
-[`scripts/hub_inf_manager.lua`](../scripts/hub_inf_manager.lua) kicks
-with `ISTA 240` on attempt. If your plugin needs to change one of
-these, the user must reconnect.
+`OP`, `RG`, `HU`, `BO` via `onInf` - but the mechanism differs by field.
+The post-login INF guard in
+[`scripts/hub_inf_manager.lua`](../scripts/hub_inf_manager.lua):
+
+- **kills with `ISTA 240`** on `HI`, `CT`, `OP`, `RG`, `HU`, `BO`
+  (forbidden flags) and `PD`, `ID` (identity spoof) - the connection is
+  dropped.
+- **silently strips** `I4` / `I6` (`cmd:deletenp`, non-fatal since
+  [#222](https://github.com/luadch-ng/luadch-ng/issues/222)): the stripped
+  fields never reach the broadcast, but the session survives - real DC++
+  clients emit routine post-login INF updates carrying `I4` (NAT rebind,
+  ISP-IP change), so killing them was user-hostile.
+
+Either way the claimed mutation does not take effect; if your plugin needs
+to change one of these, the user must reconnect.
 
 ### 10.7 UTF-8 input is the plugin's responsibility
 

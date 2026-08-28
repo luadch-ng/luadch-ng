@@ -61,7 +61,7 @@ After a fresh install, before opening the hub to real users:
 | Path                     | What it is                                                   |
 |--------------------------|--------------------------------------------------------------|
 | `cfg/cfg.tbl`            | Main hub configuration (Lua-serialised table)                |
-| `cfg/user.tbl`           | Registered users (nick, password hash, level, …)             |
+| `cfg/user.tbl`           | Registered users + password-equivalents (cleartext-equivalent as ADC requires; encrypted at rest by default - see SECURITY.md) |
 | `cfg/user.tbl.bak`       | Rolling backup the hub maintains automatically               |
 | `lang/de/hub.json`, `en/hub.json` | Hub-side strings (greeting, error messages, …)      |
 | `scripts/lang/de/*.json` / `en/*.json` | Per-script translations                          |
@@ -103,7 +103,8 @@ ssl_params = {
     cafile      = "certs/cacert.pem",
     protocol    = "tlsv1_3",   -- TLS 1.3 only; cannot negotiate down
     options     = { "no_sslv2", "no_sslv3", "no_tlsv1", "no_tlsv1_1", "no_renegotiation" },
-    ciphers     = "HIGH+kEDH:HIGH+kEECDH:HIGH:!PSK:!SRP:!3DES:!aNULL",
+    ciphers     = "HIGH",
+    ciphersuites = "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256",
     curve       = "prime256v1",
 },
 ```
@@ -127,9 +128,11 @@ To enable plain ADC alongside TLS, set `tcp_ports = { 5000 }` (and / or `tcp_por
 
 ### Default account warning
 
-The bundled `[BOT]HubSecurity` script warns in main chat as long as the
-`dummy` account is still registered. **Take that warning seriously** —
-do not run a public hub with `dummy / test` active.
+The bundled `etc_dummy_warning` plugin warns level-100 users at login
+(both in main chat and via PM) as long as the `dummy` account is still
+registered - the message is delivered by the hub bot (default nick
+`[BOT]HubSecurity`). **Take that warning seriously** - do not run a
+public hub with `dummy / test` active.
 
 ---
 
@@ -166,7 +169,8 @@ specific commands.
 ```
 +reg <nick> <level>           # register a new user at <level>
 +delreg <nick>                # remove a registered user
-+regme <nick> <password>      # self-register (if cfg allows it)
++regme <nick> <password>      # self-register (optional add-on; install
+                              #   examples/etc/other_available_scripts/cmd_regme.lua first)
 +setpass <newpass>            # change your own password
 +accinfo <nick>               # show registration info for someone
 ```
@@ -272,4 +276,11 @@ plugin appends its own entries.
 - The shipped `cfg/cfg.tbl` itself — every key has an inline comment
 - [PLUGIN_API.md](PLUGIN_API.md) - the plugin API reference
 - [SCRIPTS.md](SCRIPTS.md) — bundled plugin reference + rate-limit configuration
+- [SECURITY.md](SECURITY.md) - threat model, at-rest crypto, file permissions
+- [BLOCKLIST.md](BLOCKLIST.md) - blocklist engine, GeoIP, feeds, proxy detection
+- [BACKUP.md](BACKUP.md) - encrypted automatic backups + offline restore
+- [HTTP_API.md](HTTP_API.md) - inbound HTTP/JSON management API
+- [WEBHOOKS.md](WEBHOOKS.md) - inbound signed-webhook receiver
+- [CACERT.md](CACERT.md) - CA-bundle reconciliation
+- [TRANSLATING.md](TRANSLATING.md) - language files + Weblate workflow
 - [docs/phases/](phases/) — modernization journals (what changed and why)

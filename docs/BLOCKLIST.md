@@ -396,7 +396,7 @@ before enabling on a public hub - the free tiers differ sharply:
 
 | Provider | `provider` | Free tier | Commercial use on free tier | Auth |
 |---|---|---|---|---|
-| [proxycheck.io](https://proxycheck.io) | `proxycheck` | 1,000/day (100/day without a key) | Not explicitly granted - the terms neither permit nor forbid it. Treat as unconfirmed. | API key as query param (optional) |
+| [proxycheck.io](https://proxycheck.io) | `proxycheck` | 1,000/day (100/day without a key) | Not explicitly granted - the terms neither permit nor forbid it. Treat as unconfirmed. | API key in POST body (optional) |
 | [VPNAPI.io](https://vpnapi.io) | `vpnapi` | 1,000/day | **No** - the free tier is "personal, non-commercial use" only. A public/community hub needs a paid plan. | API key (required) |
 | [IPQualityScore](https://www.ipqualityscore.com) | `ipqs` | 1,000/**month** (35/day cap) | **Evaluation only** - free/trial use is for testing; production/commercial use needs a paid plan. | API key in the URL path (required) |
 

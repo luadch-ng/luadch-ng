@@ -86,6 +86,7 @@ one-line summary from each entry; see the entry for commands and cfg keys.
 | [etc_proxydetect](#etc_proxydetect) | Live proxy / VPN / Tor detection via an external provider API on connect |
 | [etc_status_push](#etc_status_push) | Periodically pushes the hub's public status to an external HTTP(S) endpoint |
 | [etc_prometheus](#etc_prometheus) | Prometheus text-exposition `/metrics` endpoint for the HTTP API |
+| [etc_stats_history](#etc_stats_history) | Sampled online-users time-series backing the WebUI dashboard history graph |
 | [etc_regserver_announce](#etc_regserver_announce) | Announces this hub to an external ADC hublist regserver |
 | [etc_clientblocker](#etc_clientblocker) | Block clients by Lua-pattern match against the BINF `AP+VE` field |
 | [etc_keyprint](#etc_keyprint) | Automatically extract and cache hub certificate keyprint (SHA256) for client validation |
@@ -386,9 +387,8 @@ other users' passwords.
 **Commands:** `+setpass myself <password>` /
 `+setpass nick <nick> <password>`
 
-**Config:** `cmd_setpass_permission`, `cmd_setpass_advanced_rc`,
-`cmd_setpass_report`, `cmd_setpass_report_hubbot`,
-`cmd_setpass_report_opchat`
+**Config:** `cmd_setpass_permission`, `cmd_setpass_permission_own_pw`,
+`cmd_setpass_advanced_rc`
 
 ### cmd_shutdown
 
@@ -424,7 +424,7 @@ Broadcast messages anonymously without nickname prefix.
 
 **Commands:** `+talk <message>`
 
-**Config:** `cmd_talk_permission`
+**Config:** `cmd_talk_minlevel`
 
 ### cmd_topic
 
@@ -500,7 +500,7 @@ Useful for administration.
 
 **Commands:** `+userlist [bydate]`
 
-**Config:** `cmd_userlist_permission`
+**Config:** `cmd_userlist_minlevel`
 
 ### cmd_usersearch
 
@@ -534,7 +534,8 @@ re-registration.
 Log main chat messages with timestamps, user nicks, and message
 content. Display on user login.
 
-**Config:** `etc_chatlog_activate`
+**Config:** `etc_chatlog_permission`, `etc_chatlog_max_lines`,
+`etc_chatlog_default_lines`, `etc_chatlog_min_level_adv`
 
 ### etc_cmdlog
 
@@ -542,7 +543,8 @@ Audit log of all operator `+cmd` invocations (who, what, when).
 
 **Commands:** `+cmdlog show`
 
-**Config:** `etc_cmdlog_activate`
+**Config:** `etc_cmdlog_command_tbl`, `etc_cmdlog_minlevel`,
+`etc_cmdlog_redact_args`
 
 ### etc_dhtblocker
 
@@ -550,7 +552,7 @@ Disconnect users with DHT (Distributed Hash Table) search enabled.
 Prevents unwanted network search participation.
 
 **Config:** `etc_dhtblocker_activate`, `etc_dhtblocker_report`,
-`etc_dhtblocker_report_hubbot`, `etc_dhtblocker_report_opchat`
+`etc_dhtblocker_report_tohubbot`, `etc_dhtblocker_report_toopchat`
 
 ### etc_dummy_warning
 
@@ -1092,6 +1094,26 @@ searches, script errors. The full metric catalog is in
 
 **Config:** `etc_prometheus_activate`
 
+### etc_stats_history
+
+Samples the online-human count on a timer into a 3-tier, RRD-style ring
+buffer and exposes it via `GET /v1/stats/history`, feeding the WebUI
+dashboard online-users history graph
+([#665](https://github.com/luadch-ng/luadch-ng/issues/665)). Endpoint-only:
+no ADC command, no report, no lang file. Ships ENABLED by default in
+`examples/cfg/cfg.tbl` (API-toggleable).
+
+The three tiers consolidate the same 60-second samples into progressively
+wider buckets - 10-min slots x 144 = 24 h, 1-h x 168 = 7 d, 6-h x 120 =
+30 d - each keeping the peak-concurrent count per slot, so the endpoint
+just returns the tier matching the requested range with no server-side
+downsampling. The buffers persist to `scripts/data/etc_stats_history.tbl`
+(operator-owned, survives `+reload` / restart); there is no backfill - the
+graph accumulates from first enable.
+
+**HTTP API:** `GET /v1/stats/history?range=24h|7d|30d` (read scope,
+default `24h`) -> `{range, interval_sec, points:[{t,count}]}`.
+
 ### etc_regserver_announce
 
 Announces this hub to an external ADC hublist regserver by POSTing an
@@ -1379,7 +1401,10 @@ endpoint config lives in `cfg/webhooks.tbl` (copy
 `examples/cfg/webhooks.tbl`). The HTTP API listener must be reachable
 from the sender - put a reverse proxy with TLS in front. Full setup
 (Discourse / GitHub webhook config, reverse proxy, security) in
-[`docs/WEBHOOKS.md`](WEBHOOKS.md).
+[`docs/WEBHOOKS.md`](WEBHOOKS.md). The per-endpoint `conditions`
+body-field filter, the per-endpoint `enabled` toggle, and the
+`/v1/webhooks` management API (WebUI-backed) are covered in
+[`docs/WEBHOOKS.md` §3.1](WEBHOOKS.md#31-managing-endpoints-via-the-webui--http-api).
 
 **Config:** `etc_webhook_activate` + `cfg/webhooks.tbl`
 
@@ -1443,9 +1468,8 @@ hublists during a lockdown. State survives `+reload` / restart
 ### hub_bot_cleaner
 
 Remove unused bot accounts from user database on timer. Prevents
-clutter from disabled scripts.
-
-**Config:** `hub_bot_cleaner_days`
+clutter from disabled scripts. Timing and report settings are
+hardcoded in the plugin (no cfg keys).
 
 ### hub_cmd_manager
 

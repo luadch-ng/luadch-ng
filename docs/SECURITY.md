@@ -56,7 +56,7 @@ The trust boundary is between "operator-installed plugin" and
 `_ENV` from an explicit `SANDBOX_GLOBALS` whitelist (added in
 [#206](https://github.com/luadch-ng/luadch-ng/issues/206)). `os` and
 `io` are curated shims: `os` exposes only `time` / `date` /
-`difftime`; `io` exposes only a path-restricted `open` (relative
+`difftime` / `clock`; `io` exposes only a path-restricted `open` (relative
 paths, no `..` traversal) - `io.popen`, `io.lines`, `package`,
 `require`, and `debug` are NOT reachable. Subprocess access lives
 in a separate [`core/sysinfo.lua`](../core/sysinfo.lua) module
@@ -109,9 +109,10 @@ do, including:
 - Read its own and every other admin token's audit-log bodies via
   `GET /v1/log/api`. Bodies for routes that opt into the
   [`HTTP_API.md`](HTTP_API.md) §8 redact mechanism
-  (`audit_redact_body = true` - currently the two
-  password endpoints) log as `[redacted]` even to admin readers,
-  but everything else is plaintext.
+  (`audit_redact_body = true` - the config-write `PUT /v1/config/{key}`,
+  the `POST /v1/auth/verify` login, the password-rotation / reg plugin
+  routes, and etc_webhook's signed routes) log as `[redacted]` even to
+  admin readers, but everything else is plaintext.
 - Issue `POST /v1/restart` / `POST /v1/shutdown` / `POST /v1/reload`.
 - Toggle plugins (`PUT /v1/plugins/{name}/enabled`).
 - Mutate any non-denylisted cfg key (`PUT /v1/config/{key}`).
@@ -393,8 +394,10 @@ POSIX (Phase 7b,
 - `log/audit-YYYY-MM-DD.jsonl` (#84 staff-action audit trail;
   `etc_auditlog` `chmod_secret`s the file on first write per
   daily path).
-- `certs/serverkey.pem` and `certs/cakey.pem` are 0600'd by
-  `examples/certs/make_cert.sh` at generation time.
+- `certs/serverkey.pem` is 0600'd by `core/cert_bootstrap.lua` when the
+  hub auto-generates the TLS pair on first boot (the default TLS-only
+  path, #77); `examples/certs/make_cert.sh` 0600's `serverkey.pem` /
+  `cakey.pem` only when you regenerate them manually.
 
 ### Linux / BSD - one-time migration
 
