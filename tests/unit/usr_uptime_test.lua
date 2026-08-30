@@ -84,7 +84,14 @@ _G.cfg = {
 
 _G.util = {
     loadtable      = function( ) return _saved end,
-    savetable      = function( t ) _saved = t end,   -- reference-persist (simulates on-disk)
+    savetable      = function( t )
+        -- Faithful to core/util.lua: the serialiser does `for k in pairs(t)`,
+        -- which errors "bad argument #1 to 'for iterator' (table expected,
+        -- got nil)" on a nil argument exactly as the hub does. A table
+        -- reference-persists (simulates on-disk), so tests 1-3 are unchanged.
+        for _ in pairs( t ) do break end
+        _saved = t
+    end,
     getlowestlevel = function( ) return 50 end,
     formatseconds  = function( ) return 0, 0, 0, 0 end,
 }
@@ -207,6 +214,27 @@ for _ = 1, 120 do _now = _now + 1; fire( "onTimer" ) end
 fire( "onLogout", userC )
 _online[ 1 ] = nil
 eq( "single session: 120s online credited exactly on logout", credited( "Carol" ), 120 )
+
+----------------------------------------------------------------------
+-- Test 4: hub-crash regression (v0.13.1). A freshly updated / empty hub
+-- whose scripts/data/usr_uptime.tbl is MISSING (util.loadtable -> nil)
+-- must not crash when the 60s onTimer tick fires before any login has
+-- lazily created the table. Pre-fix uptime_tbl stayed nil and onTimer
+-- called util.savetable( nil, ... ), which errors in the serialiser
+-- ("bad argument #1 to 'for iterator' (table expected, got nil)"); the
+-- savetable stub above reproduces that error faithfully.
+----------------------------------------------------------------------
+_saved  = nil                       -- missing / unreadable store -> loadtable returns nil
+_online = { }                       -- empty hub: no login lazily creates the table
+_now    = _base
+load_plugin( )
+
+_now = _base + 61                   -- open the 60s onTimer credit gate
+local ok, err = pcall( function( ) fire( "onTimer" ) end )
+truthy( "missing store + empty hub: onTimer does not crash on save (err="
+    .. tostring( err ) .. ")", ok )
+truthy( "missing store: onTimer persists a table, not nil (got "
+    .. type( _saved ) .. ")", type( _saved ) == "table" )
 
 ----------------------------------------------------------------------
 if failures > 0 then
