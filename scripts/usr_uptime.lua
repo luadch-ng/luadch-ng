@@ -4,6 +4,17 @@
 
         usage: [+!#]useruptime [CT1 <FIRSTNICK> | CT2 <NICK>]
 
+        v0.13.1: by Aybo
+            - fix hub-crash on start when scripts/data/usr_uptime.tbl is
+              missing or unreadable AND no user logs in during the first
+              onTimer cycle: util.loadtable returned nil, onTimer then
+              called util.savetable( nil, ... ), which crashes in the
+              serializer ("bad argument #1 to 'for iterator' (table
+              expected, got nil)" in core/util.lua). Seed uptime_tbl to {}
+              at load so it is invariantly a table; onTimer / onExit can no
+              longer hand savetable a nil. The scattered type(nil) guards
+              in new_entry / get_useruptime / tbl are now belt-and-braces.
+
         v0.13: by Aybo
             - carry a user's accumulated uptime over to the new nick on
               +nickchange / HTTP rename. uptime_tbl is keyed by firstnick;
@@ -122,7 +133,7 @@
 --------------
 
 local scriptname = "usr_uptime"
-local scriptversion = "0.13"
+local scriptversion = "0.13.1"
 
 local cmd = { "useruptime", "uu" }
 
@@ -132,7 +143,12 @@ local uptime_file = "scripts/data/usr_uptime.tbl"
 --// imports
 local scriptlang = cfg.get( "language" )
 local lang, err = cfg.loadlanguage( scriptlang, scriptname ); lang = lang or { }; err = err and hub.debug( err )
-local uptime_tbl = util.loadtable( uptime_file )
+-- Seed to {} so uptime_tbl is invariantly a table: a missing or unreadable
+-- store (util.loadtable -> nil) must never reach util.savetable, which
+-- crashes on a nil argument in the onTimer / onExit saves before any login
+-- lazily creates the table (the onTimer 60s tick on an empty, freshly
+-- updated hub was the reported crash).
+local uptime_tbl = util.loadtable( uptime_file ) or { }
 local minlevel = cfg.get( "usr_uptime_minlevel" )
 local permission = cfg.get( "usr_uptime_permission" )
 local opchat = hub.import( "bot_opchat" )
