@@ -858,6 +858,10 @@ end
 do
     local esc = {
         sid = "AAAA", nick = "John\\sDoe", cid = "BASE32CID",
+        -- firstnick = the base nick behind a usr_nick_prefix decoration; a
+        -- consumer correlates it with a bare/registered nick. Also ADC-escaped
+        -- on the wire, so it must be decoded like nick.
+        firstnick = "John\\sDoe",
         description = "[\\sADMIN\\s]", email = "a\\sb@x",
         level = 60, share = 1024, files = 3, slots = 2,
         features = "ADC0,TCP4", hn = 1, hr = 0, ho = 0,
@@ -866,6 +870,7 @@ do
     local u = {
         sid = function( ) return esc.sid end,
         nick = function( ) return esc.nick end,
+        firstnick = function( ) return esc.firstnick end,
         cid = function( ) return esc.cid end,
         description = function( ) return esc.description end,
         email = function( ) return esc.email end,
@@ -879,6 +884,7 @@ do
     }
     local j = router._user_to_json( u )
     eq( "user_to_json: nick unescaped",        j.nick,        "John Doe" )
+    eq( "user_to_json: firstnick unescaped",   j.firstnick,   "John Doe" )
     eq( "user_to_json: description unescaped",  j.description, "[ ADMIN ]" )
     eq( "user_to_json: email unescaped",        j.email,       "a b@x" )
     eq( "user_to_json: version unescaped",      j.version,     "Fancy Client" )
