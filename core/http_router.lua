@@ -1184,8 +1184,8 @@ end
 -- Build the JSON-safe representation of a user object. Used by
 -- both /v1/users (list) and /v1/users/{sid} (detail). Pulls the
 -- subset of INF fields the API documents publicly. Free-text fields
--- (nick/description/email/version) are ADC-unescaped; structured fields
--- (cid = base32 ID, features = SU codes) carry no escapable chars.
+-- (nick/firstnick/description/email/version) are ADC-unescaped; structured
+-- fields (cid = base32 ID, features = SU codes) carry no escapable chars.
 local function _user_to_json( user )
     -- user.hubs returns (HN, HR, HO); guard the unpack so a user
     -- without an INF doesn't crash the serializer.
