@@ -1193,6 +1193,12 @@ local function _user_to_json( user )
     return {
         sid            = user:sid( ),
         nick           = _decnp( user:nick( ) ),
+        -- The base nick behind any usr_nick_prefix decoration (user:nick() is the
+        -- decorated "[HUBOWNER]dummy"; firstnick is "dummy"). Lets an API consumer
+        -- correlate a bare/registered nick with a live session (the WebUI resolves a
+        -- clicked Registered nick to its online session this way). Falls back to the
+        -- display nick when no distinct firstnick was recorded.
+        firstnick      = _decnp( user:firstnick( ) or user:nick( ) ),
         cid            = user:cid( ),
         description    = _decnp( user:description( ) ),
         email          = _decnp( user:email( ) ),
