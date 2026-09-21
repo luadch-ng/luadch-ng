@@ -191,6 +191,12 @@ jobs:
       - name: Run cmd_talk chat-endpoint unit test
         run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
 
+      # cmd_topic GET /v1/topic (v0.06): read-only companion to POST
+      # /v1/topic; registers under read scope and reports the live topic
+      # (custom if set, else cfg.hub_description) + is_default + default.
+      - name: Run cmd_topic GET-endpoint unit test
+        run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
+
       # cmd_ban periodic sweep: an expired non-permanent ban is pruned on
       # a 60s onTimer (not just lazily on the banned user's reconnect);
       # permanent bans are never swept, and a no-op sweep does not save.
@@ -665,6 +671,10 @@ jobs:
       - name: Run cmd_talk chat-endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
+
+      - name: Run cmd_topic GET-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
 
       - name: Run cmd_ban sweep unit test
         shell: msys2 {0}

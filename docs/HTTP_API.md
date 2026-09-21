@@ -1269,6 +1269,7 @@ an unknown path).
 | POST | `/v1/announce` | admin | `cmd_mass` [^http-announce-1] |
 | POST | `/v1/chat` | admin | `cmd_talk` [^http-chat-1] |
 | POST | `/v1/topic` | admin | `cmd_topic` [^http-topic-1] |
+| GET | `/v1/topic` | read | `cmd_topic` [^http-topic-2] |
 | GET | `/v1/aliases` | read | `etc_aliases` [^http-aliases-1] |
 | POST | `/v1/aliases` | admin | `etc_aliases` [^http-aliases-2] |
 | DELETE | `/v1/aliases/{alias}` | admin | `etc_aliases` [^http-aliases-3] |
@@ -1281,6 +1282,8 @@ an unknown path).
 [^http-chat-1]: #669 (hub side of [webui#177](https://github.com/luadch-ng/webui/issues/177)). Body `{message: string required (max 1024 chars, control-byte sanitised)}`. Posts the message into MAIN CHAT as the hubbot (= ADC `+talk`) - a BMSG from the hub-bot SID, so connected clients see the hubbot nick as the sender, not the token label. Per webui#177 the audit actor is the real operator asserted in `X-Actor` (`req.actor`), falling back to the token label / `"http-api"`. Returns 200 with `data: {action:"chat", message, sender}` per §7.1.1; `sender` is the hubbot nick (NOT the token label - no token-fingerprint leak, unlike the `/v1/announce` banner). The post is also mirrored into `etc_chatlog` (when that plugin is loaded) so it appears in `+history` and `GET /v1/chatlog`; hub-originated broadcasts bypass the onBroadcast chat-filter chain by design (the hubbot is not subject to chat rules / flood limits).
 
 [^http-topic-1]: Body `{topic?: string}` (max 256 chars, control-byte sanitised). Missing OR empty `topic` resets the hub topic to `cfg.hub_description`; non-empty sets it. The ADC `+topic default` magic-keyword does NOT apply on the HTTP path - the structured body expresses "reset" via absence, so HTTP callers CAN literally set the topic to the word "default" via `{"topic": "default"}`. Returns 200 with `data: {action:"topic-set"|"topic-reset", topic, previous}` per §7.1.1. The new topic is broadcast to all connected users via `IINF DE...` and persisted to `scripts/data/cmd_topic.tbl`.
+
+[^http-topic-2]: No request body. Returns 200 with `data: {topic, is_default, default}` per §7.1: `topic` is the live hub topic (the custom topic if one is set, else `cfg.hub_description`), `is_default` is true when no custom topic is set, `default` is `cfg.hub_description`. `topic` / `default` are raw (ADC-unescaped) text - the same values the POST twin persists. The `read` scope gate (not `admin`, unlike the POST) matches the GET-is-read convention; the topic is broadcast to every connected user via `IINF DE...`, so it is public hub info. Read-only: no persistence, no broadcast.
 
 [^http-reload-1]: No request body. Returns 200 with `data: {action:"reload", reloaded:["cfg", "scripts"]}` per §7.1.1 (hub-control variant: no `sid`/`nick`). `hub.restartscripts()` clears + re-registers the entire HTTP route table from plugin `onStart` listeners; the in-flight handler's closure is captured and the response is sent normally. Lua is single-threaded so no concurrent-reload guard is needed. Idempotent retries via `X-Idempotency-Key` replay the cached 200 (desired - operator-tool retry should not double-reload).
 
@@ -1512,7 +1515,7 @@ the same code path the `+cmd` listener uses.
 
 - `cmd_mass` → `POST /v1/announce`
 - `cmd_talk` → `POST /v1/chat`
-- `cmd_topic` → `POST /v1/topic`
+- `cmd_topic` → `GET/POST /v1/topic`
 - `cmd_ban` → `GET/POST /v1/bans`, `DELETE /v1/bans/{id}`
 - `cmd_disconnect` → `DELETE /v1/users/{sid}`
 - `cmd_gag` → `POST/DELETE /v1/users/{sid}/gag`, `GET /v1/gags`

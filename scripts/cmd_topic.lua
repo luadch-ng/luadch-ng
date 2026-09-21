@@ -5,6 +5,12 @@
         - this script adds a command "topic"
         - usage: [+!#]topic <NEW-TOPIC>|default
 
+        v0.06:
+            - HTTP API: GET /v1/topic (read scope) - return the live hub
+              topic (the custom topic if set, else cfg.hub_description) as
+              { topic, is_default, default }. Read-only companion to the
+              existing POST /v1/topic so a client can show the current topic.
+
         v0.04:
             - HTTP API: POST /v1/topic (admin scope)  #82 deferred Phase-2-spec
             - extract do_set_topic / do_reset_topic helpers shared by ADC + HTTP
@@ -28,7 +34,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_topic"
-local scriptversion = "0.05"
+local scriptversion = "0.06"
 
 local cmd = "topic"
 
@@ -205,6 +211,21 @@ local http_handler_topic = function( req )
     } }
 end
 
+-- HTTP handler: GET /v1/topic (read scope). Returns the live hub topic:
+-- the custom topic if one is set, else cfg.hub_description. The topic is
+-- broadcast to every connected user (IINF DE), so it is public hub info ->
+-- read scope, not admin (least privilege; consistent with GET /v1/records).
+-- Read-only: no persistence, no broadcast. `topic` is the raw (ADC-
+-- unescaped) stored text, the same value the POST path persists.
+local http_handler_get_topic = function( req )
+    local current = topic_tbl[ new ]
+    return { status = 200, data = {
+        topic      = current or default_topic,
+        is_default = current == nil,
+        default    = default_topic,
+    } }
+end
+
 hub.setlistener( "onLogin", { },
     function( user )
         if topic_tbl[ new ] then
@@ -242,6 +263,15 @@ hub.setlistener( "onStart", { },
                     action   = { type = "string", required = true },
                     topic    = { type = "string", required = true },
                     previous = { type = "string", required = true },
+                },
+            } )
+            hub.http_register( "GET", "/v1/topic", "read", http_handler_get_topic, {
+                plugin = scriptname,
+                description = "read the live hub topic (= the text shown to clients): the custom topic if set, else cfg.hub_description. response { topic, is_default, default }.",
+                response_schema = {
+                    topic      = { type = "string", required = true },
+                    is_default = { type = "boolean", required = true },
+                    default    = { type = "string", required = true },
                 },
             } )
         end
