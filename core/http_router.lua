@@ -603,6 +603,7 @@ local _xconfirm_required = {
     [ "POST /v1/reload" ]   = true,
     [ "POST /v1/restart" ]  = true,
     [ "POST /v1/shutdown" ] = true,
+    [ "POST /v1/lockdown" ] = true,   -- engage kicks online users; lift ( DELETE ) is confirm-free
     [ "DELETE /v1/registered/{nick}" ] = true,
     [ "DELETE /v1/usercleaner/expired" ] = true,
     [ "DELETE /v1/usercleaner/ghosts" ]  = true,

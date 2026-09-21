@@ -290,6 +290,7 @@ Endpoints with `X-Confirm: yes` required:
 - `POST /v1/reload`
 - `POST /v1/restart`
 - `POST /v1/shutdown`
+- `POST /v1/lockdown` (engage; the `DELETE` lift is confirm-free)
 - `DELETE /v1/registered/{nick}`
 - `DELETE /v1/usercleaner/expired`
 - `DELETE /v1/usercleaner/ghosts`
@@ -682,8 +683,8 @@ req = {
 - **Scope=none routes (`/health`) bypass rate-limit** entirely as a
   consequence of bypassing auth. **X-Confirm endpoints (the full
   §4.6 list - `/v1/reload`, `/v1/restart`, `/v1/shutdown`,
-  `DELETE /v1/registered/{nick}`, `DELETE /v1/usercleaner/expired`,
-  `DELETE /v1/usercleaner/ghosts`,
+  `POST /v1/lockdown`, `DELETE /v1/registered/{nick}`,
+  `DELETE /v1/usercleaner/expired`, `DELETE /v1/usercleaner/ghosts`,
   `DELETE /v1/usercleaner/orphan-comments`) are exempt** from the per-token
   bucket budget (§4.6): an operator's recovery action must succeed
   even if a runaway script just burned the admin token's budget.
@@ -1276,6 +1277,9 @@ an unknown path).
 | POST | `/v1/reload` | admin | `cmd_reload` - requires `X-Confirm: yes` (§4.6) [^http-reload-1] |
 | POST | `/v1/restart` | admin | `cmd_restart` - requires `X-Confirm: yes` (§4.6) [^http-restart-1] |
 | POST | `/v1/shutdown` | admin | `cmd_shutdown` - requires `X-Confirm: yes` (§4.6) [^http-shutdown-1] |
+| GET | `/v1/lockdown` | read | `etc_lockdown` [^http-lockdown-1] |
+| POST | `/v1/lockdown` | admin | `etc_lockdown` - requires `X-Confirm: yes` (§4.6) [^http-lockdown-2] |
+| DELETE | `/v1/lockdown` | admin | `etc_lockdown` [^http-lockdown-3] |
 
 [^http-announce-1]: Body `{message: string required (max 1024 chars, control-byte sanitised), scope: "all"|"hub"|"level" required, level?: integer (REQUIRED when scope="level", must exist in cfg.levels)}`. `scope="all"` broadcasts the banner to all online users with the **hubbot nick** as the visible sender (= ADC `+mass`); `scope="hub"` broadcasts without sender in the banner (= ADC `+masshub`); `scope="level"` PMs only users at the given level (= ADC `+masslvl N`). Returns 200 with `data: {action:"announce", scope, message, sender, level?, recipients?}` per §7.1.1; `sender` is the hubbot nick (NOT the token label - #177 C removed a token-fingerprint leak where the banner embedded the token's comment + first4...last4; the audit trail records the real operator via `req.actor`). `recipients` is the matched-user count for scope="level" (broadcast variants omit it - derive from `/v1/stats`). A single `admin`-scoped token can issue any of the three ADC variants via the structured body.
 
@@ -1290,6 +1294,12 @@ an unknown path).
 [^http-restart-1]: Body `{message?: string}` (max 1024 chars, control-byte sanitised). The message broadcasts to the hub as a chat banner just like `+restart <MSG>`; absent / empty message skips the broadcast. Returns 200 with `data: {action:"restart", message, countdown}` per §7.1.1 (no `sid`/`nick` - hub-control endpoint). `countdown` reflects `cfg.cmd_restart_toggle_countdown` (true = 10-second ASCII countdown before exit; false = immediate exit after ~2s). A concurrent second call returns **409 E_CONFLICT** (restart already armed); use `X-Idempotency-Key` for safe retries.
 
 [^http-shutdown-1]: Body `{message?: string}` (max 1024 chars, control-byte sanitised). Same shape as `POST /v1/restart`. Returns 200 with `data: {action:"shutdown", message, countdown}` per §7.1.1 (no `sid`/`nick` - hub-control endpoint). `countdown` reflects `cfg.cmd_shutdown_toggle_countdown` (true = 10-second ASCII countdown before exit; false = `hub.requestexit()` immediately, which fires `onShutdown` and the do_exit timer). A concurrent second call returns **409 E_CONFLICT**; use `X-Idempotency-Key` for safe retries.
+
+[^http-lockdown-1]: No request body. Returns 200 with `data` = the current maintenance-lockdown status. Off: `{active: false}`. On: `{active: true, level, message?, expires_at?, remaining_seconds?, indefinite, by_nick, started_at}` per §7.1 - `level` is the minimum admit level, `message` the operator's reason (omitted when none), `expires_at` an ABSOLUTE unix timestamp with `remaining_seconds` the derived countdown (both omitted for an indefinite hold, flagged by `indefinite: true`), `by_nick` who engaged it, `started_at` when. An expired-but-not-yet-swept lockdown reads as `{active: false}` (matches `+lockdown status`). `read` scope (not admin): operators already see this via `+lockdown status`, and the refuse text is shown to every user who tries to connect during a lockdown.
+
+[^http-lockdown-2]: Requires `X-Confirm: yes` header (§4.6) - engaging kicks online users below `level`. Body `{level: integer 0-99 required, minutes?: integer 1-525600, message?: string (max 256, control-byte sanitised)}`. Engages the maintenance gate (= ADC `+lockdown <level> [minutes] [reason]`): admit only users at/above `level`, kick everyone below now, and refuse their logins (`ISTA 226` + reconnect `TL`) with `message` (or the default) until lifted or `minutes` elapse (absent `minutes` = indefinite). **`level` is capped at 99 on the HTTP path** (never 100), so a level-100 owner always keeps access - an admin token cannot lock every ADC operator out; the ADC-side self-lockout guard (`level > your own level`) has no HTTP analogue since a token has no online session to protect. Returns 200 with `data` = the new status (the `[^http-lockdown-1]` shape) plus `kicked` (number of online users kicked). **400 E_BAD_INPUT** for a missing / non-integer / out-of-range `level` or `minutes`, or a non-string `message`. The ADC `etc_lockdown_command_minlevel` gate does NOT apply on the HTTP path: the bearer token's `admin` scope IS the authorisation gate. Audit event `lockdown.enable`.
+
+[^http-lockdown-3]: No request body, **no X-Confirm** - lifting restores access (a recovery action, not disruptive). Lifts the maintenance gate (= ADC `+lockdown off`). Returns 200 with `data: {active: false, was_active}` per §7.1 - `was_active` is `true` iff a lockdown was actually active; lifting an already-off gate is a no-op 200 with `was_active: false` and no audit event. Audit event `lockdown.disable` (only when a lockdown was actually lifted).
 
 [^http-aliases-1]: No request body. Returns 200 with `data: {aliases: [{alias, target}, ...], count}` per §7.1. Entries are sorted by `alias` for stable pagination-free output. The list mirrors what `+aliases` shows in the "Operator-defined aliases" section - built-in plugin multi-name registrations (e.g. usr_uptime's `useruptime` + `uu`) are NOT included; those are surfaced only on the ADC side via `etc_hubcommands.list()` and are visible in the `+aliases` "Built-in command names" section. The `read` scope gate (not `admin`) matches the GET-is-read convention.
 
@@ -1528,6 +1538,7 @@ the same code path the `+cmd` listener uses.
 
 - `cmd_restart` → `POST /v1/restart` (requires `X-Confirm`, see §4.6)
 - `cmd_shutdown` → `POST /v1/shutdown` (requires `X-Confirm`, see §4.6)
+- `etc_lockdown` → `GET /v1/lockdown`, `POST /v1/lockdown` (engage, requires `X-Confirm`, see §4.6), `DELETE /v1/lockdown` (lift)
 - `cmd_errors` → `GET /v1/log/error`
 - `etc_cmdlog` → `GET /v1/log/cmd`
 - `etc_log_cleaner` → `DELETE /v1/log/{name}`
