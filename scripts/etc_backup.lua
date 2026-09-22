@@ -19,12 +19,17 @@
     master.key unreadable), the hubbot PMs the owner on start + on login,
     enumerating exactly what is missing.
 
+    v0.02 (#701): HTTP API - GET /v1/backups (admin: status + artifact list)
+      and POST /v1/backups (admin: run a backup now). Restore stays CLI-only
+      (./luadch --restore), so there is no HTTP restore route. run_backup_now()
+      is shared by the ADC `+backup now` and the HTTP trigger (no divergence).
+
     License: GPLv3
 
 ]]--
 
 local scriptname    = "etc_backup"
-local scriptversion = "0.01"
+local scriptversion = "0.02"
 
 --// sandbox globals //--
 local cfg     = cfg
@@ -33,6 +38,8 @@ local backup  = backup
 local audit   = audit
 local secrets = secrets
 local util    = util
+local util_http = util_http
+local setmetatable = setmetatable
 local type     = type
 local tonumber = tonumber
 local tostring = tostring
@@ -205,11 +212,18 @@ end
 
 ----------------------------------// COMMAND: +backup //--
 
-local function cmd_now( user )
-    local res, err = do_backup( "manual", user )
+-- Run a manual backup, advance the schedule + persist. Shared by the ADC
+-- `+backup now` command and POST /v1/backups so neither path diverges (§1a.1).
+local function run_backup_now( actor )
+    local res, err = do_backup( "manual", actor )
     local now = os_time( )
     next_backup_at = _schedule_next( now, now )
     persist_state( )
+    return res, err
+end
+
+local function cmd_now( user )
+    local res, err = run_backup_now( user )
     if res then
         user:reply( msg_now_ok .. res.path .. " (" .. tostring( res.bytes ) .. msg_bytes
             .. ", " .. tostring( res.files ) .. msg_files .. ")", hub_getbot( ) )
@@ -262,6 +276,76 @@ local function on_backup( user, command, parameters )
     return PROCESSED
 end
 
+----------------------------------// HTTP API ( #701 ) //--
+
+-- Force a JSON array ( [] when empty ) rather than dkjson's default {} for an
+-- empty Lua table ( the etc_webhook idiom ).
+local function _json_array( t )
+    return setmetatable( t or { }, { __jsontype = "array" } )
+end
+
+-- Structured backup status + artifact list. Reads the live engine ( readiness /
+-- list ) plus the plugin's schedule state ( enabled / daily_at / interval /
+-- next / last ). Shape mirrors `+backup status` + `+backup list`.
+local function backups_status_json( )
+    local r    = backup.readiness( )
+    local rows = backup.list( ) or { }
+    local out  = {
+        enabled        = enabled and true or false,
+        ready          = r.ok and true or false,
+        dir            = cfg.get( "etc_backup_dir" ) or "cfg/backups",
+        next_backup_at = next_backup_at,
+        last_backup_at = last_backup_at,
+        daily_at       = ( daily_at and daily_at ~= "" ) and daily_at or nil,
+        interval_hours = ( interval_sec and interval_sec > 0 ) and ( interval_sec // 3600 ) or nil,
+        backups        = _json_array( { } ),
+    }
+    if not r.ok then out.issues = _json_array( r.issues or { } ) end
+    for _, b in ipairs( rows ) do
+        out.backups[ #out.backups + 1 ] = { name = b.name, bytes = b.bytes }
+    end
+    return out
+end
+
+-- GET /v1/backups ( admin scope ). Backup status + artifact list. Admin, not
+-- read: the filenames + readiness ( "no passphrase" etc. ) are sensitive
+-- operational state, and the ADC `+backup` command is oplevel ( admin ).
+local http_handler_get_backups = function( req )
+    return { status = 200, data = backups_status_json( ) }
+end
+
+-- POST /v1/backups ( admin scope ). Run a backup NOW ( = ADC `+backup now` ).
+-- No X-Confirm: a manual backup is additive ( writes an encrypted archive, no
+-- data loss ), like topic / announce. 409 when the feature is not ready ( the
+-- caller sees the config issues, and a doomed run is skipped ); 500 on an
+-- unexpected run failure. Restore stays offline ( ./luadch --restore ).
+local http_handler_post_backups = function( req )
+    -- readiness() does NOT cover the enabled toggle ( run() would fail it with a
+    -- generic error -> a misleading 500 ); treat a disabled feature as the same
+    -- "not ready" precondition so a deliberate config state is a clean 409.
+    if not enabled then
+        return { status = 409, error = { code = "E_BACKUP_NOT_READY",
+            message = "backup is disabled (etc_backup_enabled = false)" } }
+    end
+    local r = backup.readiness( )
+    if not r.ok then
+        return { status = 409, error = { code = "E_BACKUP_NOT_READY",
+            message = "backup not ready: " .. table_concat( r.issues or { }, ", " ) } }
+    end
+    local actor = { nick = util_http.operator_label( req ), sid = "<http>" }
+    local res, err = run_backup_now( actor )
+    if not res then
+        return { status = 500, error = { code = "E_BACKUP_FAILED", message = tostring( err ) } }
+    end
+    return { status = 200, data = {
+        path           = res.path,
+        bytes          = res.bytes,
+        files          = res.files,
+        skipped        = res.skipped,
+        next_backup_at = next_backup_at,
+    } }
+end
+
 ----------------------------------// LISTENERS //--
 
 hub_setlistener( "onStart", { },
@@ -302,6 +386,29 @@ hub_setlistener( "onStart", { },
         end
         local hubcmd = hub_import( "etc_hubcommands" )
         if hubcmd then hubcmd.add( cmd_main, on_backup, oplevel ) end
+
+        -- HTTP API ( #701 ). Admin-scoped status + manual-trigger; restore stays
+        -- offline ( ./luadch --restore ), so there is no HTTP restore route.
+        if hub.http_register then
+            hub.http_register( "GET", "/v1/backups", "admin", http_handler_get_backups, {
+                plugin = scriptname,
+                description = "backup status + artifact list (= ADC `+backup status` / `+backup list`). response { enabled, ready, issues?, daily_at?, interval_hours?, next_backup_at?, last_backup_at?, dir, backups:[{name,bytes}] }.",
+                response_schema = {
+                    enabled = { type = "boolean", required = true },
+                    ready   = { type = "boolean", required = true },
+                    backups = { type = "array",   required = true },
+                },
+            } )
+            hub.http_register( "POST", "/v1/backups", "admin", http_handler_post_backups, {
+                plugin = scriptname,
+                description = "run a backup now (= ADC `+backup now`); no body. 409 if not ready, 500 on failure, else 200 { path, bytes, files, skipped, next_backup_at }.",
+                response_schema = {
+                    path  = { type = "string",  required = true },
+                    bytes = { type = "integer", required = true },
+                    files = { type = "integer", required = true },
+                },
+            } )
+        end
 
         notify_if_unready( nil )   -- nag owners already online (e.g. after +reload)
         return nil

@@ -338,6 +338,12 @@ jobs:
       - name: Run etc_backup schedule unit test
         run: lua5.4 tests/unit/etc_backup_schedule_test.lua
 
+      # etc_backup HTTP API (v0.02, #701): GET /v1/backups (status + list)
+      # and POST /v1/backups (run now; 409 not-ready / 500 fail / 200 ok),
+      # engine stubbed. Registration RED on v0.01.
+      - name: Run etc_backup endpoint unit test
+        run: lua5.4 tests/unit/etc_backup_endpoint_test.lua
+
       # core/restore.lua (#480 PR-B) offline-restore pure logic: the
       # _safe_rel path-traversal guard (reject absolute / ".." / drive /
       # UNC), master.key dest resolution, plan building + reject routing,
@@ -763,6 +769,10 @@ jobs:
       - name: Run etc_backup schedule unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/etc_backup_schedule_test.lua
+
+      - name: Run etc_backup endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/etc_backup_endpoint_test.lua
 
       - name: Run restore unit test
         shell: msys2 {0}
