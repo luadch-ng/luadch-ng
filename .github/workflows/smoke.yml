@@ -197,6 +197,18 @@ jobs:
       - name: Run cmd_topic GET-endpoint unit test
         run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
 
+      # etc_motd content endpoints (v0.10): operator-owned MOTD store +
+      # GET/PUT/DELETE /v1/motd. Load-bearing: a seeded text is FROZEN, so a
+      # later lang update / upgrade never clobbers edited text. Also seed-on-
+      # fresh, live delivery ({nick}/%s), CRLF-safe sanitise, PUT validation.
+      - name: Run etc_motd content-endpoint unit test
+        run: lua5.4 tests/unit/etc_motd_endpoint_test.lua
+
+      # cmd_rules content endpoints (v0.07): mirror of etc_motd for /v1/rules
+      # (same store + seed-freeze guarantee, verbatim delivery via +rules).
+      - name: Run cmd_rules content-endpoint unit test
+        run: lua5.4 tests/unit/cmd_rules_endpoint_test.lua
+
       # cmd_ban periodic sweep: an expired non-permanent ban is pruned on
       # a 60s onTimer (not just lazily on the banned user's reconnect);
       # permanent bans are never swept, and a no-op sweep does not save.
@@ -681,6 +693,14 @@ jobs:
       - name: Run cmd_topic GET-endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
+
+      - name: Run etc_motd content-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/etc_motd_endpoint_test.lua
+
+      - name: Run cmd_rules content-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_rules_endpoint_test.lua
 
       - name: Run cmd_ban sweep unit test
         shell: msys2 {0}
