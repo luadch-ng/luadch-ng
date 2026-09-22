@@ -50,6 +50,16 @@ percentage; a missing string is never a blank message, just English.
 3. Leave a string untranslated rather than guessing - English fallback beats
    a wrong translation.
 
+> **A few keys are operator-content default seeds, not live UI.** `etc_motd`'s
+> `msg_motd` and `cmd_rules`' `msg_rules` are the hub's welcome banner and rules
+> text. Since v0.10 / v0.07 these are operator-owned: the text lives in
+> `scripts/data/*.tbl` and is edited in the WebUI (Hub Content) or via
+> `PUT /v1/motd` / `PUT /v1/rules`. The lang string is used ONCE, as the default
+> a fresh hub of that language starts with, then frozen - a later translation
+> never overwrites an operator's text. So translating these two keys still helps
+> (it sets a nicer localized default), but it is lower priority than genuine UI
+> strings, and it never changes what an existing hub already shows.
+
 That's it. Saving in Weblate is all that is required from a translator.
 
 ## The flow: from Weblate to a release

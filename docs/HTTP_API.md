@@ -1271,6 +1271,12 @@ an unknown path).
 | POST | `/v1/chat` | admin | `cmd_talk` [^http-chat-1] |
 | POST | `/v1/topic` | admin | `cmd_topic` [^http-topic-1] |
 | GET | `/v1/topic` | read | `cmd_topic` [^http-topic-2] |
+| GET | `/v1/motd` | read | `etc_motd` [^http-motd-1] |
+| PUT | `/v1/motd` | admin | `etc_motd` [^http-motd-2] |
+| DELETE | `/v1/motd` | admin | `etc_motd` [^http-motd-3] |
+| GET | `/v1/rules` | read | `cmd_rules` [^http-rules-1] |
+| PUT | `/v1/rules` | admin | `cmd_rules` [^http-rules-2] |
+| DELETE | `/v1/rules` | admin | `cmd_rules` [^http-rules-3] |
 | GET | `/v1/aliases` | read | `etc_aliases` [^http-aliases-1] |
 | POST | `/v1/aliases` | admin | `etc_aliases` [^http-aliases-2] |
 | DELETE | `/v1/aliases/{alias}` | admin | `etc_aliases` [^http-aliases-3] |
@@ -1290,6 +1296,18 @@ an unknown path).
 [^http-topic-1]: Body `{topic?: string}` (max 256 chars, control-byte sanitised). Missing OR empty `topic` resets the hub topic to `cfg.hub_description`; non-empty sets it. The ADC `+topic default` magic-keyword does NOT apply on the HTTP path - the structured body expresses "reset" via absence, so HTTP callers CAN literally set the topic to the word "default" via `{"topic": "default"}`. Returns 200 with `data: {action:"topic-set"|"topic-reset", topic, previous}` per §7.1.1. The new topic is broadcast to all connected users via `IINF DE...` and persisted to `scripts/data/cmd_topic.tbl`.
 
 [^http-topic-2]: No request body. Returns 200 with `data: {topic, is_default, default}` per §7.1: `topic` is the live hub topic (the custom topic if one is set, else `cfg.hub_description`), `is_default` is true when no custom topic is set, `default` is `cfg.hub_description`. `topic` / `default` are raw (ADC-unescaped) text - the same values the POST twin persists. The `read` scope gate (not `admin`, unlike the POST) matches the GET-is-read convention; the topic is broadcast to every connected user via `IINF DE...`, so it is public hub info. Read-only: no persistence, no broadcast.
+
+[^http-motd-1]: No request body. Returns 200 with `data: {text, is_default, default}` per §7.1 - `text` is the live MOTD (the operator override if set, else the lang default seed), `is_default` is true while the text is still the seeded / reset default (false once set via PUT), `default` is the current lang default (`scripts/lang/<lng>/etc_motd.json` `msg_motd`) = what DELETE resets to. `read` scope: the MOTD is shown to users on login, so it is not secret (same posture as `GET /v1/topic`). The endpoint registers even when MOTD delivery is deactivated (`etc_motd_activate=false`), so the text can be prepared before switch-on. The delivery on/off + destination + per-level `permission` toggles are ordinary `cfg` keys, edited via `PUT /v1/config` (not here - the content endpoints own only the text).
+
+[^http-motd-2]: Body `{text: string required}` (max 16384 bytes; control bytes except tab + newline are scrubbed to `?`, and CRLF / lone CR is normalised to LF - the MOTD is a multi-line banner, so newlines are preserved, unlike the single-line control-byte strip used elsewhere). Sets the operator MOTD and **takes ownership**: the store's `origin` flips to `"operator"`, so a later lang update or software upgrade never overwrites it - the text lives in `scripts/data/etc_motd.tbl`, which upgrades exclude, and the lang string is only ever a one-time seed (written into the store once on first boot with `origin="seed"` and frozen thereafter; a `PUT` promotes it to `origin="operator"`). An empty string is a valid MOTD (delivers nothing); use `DELETE` to reset to the default instead. Returns 200 with `data: {text, is_default:false}`. **400 E_BAD_INPUT** for a missing / non-string / over-cap `text`. Placeholders `{nick}` (preferred) and `%s` (legacy) in the stored text expand to the user's firstnick at delivery. Audit event `hub.motd.set`.
+
+[^http-motd-3]: No request body, **no X-Confirm** (a content reset is not disruptive). Resets the MOTD to the current lang default (`origin -> "seed"`, dropping the operator override and re-tracking the shipped / translated default). Returns 200 with `data: {text, is_default:true}`. Audit event `hub.motd.reset`.
+
+[^http-rules-1]: No request body. Returns 200 with `data: {text, is_default, default}` per §7.1 - the `/v1/rules` twin of `[^http-motd-1]`: `text` is the live hub rules (operator override if set, else the lang default seed from `scripts/lang/<lng>/cmd_rules.json` `msg_rules`), `is_default` / `default` as for MOTD. `read` scope: the rules are shown to users via `+rules`, so they are not secret. The ADC `+rules` gate is `cmd_rules_minlevel`, edited via `PUT /v1/config`.
+
+[^http-rules-2]: Body `{text: string required}` - identical shape + sanitisation + ownership semantics to `[^http-motd-2]` (max 16384 bytes; tab / newline preserved; CRLF normalised; scrubbed control bytes; store `scripts/data/cmd_rules.tbl`). No placeholder substitution - the rules text is sent verbatim by `+rules`. Returns 200 with `data: {text, is_default:false}`. **400 E_BAD_INPUT** for a missing / non-string / over-cap `text`. Audit event `hub.rules.set`.
+
+[^http-rules-3]: No request body, **no X-Confirm**. Resets the hub rules to the current lang default (`origin -> "seed"`). Returns 200 with `data: {text, is_default:true}`. Audit event `hub.rules.reset`.
 
 [^http-reload-1]: No request body. Returns 200 with `data: {action:"reload", reloaded:["cfg", "scripts"]}` per §7.1.1 (hub-control variant: no `sid`/`nick`). `hub.restartscripts()` clears + re-registers the entire HTTP route table from plugin `onStart` listeners; the in-flight handler's closure is captured and the response is sent normally. Lua is single-threaded so no concurrent-reload guard is needed. Idempotent retries via `X-Idempotency-Key` replay the cached 200 (desired - operator-tool retry should not double-reload).
 
@@ -1532,6 +1550,8 @@ the same code path the `+cmd` listener uses.
 - `cmd_mass` → `POST /v1/announce`
 - `cmd_talk` → `POST /v1/chat`
 - `cmd_topic` → `GET/POST /v1/topic`
+- `etc_motd` → `GET /v1/motd` (live text), `PUT /v1/motd` (set), `DELETE /v1/motd` (reset to lang default)
+- `cmd_rules` → `GET /v1/rules` (live text), `PUT /v1/rules` (set), `DELETE /v1/rules` (reset to lang default)
 - `cmd_ban` → `GET/POST /v1/bans`, `DELETE /v1/bans/{id}`
 - `cmd_disconnect` → `DELETE /v1/users/{sid}`
 - `cmd_gag` → `POST/DELETE /v1/users/{sid}/gag`, `GET /v1/gags`
