@@ -1,6 +1,16 @@
 --[[
 
-    etc_lockdown.lua v0.02 by Aybo ( #501 )
+    etc_lockdown.lua v0.03 by Aybo ( #501 )
+
+        v0.03 ( #699, WebUI Wave 3 ) - HTTP API:
+                GET  /v1/lockdown  ( read )  -> current status
+                POST /v1/lockdown  ( admin, X-Confirm ) -> engage
+                DELETE /v1/lockdown ( admin ) -> lift ( recovery, no confirm )
+                HTTP engage is capped at level 0-99 ( never 100 ) so a level-100
+                owner always keeps access - an admin token cannot lock every ADC
+                operator out ( the ADC self-lockout guard has no HTTP analogue ).
+                enable_lockdown_with(...) extracted so the ADC + HTTP enable paths
+                share one core and never diverge.
 
         v0.02 - probe io.open before util.loadtable at load, so a fresh /
                 never-activated hub ( no state file yet ) no longer logs a
@@ -61,7 +71,7 @@
 --------------
 
 local scriptname    = "etc_lockdown"
-local scriptversion = "0.02"
+local scriptversion = "0.03"
 
 local cmd_main = "lockdown"
 
@@ -260,20 +270,29 @@ local function parse_time_reason( rest )
     return n, ( tail ~= "" and tail or nil ), nil    -- minutes + optional reason
 end
 
--- Enable. `actor` is the invoking user ( already past the self-lockout
--- guard, so >= level -> never kicked ). Returns the number kicked.
-local function enable_lockdown( level, minutes, reason, actor )
+-- Enable core: the actor identity is passed as plain values ( by_nick /
+-- by_level ) so BOTH the ADC command ( an actor object ) and the HTTP handler
+-- ( a token label, no ADC level ) drive ONE enable path - no divergence
+-- ( §1a.1 ). Returns the number kicked.
+local function enable_lockdown_with( level, minutes, reason, by_nick, by_level )
     state = {
         active     = true,
         level      = level,
         message    = reason,
         expires_at = minutes and ( os_time( ) + minutes * 60 ) or nil,
-        by_nick    = ( actor and actor:firstnick( ) ) or "?",
-        by_level   = ( actor and actor:level( ) ) or 0,
+        by_nick    = by_nick or "?",
+        by_level   = by_level or 0,
         started_at = os_time( ),
     }
     persist( )
     return kick_online_below( )
+end
+
+-- ADC convenience: `actor` is the invoking user ( already past the self-lockout
+-- guard, so >= level -> never kicked ). Returns the number kicked.
+local function enable_lockdown( level, minutes, reason, actor )
+    return enable_lockdown_with( level, minutes, reason,
+        actor and actor:firstnick( ), actor and actor:level( ) )
 end
 
 -- Disable. Returns whether a lockdown was actually active.
@@ -305,6 +324,113 @@ local function send_report( msg )
     if report then
         report.send( report_activate, report_hubbot, report_opchat, report_llevel, msg )
     end
+end
+
+
+-------------------
+--[HTTP HANDLERS]--
+-------------------
+
+-- Structured status for the HTTP API. Mirrors is_active_now() / format_status():
+-- an expired-but-not-yet-swept lockdown reads as inactive here too. Off -> just
+-- { active = false }; on -> the full record ( expires_at is an ABSOLUTE unix time,
+-- remaining_seconds the derived countdown; both omitted for an indefinite hold,
+-- flagged by indefinite = true ).
+local function status_json( )
+    if not is_active_now( ) then return { active = false } end
+    local out = {
+        active     = true,
+        level      = state.level,
+        by_nick    = state.by_nick or "?",
+        started_at = state.started_at,
+    }
+    if state.message and state.message ~= "" then out.message = state.message end
+    if state.expires_at then
+        out.indefinite        = false
+        out.expires_at        = state.expires_at
+        local rem = state.expires_at - os_time( )
+        out.remaining_seconds = rem > 0 and rem or 0
+    else
+        out.indefinite = true
+    end
+    return out
+end
+
+-- GET /v1/lockdown ( read scope ). Read-only current status. Read, not admin:
+-- operators already see this via `+lockdown status`, and the refuse text is
+-- shown to every user who tries to connect during a lockdown.
+local http_handler_get_lockdown = function( req )
+    return { status = 200, data = status_json( ) }
+end
+
+-- POST /v1/lockdown ( admin scope, X-Confirm - registered in core
+-- _xconfirm_required ). Engage the gate. Body { level ( int 0-99, required ),
+-- minutes? ( int 1..MAX_MINUTES ), message? ( string ) }.
+--
+-- level is capped at 99 ( never 100 ) on the HTTP path so a level-100 owner
+-- always keeps access - the API cannot lock every ADC operator out. The ADC
+-- `+lockdown` self-lockout guard ( level > user:level() ) has no HTTP analogue,
+-- because a bearer token has no online ADC session to protect; the 0-99 cap is
+-- its HTTP-side equivalent. numeric fields are validated with `% 1` ( not
+-- math.type ) since dkjson may decode a JSON integer as a Lua float.
+local http_handler_post_lockdown = function( req )
+    local body = req.body or { }
+
+    local level = body.level
+    if type( level ) ~= "number" or level % 1 ~= 0 or level < 0 or level > 99 then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "level must be a whole number 0-99" } }
+    end
+    level = math_floor( level )
+
+    local minutes = body.minutes
+    if minutes ~= nil then
+        if type( minutes ) ~= "number" or minutes % 1 ~= 0 or minutes < 1 or minutes > MAX_MINUTES then
+            return { status = 400, error = { code = "E_BAD_INPUT",
+                message = "minutes must be a whole number 1-" .. MAX_MINUTES } }
+        end
+        minutes = math_floor( minutes )
+    end
+
+    local message = body.message
+    if message ~= nil and type( message ) ~= "string" then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "message must be a string" } }
+    end
+    -- Handler-side length cap ( belt-and-suspenders with the router's max_length=256 ):
+    -- keeps the direct-call unit tests, which bypass the router, covering the bound too.
+    if type( message ) == "string" and #message > 256 then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "message too long ( max 256 )" } }
+    end
+    local reason = ( message and message ~= "" ) and util.strip_control_bytes( message ) or nil
+
+    local by_nick = util_http.operator_label( req )
+    local kicked  = enable_lockdown_with( level, minutes, reason, by_nick, nil )
+
+    local when = minutes and ( minutes .. " min" ) or msg_indefinite
+    send_report( utf_format( msg_enabled, by_nick, level, when, kicked ) )
+    audit.fire( audit.build( "lockdown.enable", { nick = by_nick, sid = "<http>" }, nil, reason, {
+        level   = level,
+        minutes = minutes,
+        kicked  = kicked,
+    } ) )
+
+    local data = status_json( )
+    data.kicked = kicked
+    return { status = 200, data = data }
+end
+
+-- DELETE /v1/lockdown ( admin scope ). Lift the gate. No body, no X-Confirm -
+-- lifting restores access, a recovery action, not a disruptive one.
+local http_handler_delete_lockdown = function( req )
+    local was     = disable_lockdown( )
+    local by_nick = util_http.operator_label( req )
+    if was then
+        send_report( utf_format( msg_disabled, by_nick ) )
+        audit.fire( audit.build( "lockdown.disable", { nick = by_nick, sid = "<http>" }, nil, nil, { } ) )
+    end
+    return { status = 200, data = { active = false, was_active = was } }
 end
 
 
@@ -442,6 +568,40 @@ hub.setlistener( "onStart", { },
         local hubcmd = hub_import( "etc_hubcommands" )
         assert( hubcmd )
         assert( hubcmd.add( cmd_main, on_lockdown, command_minlevel ) )
+
+        -- HTTP API ( #699 ). Coexists with the ADC `+lockdown` above. Raw
+        -- hub.http_register ( not util_http ): a hub-control endpoint with no SID
+        -- target. POST engage is X-Confirm ( core _xconfirm_required ); DELETE
+        -- lift is NOT - it restores access, a recovery action.
+        if hub.http_register then
+            hub.http_register( "GET", "/v1/lockdown", "read", http_handler_get_lockdown, {
+                plugin = scriptname,
+                description = "current maintenance-lockdown status (= ADC `+lockdown status`). response { active, level?, message?, expires_at?, remaining_seconds?, indefinite?, by_nick?, started_at? }.",
+                response_schema = {
+                    active = { type = "boolean", required = true },
+                },
+            } )
+            hub.http_register( "POST", "/v1/lockdown", "admin", http_handler_post_lockdown, {
+                plugin = scriptname,
+                description = "engage the maintenance lockdown (= ADC `+lockdown <level> [minutes] [reason]`); requires X-Confirm: yes. body { level: int 0-99 required, minutes?: int 1-525600, message?: string }. HTTP level is capped at 99 so a level-100 owner keeps access.",
+                request_schema = {
+                    level   = { type = "integer", min = 0, max = 99, required = true },
+                    minutes = { type = "integer", min = 1, max = MAX_MINUTES },
+                    message = { type = "string", max_length = 256 },
+                },
+                response_schema = {
+                    active = { type = "boolean", required = true },
+                },
+            } )
+            hub.http_register( "DELETE", "/v1/lockdown", "admin", http_handler_delete_lockdown, {
+                plugin = scriptname,
+                description = "lift the maintenance lockdown (= ADC `+lockdown off`). no body, no X-Confirm. response { active: false, was_active }.",
+                response_schema = {
+                    active     = { type = "boolean", required = true },
+                    was_active = { type = "boolean", required = true },
+                },
+            } )
+        end
 
         return nil
     end

@@ -5,6 +5,19 @@
         - this script adds a command "topic"
         - usage: [+!#]topic <NEW-TOPIC>|default
 
+        v0.07:
+            - POST /v1/topic resolves the actor label via
+              util_http.operator_label( req ) instead of the raw
+              token_label, so an X-Actor operator nick is honoured in the
+              audit trail / report - the same attribution idiom the
+              motd/rules/lockdown/backup endpoints use ( no divergence ).
+
+        v0.06:
+            - HTTP API: GET /v1/topic (read scope) - return the live hub
+              topic (the custom topic if set, else cfg.hub_description) as
+              { topic, is_default, default }. Read-only companion to the
+              existing POST /v1/topic so a client can show the current topic.
+
         v0.04:
             - HTTP API: POST /v1/topic (admin scope)  #82 deferred Phase-2-spec
             - extract do_set_topic / do_reset_topic helpers shared by ADC + HTTP
@@ -28,7 +41,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_topic"
-local scriptversion = "0.05"
+local scriptversion = "0.07"
 
 local cmd = "topic"
 
@@ -179,7 +192,10 @@ end
 local http_handler_topic = function( req )
     local body = req.body or { }
     local topic = body.topic
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- Actor label via util_http.operator_label ( X-Actor -> token_label -> "http-api",
+    -- control-byte stripped ): same attribution idiom as the motd/rules/lockdown/backup
+    -- endpoints, so an X-Actor operator nick is honoured here too ( no divergence, 1a.1 ).
+    local actor_label = util_http.operator_label( req )
     local previous = topic_tbl[ new ] or default_topic
     local msg, action, new_topic
     local audit_action_name = "hub.topic.set"
@@ -202,6 +218,21 @@ local http_handler_topic = function( req )
         action   = action,
         topic    = new_topic,
         previous = previous,
+    } }
+end
+
+-- HTTP handler: GET /v1/topic (read scope). Returns the live hub topic:
+-- the custom topic if one is set, else cfg.hub_description. The topic is
+-- broadcast to every connected user (IINF DE), so it is public hub info ->
+-- read scope, not admin (least privilege; consistent with GET /v1/records).
+-- Read-only: no persistence, no broadcast. `topic` is the raw (ADC-
+-- unescaped) stored text, the same value the POST path persists.
+local http_handler_get_topic = function( req )
+    local current = topic_tbl[ new ]
+    return { status = 200, data = {
+        topic      = current or default_topic,
+        is_default = current == nil,
+        default    = default_topic,
     } }
 end
 
@@ -242,6 +273,15 @@ hub.setlistener( "onStart", { },
                     action   = { type = "string", required = true },
                     topic    = { type = "string", required = true },
                     previous = { type = "string", required = true },
+                },
+            } )
+            hub.http_register( "GET", "/v1/topic", "read", http_handler_get_topic, {
+                plugin = scriptname,
+                description = "read the live hub topic (= the text shown to clients): the custom topic if set, else cfg.hub_description. response { topic, is_default, default }.",
+                response_schema = {
+                    topic      = { type = "string", required = true },
+                    is_default = { type = "boolean", required = true },
+                    default    = { type = "string", required = true },
                 },
             } )
         end

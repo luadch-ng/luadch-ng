@@ -290,6 +290,7 @@ Endpoints with `X-Confirm: yes` required:
 - `POST /v1/reload`
 - `POST /v1/restart`
 - `POST /v1/shutdown`
+- `POST /v1/lockdown` (engage; the `DELETE` lift is confirm-free)
 - `DELETE /v1/registered/{nick}`
 - `DELETE /v1/usercleaner/expired`
 - `DELETE /v1/usercleaner/ghosts`
@@ -682,8 +683,8 @@ req = {
 - **Scope=none routes (`/health`) bypass rate-limit** entirely as a
   consequence of bypassing auth. **X-Confirm endpoints (the full
   §4.6 list - `/v1/reload`, `/v1/restart`, `/v1/shutdown`,
-  `DELETE /v1/registered/{nick}`, `DELETE /v1/usercleaner/expired`,
-  `DELETE /v1/usercleaner/ghosts`,
+  `POST /v1/lockdown`, `DELETE /v1/registered/{nick}`,
+  `DELETE /v1/usercleaner/expired`, `DELETE /v1/usercleaner/ghosts`,
   `DELETE /v1/usercleaner/orphan-comments`) are exempt** from the per-token
   bucket budget (§4.6): an operator's recovery action must succeed
   even if a runaway script just burned the admin token's budget.
@@ -1269,12 +1270,24 @@ an unknown path).
 | POST | `/v1/announce` | admin | `cmd_mass` [^http-announce-1] |
 | POST | `/v1/chat` | admin | `cmd_talk` [^http-chat-1] |
 | POST | `/v1/topic` | admin | `cmd_topic` [^http-topic-1] |
+| GET | `/v1/topic` | read | `cmd_topic` [^http-topic-2] |
+| GET | `/v1/motd` | read | `etc_motd` [^http-motd-1] |
+| PUT | `/v1/motd` | admin | `etc_motd` [^http-motd-2] |
+| DELETE | `/v1/motd` | admin | `etc_motd` [^http-motd-3] |
+| GET | `/v1/rules` | read | `cmd_rules` [^http-rules-1] |
+| PUT | `/v1/rules` | admin | `cmd_rules` [^http-rules-2] |
+| DELETE | `/v1/rules` | admin | `cmd_rules` [^http-rules-3] |
 | GET | `/v1/aliases` | read | `etc_aliases` [^http-aliases-1] |
 | POST | `/v1/aliases` | admin | `etc_aliases` [^http-aliases-2] |
 | DELETE | `/v1/aliases/{alias}` | admin | `etc_aliases` [^http-aliases-3] |
 | POST | `/v1/reload` | admin | `cmd_reload` - requires `X-Confirm: yes` (§4.6) [^http-reload-1] |
 | POST | `/v1/restart` | admin | `cmd_restart` - requires `X-Confirm: yes` (§4.6) [^http-restart-1] |
 | POST | `/v1/shutdown` | admin | `cmd_shutdown` - requires `X-Confirm: yes` (§4.6) [^http-shutdown-1] |
+| GET | `/v1/lockdown` | read | `etc_lockdown` [^http-lockdown-1] |
+| POST | `/v1/lockdown` | admin | `etc_lockdown` - requires `X-Confirm: yes` (§4.6) [^http-lockdown-2] |
+| DELETE | `/v1/lockdown` | admin | `etc_lockdown` [^http-lockdown-3] |
+| GET | `/v1/backups` | admin | `etc_backup` [^http-backups-1] |
+| POST | `/v1/backups` | admin | `etc_backup` [^http-backups-2] |
 
 [^http-announce-1]: Body `{message: string required (max 1024 chars, control-byte sanitised), scope: "all"|"hub"|"level" required, level?: integer (REQUIRED when scope="level", must exist in cfg.levels)}`. `scope="all"` broadcasts the banner to all online users with the **hubbot nick** as the visible sender (= ADC `+mass`); `scope="hub"` broadcasts without sender in the banner (= ADC `+masshub`); `scope="level"` PMs only users at the given level (= ADC `+masslvl N`). Returns 200 with `data: {action:"announce", scope, message, sender, level?, recipients?}` per §7.1.1; `sender` is the hubbot nick (NOT the token label - #177 C removed a token-fingerprint leak where the banner embedded the token's comment + first4...last4; the audit trail records the real operator via `req.actor`). `recipients` is the matched-user count for scope="level" (broadcast variants omit it - derive from `/v1/stats`). A single `admin`-scoped token can issue any of the three ADC variants via the structured body.
 
@@ -1282,11 +1295,35 @@ an unknown path).
 
 [^http-topic-1]: Body `{topic?: string}` (max 256 chars, control-byte sanitised). Missing OR empty `topic` resets the hub topic to `cfg.hub_description`; non-empty sets it. The ADC `+topic default` magic-keyword does NOT apply on the HTTP path - the structured body expresses "reset" via absence, so HTTP callers CAN literally set the topic to the word "default" via `{"topic": "default"}`. Returns 200 with `data: {action:"topic-set"|"topic-reset", topic, previous}` per §7.1.1. The new topic is broadcast to all connected users via `IINF DE...` and persisted to `scripts/data/cmd_topic.tbl`.
 
+[^http-topic-2]: No request body. Returns 200 with `data: {topic, is_default, default}` per §7.1: `topic` is the live hub topic (the custom topic if one is set, else `cfg.hub_description`), `is_default` is true when no custom topic is set, `default` is `cfg.hub_description`. `topic` / `default` are raw (ADC-unescaped) text - the same values the POST twin persists. The `read` scope gate (not `admin`, unlike the POST) matches the GET-is-read convention; the topic is broadcast to every connected user via `IINF DE...`, so it is public hub info. Read-only: no persistence, no broadcast.
+
+[^http-motd-1]: No request body. Returns 200 with `data: {text, is_default, default}` per §7.1 - `text` is the live MOTD (the operator override if set, else the lang default seed), `is_default` is true while the text is still the seeded / reset default (false once set via PUT), `default` is the current lang default (`scripts/lang/<lng>/etc_motd.json` `msg_motd`) = what DELETE resets to. `read` scope: the MOTD is shown to users on login, so it is not secret (same posture as `GET /v1/topic`). The endpoint registers even when MOTD delivery is deactivated (`etc_motd_activate=false`), so the text can be prepared before switch-on. The delivery on/off + destination + per-level `permission` toggles are ordinary `cfg` keys, edited via `PUT /v1/config` (not here - the content endpoints own only the text).
+
+[^http-motd-2]: Body `{text: string required}` (max 16384 bytes; control bytes except tab + newline are scrubbed to `?`, and CRLF / lone CR is normalised to LF - the MOTD is a multi-line banner, so newlines are preserved, unlike the single-line control-byte strip used elsewhere). Sets the operator MOTD and **takes ownership**: the store's `origin` flips to `"operator"`, so a later lang update or software upgrade never overwrites it - the text lives in `scripts/data/etc_motd.tbl`, which upgrades exclude, and the lang string is only ever a one-time seed (written into the store once on first boot with `origin="seed"` and frozen thereafter; a `PUT` promotes it to `origin="operator"`). An empty string is a valid MOTD (delivers nothing); use `DELETE` to reset to the default instead. Returns 200 with `data: {text, is_default:false}`. **400 E_BAD_INPUT** for a missing / non-string / over-cap `text`. Placeholders `{nick}` (preferred) and `%s` (legacy) in the stored text expand to the user's firstnick at delivery. Audit event `hub.motd.set`.
+
+[^http-motd-3]: No request body, **no X-Confirm** (a content reset is not disruptive). Resets the MOTD to the current lang default (`origin -> "seed"`, dropping the operator override and re-tracking the shipped / translated default). Returns 200 with `data: {text, is_default:true}`. Audit event `hub.motd.reset`.
+
+[^http-rules-1]: No request body. Returns 200 with `data: {text, is_default, default}` per §7.1 - the `/v1/rules` twin of `[^http-motd-1]`: `text` is the live hub rules (operator override if set, else the lang default seed from `scripts/lang/<lng>/cmd_rules.json` `msg_rules`), `is_default` / `default` as for MOTD. `read` scope: the rules are shown to users via `+rules`, so they are not secret. The ADC `+rules` gate is `cmd_rules_minlevel`, edited via `PUT /v1/config`.
+
+[^http-rules-2]: Body `{text: string required}` - identical shape + sanitisation + ownership semantics to `[^http-motd-2]` (max 16384 bytes; tab / newline preserved; CRLF normalised; scrubbed control bytes; store `scripts/data/cmd_rules.tbl`). No placeholder substitution - the rules text is sent verbatim by `+rules`. Returns 200 with `data: {text, is_default:false}`. **400 E_BAD_INPUT** for a missing / non-string / over-cap `text`. Audit event `hub.rules.set`.
+
+[^http-rules-3]: No request body, **no X-Confirm**. Resets the hub rules to the current lang default (`origin -> "seed"`). Returns 200 with `data: {text, is_default:true}`. Audit event `hub.rules.reset`.
+
 [^http-reload-1]: No request body. Returns 200 with `data: {action:"reload", reloaded:["cfg", "scripts"]}` per §7.1.1 (hub-control variant: no `sid`/`nick`). `hub.restartscripts()` clears + re-registers the entire HTTP route table from plugin `onStart` listeners; the in-flight handler's closure is captured and the response is sent normally. Lua is single-threaded so no concurrent-reload guard is needed. Idempotent retries via `X-Idempotency-Key` replay the cached 200 (desired - operator-tool retry should not double-reload).
 
 [^http-restart-1]: Body `{message?: string}` (max 1024 chars, control-byte sanitised). The message broadcasts to the hub as a chat banner just like `+restart <MSG>`; absent / empty message skips the broadcast. Returns 200 with `data: {action:"restart", message, countdown}` per §7.1.1 (no `sid`/`nick` - hub-control endpoint). `countdown` reflects `cfg.cmd_restart_toggle_countdown` (true = 10-second ASCII countdown before exit; false = immediate exit after ~2s). A concurrent second call returns **409 E_CONFLICT** (restart already armed); use `X-Idempotency-Key` for safe retries.
 
 [^http-shutdown-1]: Body `{message?: string}` (max 1024 chars, control-byte sanitised). Same shape as `POST /v1/restart`. Returns 200 with `data: {action:"shutdown", message, countdown}` per §7.1.1 (no `sid`/`nick` - hub-control endpoint). `countdown` reflects `cfg.cmd_shutdown_toggle_countdown` (true = 10-second ASCII countdown before exit; false = `hub.requestexit()` immediately, which fires `onShutdown` and the do_exit timer). A concurrent second call returns **409 E_CONFLICT**; use `X-Idempotency-Key` for safe retries.
+
+[^http-lockdown-1]: No request body. Returns 200 with `data` = the current maintenance-lockdown status. Off: `{active: false}`. On: `{active: true, level, message?, expires_at?, remaining_seconds?, indefinite, by_nick, started_at}` per §7.1 - `level` is the minimum admit level, `message` the operator's reason (omitted when none), `expires_at` an ABSOLUTE unix timestamp with `remaining_seconds` the derived countdown (both omitted for an indefinite hold, flagged by `indefinite: true`), `by_nick` who engaged it, `started_at` when. An expired-but-not-yet-swept lockdown reads as `{active: false}` (matches `+lockdown status`). `read` scope (not admin): operators already see this via `+lockdown status`, and the refuse text is shown to every user who tries to connect during a lockdown.
+
+[^http-lockdown-2]: Requires `X-Confirm: yes` header (§4.6) - engaging kicks online users below `level`. Body `{level: integer 0-99 required, minutes?: integer 1-525600, message?: string (max 256, control-byte sanitised)}`. Engages the maintenance gate (= ADC `+lockdown <level> [minutes] [reason]`): admit only users at/above `level`, kick everyone below now, and refuse their logins (`ISTA 226` + reconnect `TL`) with `message` (or the default) until lifted or `minutes` elapse (absent `minutes` = indefinite). **`level` is capped at 99 on the HTTP path** (never 100), so a level-100 owner always keeps access - an admin token cannot lock every ADC operator out; the ADC-side self-lockout guard (`level > your own level`) has no HTTP analogue since a token has no online session to protect. Returns 200 with `data` = the new status (the `[^http-lockdown-1]` shape) plus `kicked` (number of online users kicked). **400 E_BAD_INPUT** for a missing / non-integer / out-of-range `level` or `minutes`, or a non-string `message`. The ADC `etc_lockdown_command_minlevel` gate does NOT apply on the HTTP path: the bearer token's `admin` scope IS the authorisation gate. Audit event `lockdown.enable`.
+
+[^http-lockdown-3]: No request body, **no X-Confirm** - lifting restores access (a recovery action, not disruptive). Lifts the maintenance gate (= ADC `+lockdown off`). Returns 200 with `data: {active: false, was_active}` per §7.1 - `was_active` is `true` iff a lockdown was actually active; lifting an already-off gate is a no-op 200 with `was_active: false` and no audit event. Audit event `lockdown.disable` (only when a lockdown was actually lifted).
+
+[^http-backups-1]: No request body. Returns 200 with `data` = the backup status + artifact list (= ADC `+backup status` + `+backup list`): `{enabled, ready, issues?, daily_at?, interval_hours?, next_backup_at?, last_backup_at?, dir, backups}` per §7.1. `enabled` is the `etc_backup_enabled` toggle; `ready` is whether a backup can run now, with `issues` (a string-code array: `no_passphrase` / `backup_dir_unwritable` / `master_key_unreadable`) present only when NOT ready; `daily_at` ("HH:MM") **or** `interval_hours` describes the schedule (whichever is configured; both absent = no schedule); `next_backup_at` / `last_backup_at` are ABSOLUTE unix timestamps (absent when unset); `dir` is the backup directory; `backups` is a (possibly empty) array of `{name, bytes}` newest-first (`bytes` is absent - the key omitted - if a file could not be stat'd). **`admin` scope** (not read): the filenames + readiness expose sensitive operational state, and the ADC `+backup` command is `etc_backup_oplevel` (admin). Restore is offline-only (`./luadch --restore`), so there is no HTTP restore route.
+
+[^http-backups-2]: No request body. Runs a backup NOW (= ADC `+backup now`): the same collect -> seal (AES-256-GCM, PBKDF2-in-C) -> write -> rotate the scheduler runs, then advances + persists the next-run deadline. **No X-Confirm**: a manual backup is additive (writes an encrypted archive, no data loss), like `POST /v1/topic`. Returns 200 with `data: {path, bytes, files, skipped, next_backup_at}` per §7.1 on success (audit `backup.success`). **409 E_BACKUP_NOT_READY** when the feature is not ready (the message lists the same issue codes as `[^http-backups-1]`), so a doomed run is skipped and the caller sees why. **500 E_BACKUP_FAILED** on an unexpected run failure (e.g. no state files to collect); the engine's error string is surfaced and audit `backup.fail` fires. The ADC `etc_backup_oplevel` gate does NOT apply on the HTTP path: the bearer token's `admin` scope IS the authorisation gate.
 
 [^http-aliases-1]: No request body. Returns 200 with `data: {aliases: [{alias, target}, ...], count}` per §7.1. Entries are sorted by `alias` for stable pagination-free output. The list mirrors what `+aliases` shows in the "Operator-defined aliases" section - built-in plugin multi-name registrations (e.g. usr_uptime's `useruptime` + `uu`) are NOT included; those are surfaced only on the ADC side via `etc_hubcommands.list()` and are visible in the `+aliases` "Built-in command names" section. The `read` scope gate (not `admin`) matches the GET-is-read convention.
 
@@ -1512,7 +1549,9 @@ the same code path the `+cmd` listener uses.
 
 - `cmd_mass` → `POST /v1/announce`
 - `cmd_talk` → `POST /v1/chat`
-- `cmd_topic` → `POST /v1/topic`
+- `cmd_topic` → `GET/POST /v1/topic`
+- `etc_motd` → `GET /v1/motd` (live text), `PUT /v1/motd` (set), `DELETE /v1/motd` (reset to lang default)
+- `cmd_rules` → `GET /v1/rules` (live text), `PUT /v1/rules` (set), `DELETE /v1/rules` (reset to lang default)
 - `cmd_ban` → `GET/POST /v1/bans`, `DELETE /v1/bans/{id}`
 - `cmd_disconnect` → `DELETE /v1/users/{sid}`
 - `cmd_gag` → `POST/DELETE /v1/users/{sid}/gag`, `GET /v1/gags`
@@ -1525,6 +1564,8 @@ the same code path the `+cmd` listener uses.
 
 - `cmd_restart` → `POST /v1/restart` (requires `X-Confirm`, see §4.6)
 - `cmd_shutdown` → `POST /v1/shutdown` (requires `X-Confirm`, see §4.6)
+- `etc_lockdown` → `GET /v1/lockdown`, `POST /v1/lockdown` (engage, requires `X-Confirm`, see §4.6), `DELETE /v1/lockdown` (lift)
+- `etc_backup` → `GET /v1/backups` (status + list), `POST /v1/backups` (run now); restore stays offline (`./luadch --restore`)
 - `cmd_errors` → `GET /v1/log/error`
 - `etc_cmdlog` → `GET /v1/log/cmd`
 - `etc_log_cleaner` → `DELETE /v1/log/{name}`

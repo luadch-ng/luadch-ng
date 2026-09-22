@@ -91,6 +91,16 @@ _G.io = setmetatable( {
 _G.util = {
     loadtable = function( ) _loadtable_called = true; return _persisted end,
     savetable = function( t, name, path ) _saved = t; _save_count = _save_count + 1 end,
+    strip_control_bytes = function( s ) return s end,
+}
+-- The HTTP actor-label helper ( core/util_http ) is a sandbox global; the
+-- handlers use it for by_nick + audit. Stub the X-Actor -> token-label -> default
+-- fallback it implements.
+_G.util_http = {
+    operator_label = function( req )
+        if req and type( req.actor ) == "string" and req.actor ~= "" then return req.actor end
+        return ( req and req.token_label ) or "http-api"
+    end,
 }
 _G.cfg = {
     get          = function( k ) return _cfg[ k ] end,
@@ -113,6 +123,7 @@ _G.hub = {
     getbot      = function( ) return "bot" end,
     getusers    = function( ) return _online end,
     escapeto    = function( s ) return s end,
+    http_register = function( method, path, _scope, handler ) _G._http[ method .. " " .. path ] = handler end,
     import      = function( name )
         if name == "etc_hubcommands" then return { add = function( ) return true end } end
         if name == "cmd_help" then return { reg = function( ) end } end
@@ -144,6 +155,7 @@ local function load_plugin( overrides, persisted )
     fresh( )
     _persisted = persisted
     _G._listeners = { }
+    _G._http = { }
     local p = assert( loadfile( "scripts/etc_lockdown.lua" ) )( )
     if _G._listeners.onStart then _G._listeners.onStart( ) end
     return p, _G._listeners
@@ -394,6 +406,106 @@ do
         by_nick = "op", by_level = 60, started_at = _now } )
     truthy( "existing-store: util.loadtable consulted", _loadtable_called )
     truthy( "existing-store: persisted lockdown active", p._state( ).active )
+end
+
+----------------------------------------------------------------------
+-- HTTP API ( v0.03, #699 ): GET status + POST engage ( 0-99 cap ) +
+-- DELETE lift. Handlers captured from hub.http_register in onStart; RED
+-- pre-fix ( the three routes are unregistered on v0.02 ).
+----------------------------------------------------------------------
+do
+    local p = load_plugin( )
+    local GET  = _G._http[ "GET /v1/lockdown" ]
+    local POST = _G._http[ "POST /v1/lockdown" ]
+    local DEL  = _G._http[ "DELETE /v1/lockdown" ]
+    truthy( "http: GET /v1/lockdown registered",    GET ~= nil )
+    truthy( "http: POST /v1/lockdown registered",   POST ~= nil )
+    truthy( "http: DELETE /v1/lockdown registered", DEL ~= nil )
+
+    -- GET while off
+    local r = GET( { } )
+    eq( "http GET off: status 200", r.status, 200 )
+    eq( "http GET off: active false", r.data.active, false )
+
+    -- POST engage: level 60, 5 min, message; one online below is kicked, staff not
+    _online = { A = mkuser( 20, "10.0.0.1", "A" ), C = mkuser( 80, "10.0.0.3", "C" ) }
+    r = POST( { body = { level = 60, minutes = 5, message = "webui maint" }, token_label = "tok", actor = "adminop" } )
+    eq( "http POST: status 200", r.status, 200 )
+    eq( "http POST: active", r.data.active, true )
+    eq( "http POST: level", r.data.level, 60 )
+    eq( "http POST: message", r.data.message, "webui maint" )
+    eq( "http POST: kicked = 1 ( A l20; C l80 staff exempt )", r.data.kicked, 1 )
+    truthy( "http POST: A kicked", _online.A._killed ~= nil )
+    falsy(  "http POST: C staff not kicked", _online.C._killed )
+    eq( "http POST: expires_at absolute", r.data.expires_at, _now + 300 )
+    eq( "http POST: remaining_seconds = 300", r.data.remaining_seconds, 300 )
+    eq( "http POST: indefinite false", r.data.indefinite, false )
+    eq( "http POST: by_nick = X-Actor label", r.data.by_nick, "adminop" )
+    truthy( "http POST: state active", p._state( ).active )
+    eq( "http POST: audit action lockdown.enable", _audit[ #_audit ].action, "lockdown.enable" )
+
+    -- GET reflects the live state
+    r = GET( { } )
+    eq( "http GET on: active", r.data.active, true )
+    eq( "http GET on: level", r.data.level, 60 )
+
+    -- DELETE lift
+    r = DEL( { token_label = "tok" } )
+    eq( "http DELETE: status 200", r.status, 200 )
+    eq( "http DELETE: active false", r.data.active, false )
+    eq( "http DELETE: was_active true", r.data.was_active, true )
+    falsy( "http DELETE: state inactive", p._state( ).active )
+    eq( "http DELETE: audit lockdown.disable", _audit[ #_audit ].action, "lockdown.disable" )
+
+    -- DELETE when already off -> was_active false, no new audit
+    local n_before = #_audit
+    r = DEL( { token_label = "tok" } )
+    eq( "http DELETE off: was_active false", r.data.was_active, false )
+    eq( "http DELETE off: no audit fired", #_audit, n_before )
+
+    -- by_nick falls back to token_label when X-Actor absent
+    r = POST( { body = { level = 50 }, token_label = "onlytoken" } )
+    eq( "http POST: by_nick falls back to token_label", r.data.by_nick, "onlytoken" )
+    DEL( { token_label = "tok" } )
+end
+
+do
+    -- POST validation: HTTP level cap 0-99, integer + range; minutes int/range;
+    -- message must be a string. Every bad body -> 400 and NOTHING engages.
+    local p = load_plugin( )
+    local POST = _G._http[ "POST /v1/lockdown" ]
+
+    local function bad( label, body )
+        local r = POST( { body = body, token_label = "tok" } )
+        eq( label .. ": status 400", r.status, 400 )
+        falsy( label .. ": stays off", p._state( ).active )
+    end
+    bad( "level 100 ( HTTP cap )", { level = 100 } )
+    bad( "level -1",               { level = -1 } )
+    bad( "level 60.5 ( non-int )", { level = 60.5 } )
+    bad( "level missing",          { } )
+    bad( "level string",           { level = "60" } )
+    bad( "minutes 0",              { level = 60, minutes = 0 } )
+    bad( "minutes 1.5",            { level = 60, minutes = 1.5 } )
+    bad( "minutes over cap",       { level = 60, minutes = 525601 } )
+    bad( "message non-string",     { level = 60, message = 5 } )
+    bad( "message over 256",       { level = 60, message = string.rep( "x", 257 ) } )
+    falsy( "validation: nothing engaged after all bad inputs", p._state( ).active )
+
+    -- boundary: level 99 ( the cap ) and level 0 are accepted
+    local r = POST( { body = { level = 99 }, token_label = "tok" } )
+    eq( "level 99 ( cap boundary ) accepted", r.data.active, true )
+    eq( "level 99: indefinite ( no minutes )", r.data.indefinite, true )
+    falsy( "level 99: no expires_at", r.data.expires_at )
+
+    -- The design invariant the 0-99 cap exists for: a level-99 HTTP engage
+    -- must NEVER lock out a level-100 owner. Prove it at the onConnect gate
+    -- ( is_exempt: 100 >= 99 ), and that a level-98 user IS refused.
+    local L = _G._listeners
+    local owner = mkuser( 100, "1.1.1.1", "O" )
+    eq(    "cap: level-100 owner admitted under a level-99 lockdown", L.onConnect( owner ), nil )
+    falsy( "cap: level-100 owner not killed", owner._killed )
+    eq(    "cap: level-98 refused under a level-99 lockdown", L.onConnect( mkuser( 98, "2.2.2.2", "Lo" ) ), "PROCESSED" )
 end
 
 ----------------------------------------------------------------------

@@ -191,6 +191,24 @@ jobs:
       - name: Run cmd_talk chat-endpoint unit test
         run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
 
+      # cmd_topic GET /v1/topic (v0.06): read-only companion to POST
+      # /v1/topic; registers under read scope and reports the live topic
+      # (custom if set, else cfg.hub_description) + is_default + default.
+      - name: Run cmd_topic GET-endpoint unit test
+        run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
+
+      # etc_motd content endpoints (v0.10): operator-owned MOTD store +
+      # GET/PUT/DELETE /v1/motd. Load-bearing: a seeded text is FROZEN, so a
+      # later lang update / upgrade never clobbers edited text. Also seed-on-
+      # fresh, live delivery ({nick}/%s), CRLF-safe sanitise, PUT validation.
+      - name: Run etc_motd content-endpoint unit test
+        run: lua5.4 tests/unit/etc_motd_endpoint_test.lua
+
+      # cmd_rules content endpoints (v0.07): mirror of etc_motd for /v1/rules
+      # (same store + seed-freeze guarantee, verbatim delivery via +rules).
+      - name: Run cmd_rules content-endpoint unit test
+        run: lua5.4 tests/unit/cmd_rules_endpoint_test.lua
+
       # cmd_ban periodic sweep: an expired non-permanent ban is pruned on
       # a 60s onTimer (not just lazily on the banned user's reconnect);
       # permanent bans are never swept, and a no-op sweep does not save.
@@ -331,6 +349,12 @@ jobs:
       # invalid HH:MM falls back to the interval. Loaded with stubbed globals.
       - name: Run etc_backup schedule unit test
         run: lua5.4 tests/unit/etc_backup_schedule_test.lua
+
+      # etc_backup HTTP API (v0.02, #701): GET /v1/backups (status + list)
+      # and POST /v1/backups (run now; 409 not-ready / 500 fail / 200 ok),
+      # engine stubbed. Registration RED on v0.01.
+      - name: Run etc_backup endpoint unit test
+        run: lua5.4 tests/unit/etc_backup_endpoint_test.lua
 
       # core/restore.lua (#480 PR-B) offline-restore pure logic: the
       # _safe_rel path-traversal guard (reject absolute / ".." / drive /
@@ -666,6 +690,18 @@ jobs:
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_talk_endpoint_test.lua
 
+      - name: Run cmd_topic GET-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_topic_endpoint_test.lua
+
+      - name: Run etc_motd content-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/etc_motd_endpoint_test.lua
+
+      - name: Run cmd_rules content-endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_rules_endpoint_test.lua
+
       - name: Run cmd_ban sweep unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_ban_sweep_test.lua
@@ -753,6 +789,10 @@ jobs:
       - name: Run etc_backup schedule unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/etc_backup_schedule_test.lua
+
+      - name: Run etc_backup endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/etc_backup_endpoint_test.lua
 
       - name: Run restore unit test
         shell: msys2 {0}
