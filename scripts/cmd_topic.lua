@@ -5,6 +5,13 @@
         - this script adds a command "topic"
         - usage: [+!#]topic <NEW-TOPIC>|default
 
+        v0.07:
+            - POST /v1/topic resolves the actor label via
+              util_http.operator_label( req ) instead of the raw
+              token_label, so an X-Actor operator nick is honoured in the
+              audit trail / report - the same attribution idiom the
+              motd/rules/lockdown/backup endpoints use ( no divergence ).
+
         v0.06:
             - HTTP API: GET /v1/topic (read scope) - return the live hub
               topic (the custom topic if set, else cfg.hub_description) as
@@ -34,7 +41,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_topic"
-local scriptversion = "0.06"
+local scriptversion = "0.07"
 
 local cmd = "topic"
 
@@ -185,7 +192,10 @@ end
 local http_handler_topic = function( req )
     local body = req.body or { }
     local topic = body.topic
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- Actor label via util_http.operator_label ( X-Actor -> token_label -> "http-api",
+    -- control-byte stripped ): same attribution idiom as the motd/rules/lockdown/backup
+    -- endpoints, so an X-Actor operator nick is honoured here too ( no divergence, 1a.1 ).
+    local actor_label = util_http.operator_label( req )
     local previous = topic_tbl[ new ] or default_topic
     local msg, action, new_topic
     local audit_action_name = "hub.topic.set"

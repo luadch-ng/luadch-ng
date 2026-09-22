@@ -236,7 +236,7 @@ hub.setlistener( "onStart", { },
             } )
             hub.http_register( "PUT", "/v1/motd", "admin", http_handler_put_motd, {
                 plugin = scriptname,
-                description = "set the MOTD text. body { text: string } ( <= 16384 bytes; control bytes except tab / newline are scrubbed ); an empty string delivers nothing. Takes ownership so a later lang update / upgrade never overwrites it. Use DELETE to reset to the lang default.",
+                description = "set the MOTD text. body { text: string } ( <= " .. MOTD_MAX .. " bytes; control bytes except tab / newline are scrubbed ); an empty string delivers nothing. Takes ownership so a later lang update / upgrade never overwrites it. Use DELETE to reset to the lang default.",
                 request_schema = {
                     text = { type = "string", max_length = MOTD_MAX, required = true },
                 },

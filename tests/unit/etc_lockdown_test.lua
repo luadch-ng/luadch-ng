@@ -489,6 +489,7 @@ do
     bad( "minutes 1.5",            { level = 60, minutes = 1.5 } )
     bad( "minutes over cap",       { level = 60, minutes = 525601 } )
     bad( "message non-string",     { level = 60, message = 5 } )
+    bad( "message over 256",       { level = 60, message = string.rep( "x", 257 ) } )
     falsy( "validation: nothing engaged after all bad inputs", p._state( ).active )
 
     -- boundary: level 99 ( the cap ) and level 0 are accepted

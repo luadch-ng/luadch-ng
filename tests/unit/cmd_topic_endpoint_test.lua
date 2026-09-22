@@ -67,6 +67,8 @@ _G.util = {
 
 -- POST path fires an audit event; stub it so the roundtrip case can run.
 _G.audit = { fire = function( ) end, build = function( ) return { } end }
+-- POST resolves the actor label via util_http.operator_label (X-Actor -> token_label).
+_G.util_http = { operator_label = function( req ) return ( req and req.token_label ) or "http-api" end }
 
 _G.hub = {
     getbot      = function( ) return { } end,
