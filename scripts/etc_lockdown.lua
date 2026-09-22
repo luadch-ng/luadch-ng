@@ -397,6 +397,12 @@ local http_handler_post_lockdown = function( req )
         return { status = 400, error = { code = "E_BAD_INPUT",
             message = "message must be a string" } }
     end
+    -- Handler-side length cap ( belt-and-suspenders with the router's max_length=256 ):
+    -- keeps the direct-call unit tests, which bypass the router, covering the bound too.
+    if type( message ) == "string" and #message > 256 then
+        return { status = 400, error = { code = "E_BAD_INPUT",
+            message = "message too long ( max 256 )" } }
+    end
     local reason = ( message and message ~= "" ) and util.strip_control_bytes( message ) or nil
 
     local by_nick = util_http.operator_label( req )
@@ -579,6 +585,8 @@ hub.setlistener( "onStart", { },
                 plugin = scriptname,
                 description = "engage the maintenance lockdown (= ADC `+lockdown <level> [minutes] [reason]`); requires X-Confirm: yes. body { level: int 0-99 required, minutes?: int 1-525600, message?: string }. HTTP level is capped at 99 so a level-100 owner keeps access.",
                 request_schema = {
+                    level   = { type = "integer", min = 0, max = 99, required = true },
+                    minutes = { type = "integer", min = 1, max = MAX_MINUTES },
                     message = { type = "string", max_length = 256 },
                 },
                 response_schema = {

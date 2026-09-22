@@ -63,7 +63,7 @@ local cmd = "rules"
 --// table lookups
 local cfg_get = cfg.get
 local cfg_loadlanguage = cfg.loadlanguage
-local hub_getbot = hub.getbot()
+local hub_getbot = hub.getbot
 local hub_debug = hub.debug
 local hub_import = hub.import
 local util_loadtable = util.loadtable
@@ -193,8 +193,8 @@ local onbmsg = function( user )
         -- Text is read live so a PUT applies to the next `+rules` without a +reload.
         local msg = current_rules( )
         if msg ~= "" then
-            if destination_main then user:reply( msg, hub_getbot ) end
-            if destination_pm then user:reply( msg, hub_getbot, hub_getbot ) end
+            if destination_main then user:reply( msg, hub_getbot() ) end
+            if destination_pm then user:reply( msg, hub_getbot(), hub_getbot() ) end
         end
     end
     return PROCESSED
@@ -241,7 +241,7 @@ hub.setlistener( "onStart", { },
             } )
             hub.http_register( "PUT", "/v1/rules", "admin", http_handler_put_rules, {
                 plugin = scriptname,
-                description = "set the hub rules text. body { text: string } ( <= 16384 bytes; control bytes except tab / newline are scrubbed ); an empty string sends nothing. Takes ownership so a later lang update / upgrade never overwrites it. Use DELETE to reset to the lang default.",
+                description = "set the hub rules text. body { text: string } ( <= " .. RULES_MAX .. " bytes; control bytes except tab / newline are scrubbed ); an empty string sends nothing. Takes ownership so a later lang update / upgrade never overwrites it. Use DELETE to reset to the lang default.",
                 request_schema = {
                     text = { type = "string", max_length = RULES_MAX, required = true },
                 },

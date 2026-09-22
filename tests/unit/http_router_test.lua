@@ -539,6 +539,48 @@ do
 end
 
 ----------------------------------------------------------------------
+-- dispatch X-Confirm gate: a route in _xconfirm_required must 400
+-- E_CONFIRMATION_REQUIRED without the `X-Confirm: yes` header, and pass
+-- through with it. Pinned for POST /v1/lockdown (etc_lockdown #700) - the
+-- first PLUGIN route in the confirm set - so the confirm KEY
+-- ("POST /v1/lockdown") staying matched to the registered route template
+-- is tested, not just asserted: a rename/typo that silently dropped the
+-- gate would go RED here.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    local ran = false
+    local h = function( ) ran = true; return { status = 200, data = { active = true } } end
+    router.register( "POST", "/v1/lockdown", "admin", h )
+    _stub_cfg_tokens = { [ "ADMINTOKEN00000001" ] = { scope = "admin" } }
+
+    local function post( confirm )
+        local headers = { [ "authorization" ] = "Bearer ADMINTOKEN00000001" }
+        if confirm then headers[ "x-confirm" ] = "yes" end
+        return router.dispatch(
+            { method = "POST", target = "/v1/lockdown", headers = headers, body = nil },
+            "127.0.0.1" )
+    end
+
+    ran = false
+    local st, body = post( false )
+    eq( "confirm-gate: POST /v1/lockdown without X-Confirm -> 400", st, 400 )
+    eq( "confirm-gate: code E_CONFIRMATION_REQUIRED",
+        body and body._encoded and body._encoded.error and body._encoded.error.code,
+        "E_CONFIRMATION_REQUIRED" )
+    eq( "confirm-gate: handler NOT run without confirm", ran, false )
+
+    ran = false
+    local st2 = post( true )
+    eq( "confirm-gate: POST /v1/lockdown with X-Confirm: yes -> 200", st2, 200 )
+    eq( "confirm-gate: handler ran with confirm", ran, true )
+
+    router.unregister_all( )
+    _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
 -- Pin the external assumption Fix A relies on: the BUNDLED dkjson tags a
 -- decoded top-level array with __jsontype="array" and an object with
 -- "object". If a future dkjson bump drops the tag, the body-shape guard
