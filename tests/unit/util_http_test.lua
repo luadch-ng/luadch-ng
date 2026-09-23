@@ -26,6 +26,7 @@
 local _captured_route = nil    -- last (method, path, scope, handler, meta) registered
 
 local _stub_users = { }    -- sid -> mock user object | "_bot_sid_marker"
+local _stub_regnicks = { } -- nick -> { level = N } (actor_level resolution)
 
 local _mock_hub_obj = {
     http_register = function( method, path, scope, handler, meta )
@@ -36,12 +37,16 @@ local _mock_hub_obj = {
     issidonline = function( sid )
         return _stub_users[ sid ]
     end,
+    -- Mirrors core/hub.lua getregusers(): ( regusers, regnicks, regcids ).
+    getregusers = function( )
+        return nil, _stub_regnicks, nil
+    end,
 }
 
 local _mock_hub_module = { object = function( ) return _mock_hub_obj end }
 
 local _real = {
-    pairs = pairs, type = type,
+    pairs = pairs, type = type, tonumber = tonumber,
     hub   = _mock_hub_module,
     -- operator_label resolves `use "util"` lazily for strip_control_bytes;
     -- mirror production semantics (control chars -> '?', non-string -> "").
@@ -256,6 +261,75 @@ do
         util_http.operator_label( nil ), "http-api" )
     eq( "operator: control bytes stripped from actor",
         util_http.operator_label( { actor = "op\1Nick" } ), "op?Nick" )
+end
+
+----------------------------------------------------------------------
+-- 10. actor_level: resolve the OPERATOR level behind an HTTP request from
+--     the X-Actor nick (req.actor) via the registered-user level, for the
+--     per-command permission-ceiling checks (#708). nil when there is no
+--     actor or it is not a registered nick -> callers skip the ceiling
+--     (backward-compatible with token calls that send no X-Actor).
+----------------------------------------------------------------------
+
+do
+    _stub_regnicks = {
+        [ "opNick" ]  = { level = 60 },
+        [ "highOp" ]  = { level = 100 },
+        [ "op?ick" ]  = { level = 40 },    -- for the control-byte case below
+        [ "a=b" ]     = { level = 70 },    -- for the `=`-in-nick fail-open case
+    }
+    eq( "actor_level: registered actor resolves to its stored level",
+        util_http.actor_level( { actor = "opNick" } ), 60 )
+    eq( "actor_level: a higher registered actor resolves too",
+        util_http.actor_level( { actor = "highOp" } ), 100 )
+    eq( "actor_level: unknown nick -> nil (skip ceiling)",
+        util_http.actor_level( { actor = "ghost" } ), nil )
+    eq( "actor_level: no actor -> nil",
+        util_http.actor_level( { } ), nil )
+    eq( "actor_level: empty actor -> nil",
+        util_http.actor_level( { actor = "" } ), nil )
+    eq( "actor_level: nil req -> nil (no crash)",
+        util_http.actor_level( nil ), nil )
+    -- control bytes are stripped BEFORE the lookup (op\1ick -> op?ick)
+    eq( "actor_level: actor sanitised before the registered lookup",
+        util_http.actor_level( { actor = "op\1ick" } ), 40 )
+    -- The lookup uses the UN-mangled actor_raw, so a registered nick with `=`
+    -- (which the router's logsafe `actor` rewrites to `?`) still resolves - no
+    -- fail-open skip of the ceiling for a `=`-nick operator.
+    eq( "actor_level: `=`-nick resolves via actor_raw (not the logsafe actor)",
+        util_http.actor_level( { actor_raw = "a=b", actor = "a?b" } ), 70 )
+    eq( "actor_level: actor_raw takes precedence over actor",
+        util_http.actor_level( { actor_raw = "opNick", actor = "highOp" } ), 60 )
+    _stub_regnicks = { }
+end
+
+----------------------------------------------------------------------
+-- 11. ceiling_denied: the HTTP mirror of the ADC hierarchy guard
+--     `permission[ operator_level ] < target_level`. true = DENY. Skips
+--     (false) on an unknown operator or target level; a missing permission
+--     entry is ceiling 0 (guards the nil that would crash `nil < number`).
+----------------------------------------------------------------------
+
+do
+    local perm = { [ 0 ] = 0, [ 60 ] = 50, [ 100 ] = 100 }
+    eq( "ceiling: unknown operator level -> allow (skip)",
+        util_http.ceiling_denied( perm, nil, 50 ), false )
+    eq( "ceiling: unknown target level -> allow (skip)",
+        util_http.ceiling_denied( perm, 60, nil ), false )
+    eq( "ceiling: ceiling == target -> allow",
+        util_http.ceiling_denied( perm, 60, 50 ), false )
+    eq( "ceiling: target below ceiling -> allow",
+        util_http.ceiling_denied( perm, 60, 40 ), false )
+    eq( "ceiling: target above ceiling -> DENY",
+        util_http.ceiling_denied( perm, 60, 60 ), true )
+    eq( "ceiling: hubowner (100) may act on 100 -> allow",
+        util_http.ceiling_denied( perm, 100, 100 ), false )
+    eq( "ceiling: missing operator entry -> ceiling 0, deny a >0 target",
+        util_http.ceiling_denied( perm, 55, 30 ), true )
+    eq( "ceiling: missing operator entry -> ceiling 0, allow a 0 target",
+        util_http.ceiling_denied( perm, 55, 0 ), false )
+    eq( "ceiling: nil permission map -> ceiling 0, deny a >0 target (fail-closed)",
+        util_http.ceiling_denied( nil, 60, 30 ), true )
 end
 
 ----------------------------------------------------------------------
