@@ -681,7 +681,16 @@ dispatch = function( framer_unit, source_ip )
                      or generate_request_id( ),
         idempotency_key = framer_unit.headers[ "x-idempotency-key" ],
         confirm    = ( framer_unit.headers[ "x-confirm" ] == "yes" ),
+        -- `actor` is the LOGSAFE actor label (control/space/`=` -> `?`) for the
+        -- audit trail + stored `by_nick`; `actor_raw` is the un-mangled X-Actor
+        -- for AUTHZ lookups that must match a stored nick verbatim (the
+        -- permission-ceiling actor resolution, util_http.actor_level, #708) -
+        -- a nick may legally contain `=`, which logsafe_actor mangles, so the
+        -- logsafe value cannot be used as a registered-nick lookup key. A raw
+        -- table index carries no log/reflection risk (util_http.actor_level
+        -- still control-byte-sanitises it defensively).
         actor      = logsafe_actor( framer_unit.headers[ "x-actor" ] ),
+        actor_raw  = framer_unit.headers[ "x-actor" ],
     }
 
     -- Headers we always echo regardless of outcome.

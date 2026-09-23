@@ -941,6 +941,28 @@ http_handler_create_ban = function( req )
             message = "target is a bot; cannot ban via this endpoint" } }
     end
 
+    -- Per-operator permission ceiling (cmd_ban_permission), mirroring the
+    -- ADC +ban hierarchy guard at `permission[ level ] < target:level()`
+    -- above: an operator may not ban a target above their ceiling. Enforced
+    -- only when X-Actor resolves to a known operator level (#708); a direct
+    -- token call without X-Actor keeps the scope-only behaviour. Target
+    -- level = the live level for an online victim, else the stored
+    -- registered level for an offline nick; cid / ip blind targets have no
+    -- resolvable level and are not ceiling-checked (matches the ADC path,
+    -- whose cid / ip branches are likewise unchecked - see line ~1192).
+    local target_level
+    if victim then
+        target_level = victim:level( )
+    elseif target_type == "nick" then
+        local _, ceil_regnicks = hub.getregusers( )
+        local rec = ceil_regnicks and ceil_regnicks[ target_id ]
+        target_level = rec and tonumber( rec.level )
+    end
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your ban permission ceiling" } }
+    end
+
     -- For SID targets, addban needs the victim object so the
     -- persisted entry carries nick/cid/ip resolved from the live
     -- session (matches the ADC-side `by == "sid"` path).
