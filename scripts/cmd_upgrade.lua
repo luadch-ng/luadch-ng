@@ -5,6 +5,13 @@
         - this script adds a command "upgrade" to set or change the level of a user by sid/nick
         - usage: [+!#]upgrade sid|nick <SID>|<NICK> <LEVEL>
 
+        v0.24:
+            - HTTP path: enforce the cmd_upgrade_permission ceiling on PUT
+              /v1/registered/{nick}/level (the triple guard: target-current level vs the
+              operator's own level, and both the granted and current levels vs the
+              ceiling) when X-Actor resolves to an operator level (#708); a direct token
+              call without X-Actor keeps the scope-only behaviour.
+
         v0.23:
             - fix #243: ADC `+upgrade nick` path now nil-guards
               the prefix-table indexing under cfg drift. THIS IS
@@ -110,7 +117,7 @@
 --------------
 
 local scriptname = "cmd_upgrade"
-local scriptversion = "0.23"
+local scriptversion = "0.24"
 
 local cmd = "upgrade"
 
@@ -370,7 +377,7 @@ local http_handler_set_level = function( req )
             or util_http.ceiling_denied( permission, op_level, previous_level )
         ) then
         return { status = 403, error = { code = "E_FORBIDDEN",
-            message = "upgrade exceeds your permission ceiling (target level and/or requested level)" } }
+            message = "target and/or requested level exceeds your upgrade permission ceiling" } }
     end
 
     -- Idempotent: same level => 200 with online_kicked=false and

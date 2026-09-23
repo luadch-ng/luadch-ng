@@ -6,6 +6,11 @@
         - usage: [+!#]setpass nick <nick> <password>
         - [+!#]setpass myself <password> sets your own pasword
 
+        v0.25:
+            - HTTP path: enforce the cmd_setpass_permission ceiling on PUT
+              /v1/registered/{nick}/password when X-Actor resolves to an operator level
+              (#708); a direct token call without X-Actor keeps the scope-only behaviour.
+
         v0.24:
             - audit_redact_body = true on PUT /v1/registered/{nick}/password
               so the new password does not land verbatim in api_audit.log.
@@ -119,7 +124,7 @@
 --------------
 
 local scriptname = "cmd_setpass"
-local scriptversion = "0.24"
+local scriptversion = "0.25"
 
 local cmd = "setpass"
 

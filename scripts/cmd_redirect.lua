@@ -4,6 +4,11 @@
 
         usage: [+!#]redirect <NICK> <URL>
 
+        v0.10:
+            - HTTP path: enforce the cmd_redirect_permission ceiling on POST
+              /v1/users/{sid}/redirect when X-Actor resolves to an operator level
+              (#708); a direct token call without X-Actor keeps the scope-only behaviour.
+
         v0.9:
             - HTTP redirect: the opchat report + audit record the real operator
               (req.actor), not the token label; the redirected user still sees no
@@ -53,7 +58,7 @@
 --------------
 
 local scriptname = "cmd_redirect"
-local scriptversion = "0.9"
+local scriptversion = "0.10"
 
 local cmd = "redirect"
 

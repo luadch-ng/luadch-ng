@@ -6,6 +6,11 @@
         - usage: [+!#]delreg nick <NICK>  |  [+!#]delreg nick <NICK> <DESCRIPTION>
 
 
+        v0.34:
+            - HTTP path: enforce the cmd_delreg_permission ceiling on DELETE
+              /v1/registered/{nick} when X-Actor resolves to an operator level (#708);
+              a direct token call without X-Actor keeps the scope-only behaviour.
+
         v0.33:
             - removed the unused "msg_reason" local: it read
               "lang.msg_reason", a key no cmd_delreg lang file defines
@@ -145,7 +150,7 @@
 --------------
 
 local scriptname = "cmd_delreg"
-local scriptversion = "0.33"
+local scriptversion = "0.34"
 
 local cmd = "delreg"
 
