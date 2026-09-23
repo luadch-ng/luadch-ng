@@ -39,6 +39,7 @@ local use = use
 
 local pairs = use "pairs"
 local type = use "type"
+local tonumber = use "tonumber"
 
 ----------------------------------// DEFINITION //--
 
@@ -171,11 +172,68 @@ local function operator_label( req )
     return util.strip_control_bytes( ( req and req.token_label ) or "http-api" )
 end
 
+-- Resolve the OPERATOR LEVEL behind an HTTP request, for the per-command
+-- permission-ceiling checks that the ADC command path enforces but the
+-- HTTP path historically did not (luadch-ng #708). The BFF asserts the
+-- authenticated operator's nick in X-Actor (req.actor); we resolve that
+-- nick to its stored REGISTERED level (which is exactly the level the ADC
+-- path keys `cmd_*_permission` on - a logged-in user's level IS their
+-- registered level via insertreglevel). Returns nil when there is no
+-- actor or it is not a registered nick: callers then SKIP the ceiling
+-- check, so a direct token call that sends no X-Actor keeps today's
+-- scope-only behaviour (backward-compatible).
+--
+-- SECURITY: like operator_label, req.actor is client-asserted, so a raw
+-- token holder could spoof it - acceptable because a raw admin token is
+-- already fully privileged at the scope gate; this ceiling is a
+-- cooperative operator-hierarchy control for the trusted BFF path (which
+-- sets the real authenticated nick), NOT a defence against a stolen token.
+-- `use "hub"` returns the hub MODULE; the live getregusers lives on the
+-- `_luadch` object exposed via object() (same pattern as
+-- http_register_user_action; #605).
+local function actor_level( req )
+    -- Use the UN-mangled X-Actor (actor_raw) as the registered-nick lookup key,
+    -- not the logsafe `actor` (the router rewrites `=` -> `?` there for audit
+    -- safety, which would miss a registered nick containing `=` and silently
+    -- skip the ceiling - fail-open). Fall back to `actor` when actor_raw is
+    -- absent (older callers / tests). strip_control_bytes below still scrubs
+    -- control bytes (which an ADC nick cannot contain) while preserving `=`.
+    local actor = req and ( req.actor_raw or req.actor )
+    if type( actor ) ~= "string" or actor == "" then return nil end
+    local util = use "util"
+    local nick = util.strip_control_bytes( actor )
+    local _hub_mod = use "hub"
+    local hub_obj = _hub_mod and _hub_mod.object and _hub_mod.object( )
+    if not hub_obj or not hub_obj.getregusers then return nil end
+    local _, regnicks = hub_obj.getregusers( )
+    local rec = regnicks and regnicks[ nick ]
+    if rec and rec.level ~= nil then return tonumber( rec.level ) end
+    return nil
+end
+
+-- The per-command permission-ceiling check for the HTTP path, mirroring
+-- the ADC `permission[ operator_level ] < target_level` hierarchy guard
+-- (e.g. cmd_ban.lua). Returns true when the action must be DENIED: the
+-- operator level is known AND its ceiling in `permission` is below the
+-- target's level. Returns false (allow) when the operator level is
+-- unknown (nil -> skip, backward-compatible), the target level is
+-- unknown, or the ceiling covers the target. `permission` is a
+-- cmd_*_permission cfg map ({[operator_level]=max_target_level}); a
+-- missing entry is treated as ceiling 0 (matches the ADC `or 0` idiom
+-- and guards a nil that would otherwise crash `nil < number`).
+local function ceiling_denied( permission, operator_level, target_level )
+    if operator_level == nil or target_level == nil then return false end
+    local ceiling = ( permission and permission[ operator_level ] ) or 0
+    return ceiling < target_level
+end
+
 ----------------------------------// PUBLIC INTERFACE //--
 
 return {
 
     http_register_user_action = http_register_user_action,
     operator_label            = operator_label,
+    actor_level               = actor_level,
+    ceiling_denied            = ceiling_denied,
 
 }

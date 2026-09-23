@@ -6,6 +6,11 @@
         - usage: [+!#]delreg nick <NICK>  |  [+!#]delreg nick <NICK> <DESCRIPTION>
 
 
+        v0.34:
+            - HTTP path: enforce the cmd_delreg_permission ceiling on DELETE
+              /v1/registered/{nick} when X-Actor resolves to an operator level (#708);
+              a direct token call without X-Actor keeps the scope-only behaviour.
+
         v0.33:
             - removed the unused "msg_reason" local: it read
               "lang.msg_reason", a key no cmd_delreg lang file defines
@@ -145,7 +150,7 @@
 --------------
 
 local scriptname = "cmd_delreg"
-local scriptversion = "0.33"
+local scriptversion = "0.34"
 
 local cmd = "delreg"
 
@@ -359,10 +364,11 @@ end
 -- already lists `DELETE /v1/registered/{nick}`) - the handler
 -- does NOT re-check.
 --
--- The ADC-side `cmd_delreg_permission` ladder (admin can only
--- delreg users below their own ceiling) does NOT apply on the
--- HTTP path: the bearer token's `admin` scope IS the
--- authorisation gate.
+-- The bearer token's `admin` scope is the base authorisation gate;
+-- on top of it the `cmd_delreg_permission` ladder (an operator may
+-- only delreg users up to their own ceiling) is enforced when
+-- X-Actor resolves to a known operator level (#708), mirroring the
+-- ADC path. A direct token call without X-Actor keeps scope-only.
 --
 -- HTTP-only scope: this endpoint handles regged-user removal.
 -- The ADC `+delreg` chat-cmd has a secondary path that removes a
@@ -404,6 +410,16 @@ local http_handler_delreguser = function( req )
     end
 
     local target_level = tonumber( profile.level ) or 0
+
+    -- Per-operator permission ceiling (cmd_delreg_permission), mirroring the ADC
+    -- +delreg guard `(permission[user_level] or 0) < target_level`: an operator
+    -- may not delreg a target above their ceiling. Enforced BEFORE hub.delreguser
+    -- mutates anything, only when X-Actor resolves to a known operator level
+    -- (#708); a direct token call without X-Actor keeps the scope-only behaviour.
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your delreg permission ceiling" } }
+    end
 
     -- Resolve online target FIRST so we can kick before persistence
     -- mutates the regnicks index (saveusers via delreguser may
@@ -513,3 +529,9 @@ hub.setlistener( "onStart", {},
 )
 
 hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
+
+-- Test-only export (`_`-prefixed per PLUGIN_API §8): the #708 permission-ceiling
+-- regression test drives the HTTP delreg handler directly.
+return {
+    _http_handler_delreguser = http_handler_delreguser,
+}

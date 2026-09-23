@@ -5,6 +5,11 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.17:
+                - HTTP path: enforce the cmd_gag_permission ceiling on POST/DELETE
+                  /v1/users/{sid}/gag when X-Actor resolves to an operator level (#708);
+                  a direct token call without X-Actor keeps the scope-only behaviour.
+
             v0.16:
                 - HTTP gag/ungag: the stored added_by + opchat report + audit
                   record the real operator (req.actor), not the token label; the
@@ -158,7 +163,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.16"
+local scriptversion = "0.17"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -738,6 +743,15 @@ end
 -- before this handler is called; the HTTP path is online-only by
 -- design (use the ADC `+gag` cmd for offline registered targets).
 http_handler_gag = function(req, target)
+    -- Per-operator permission ceiling (cmd_gag_permission), mirroring the ADC
+    -- +gag guard `target_level > permission[user:level()]` above. Enforced only
+    -- when X-Actor resolves to a known operator level (#708); a direct token
+    -- call without X-Actor keeps the scope-only behaviour. Authz precedes state
+    -- inspection, so a below-ceiling operator is not told the gag state.
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target:level() ) then
+        return nil, { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your gag permission ceiling" } }
+    end
     local mode = req.body and req.body.mode
     if find_entry(target:firstnick()) then
         return nil, { status = 409, error = { code = "E_CONFLICT",
@@ -773,6 +787,14 @@ end
 --   verbose "user has no restriction set" message which is the same
 --   intent (informs the operator their action was a no-op).
 http_handler_ungag = function(req, target)
+    -- Same ceiling guard as gag (cmd_gag_permission), mirroring the ADC +ungag
+    -- hierarchy check (an operator may not ungag a target above their ceiling).
+    -- Authz precedes the not-gagged 404 so a below-ceiling operator learns
+    -- nothing about the target's state.
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target:level() ) then
+        return nil, { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your gag permission ceiling" } }
+    end
     local first_nick = target:firstnick()
     local _idx, entry = find_entry(first_nick)
     if not entry then
@@ -915,4 +937,6 @@ return {
     _gag_tbl                  = gag_tbl,
     _find_online_by_firstnick = find_online_by_firstnick,
     _http_handler_list_gags   = http_handler_list_gags,
+    _http_handler_gag         = http_handler_gag,
+    _http_handler_ungag       = http_handler_ungag,
 }

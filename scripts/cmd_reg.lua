@@ -7,6 +7,12 @@
         - this script adds a command "reg" to reg users
         - note: be careful when using the nick prefix script: you should reg user nicks always WITHOUT prefix
 
+        v0.37:
+            - HTTP path: enforce the cmd_reg_permission ceiling on POST /v1/registered
+              (the granted level vs the operator's ceiling) when X-Actor resolves to an
+              operator level (#708); a direct token call without X-Actor keeps the
+              scope-only behaviour.
+
         v0.36: by Aybo
             - doc (#612): the GET /v1/registered `lastseen` filter is a
               packed-decimal YYYYMMDDHHMMSS integer (hub local time), not
@@ -152,7 +158,7 @@
 --------------
 
 local scriptname = "cmd_reg"
-local scriptversion = "0.36"
+local scriptversion = "0.37"
 
 local cmd = "reg"
 
@@ -436,9 +442,13 @@ end
 -- the natural primary key (§7.4 / §10.2). Pattern mirrors cmd_ban
 -- PR-4 (#209).
 --
--- The ADC-side `cmd_reg_permission` level-ladder does NOT apply
--- on the HTTP path: the bearer token's `admin` scope IS the
--- authorisation gate (consistent with all prior #82 phases).
+-- The bearer token's `admin` scope is the base authorisation gate.
+-- On top of it, POST /v1/registered enforces the `cmd_reg_permission`
+-- level-ladder (an operator may not register a user ABOVE their own
+-- ceiling on the granted level) when X-Actor resolves to a known
+-- operator level (#708), mirroring the ADC `+reg` path. The GET /
+-- PATCH family endpoints grant no level, so that ladder does not
+-- apply to them.
 
 local format_reguser_entry = function( profile, desc_tbl )
     local level = tonumber( profile.level ) or 0
@@ -605,6 +615,17 @@ local http_handler_create_reguser = function( req )
     if not levels[ level ] then
         return { status = 400, error = { code = "E_BAD_INPUT",
             message = "unknown level " .. level .. " (not present in cfg.levels)" } }
+    end
+
+    -- Per-operator permission ceiling (cmd_reg_permission), mirroring the ADC
+    -- +reg guard `permission[user_level] < level`: an operator may not register
+    -- a user at a level ABOVE their own ceiling. NOTE the ceiling here is on the
+    -- GRANTED `level` (the body's requested level), not a target user's level.
+    -- Enforced only when X-Actor resolves to a known operator level (#708),
+    -- before hub.reguser; a direct token call without X-Actor keeps scope-only.
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "requested level exceeds your reg permission ceiling" } }
     end
 
     local blacklist_tbl_local = util.loadtable( blacklist_file ) or {}
@@ -830,3 +851,9 @@ hub.setlistener( "onStart", {},
 )
 
 hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
+
+-- Test-only export (`_`-prefixed per PLUGIN_API §8): the #708 permission-ceiling
+-- regression test drives the HTTP reg-create handler directly.
+return {
+    _http_handler_create_reguser = http_handler_create_reguser,
+}

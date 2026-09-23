@@ -11,6 +11,12 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.50:
+            - HTTP path: enforce the cmd_ban_permission ceiling on POST /v1/bans and
+              the cmd_unban_permission ceiling on DELETE /v1/bans/{id} when X-Actor
+              resolves to an operator level (#708); a direct token call without
+              X-Actor keeps the scope-only behaviour.
+
         v0.49:
             - HTTP ban: the banned user (creation kick AND later reconnect) sees the
               hubbot; the stored by_nick, opchat report, audit, and response `by`
@@ -144,10 +150,14 @@
             - HTTP path applies `util.strip_control_bytes` to `reason`
               and `req.token_label` (operator-controlled cfg comment)
               before they reach the bans table / opchat report frame.
-            - HTTP path does NOT apply the ADC-side
-              `permission[level] < target:level()` hierarchy guard:
-              the bearer token's `admin` scope IS the authorisation
-              gate (matches PR-1 / PR-2 / PR-3 convention).
+            - The bearer token's `admin` scope is the base
+              authorisation gate. On top of it, the per-command
+              permission ceiling (cmd_ban_permission) is enforced when
+              X-Actor resolves to a known operator level (#708),
+              mirroring the ADC guard `permission[level] < target:level()`
+              above: an operator may not ban a target above their
+              ceiling. A direct token call without X-Actor keeps the
+              scope-only behaviour (backward-compatible).
 
         v0.36: by pulsar
             - added "years" to util.formatseconds
@@ -307,7 +317,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.49"
+local scriptversion = "0.50"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -941,6 +951,28 @@ http_handler_create_ban = function( req )
             message = "target is a bot; cannot ban via this endpoint" } }
     end
 
+    -- Per-operator permission ceiling (cmd_ban_permission), mirroring the
+    -- ADC +ban hierarchy guard at `permission[ level ] < target:level()`
+    -- above: an operator may not ban a target above their ceiling. Enforced
+    -- only when X-Actor resolves to a known operator level (#708); a direct
+    -- token call without X-Actor keeps the scope-only behaviour. Target
+    -- level = the live level for an online victim, else the stored
+    -- registered level for an offline nick; cid / ip blind targets have no
+    -- resolvable level and are not ceiling-checked (matches the ADC path,
+    -- whose cid / ip branches are likewise unchecked - see line ~1192).
+    local target_level
+    if victim then
+        target_level = victim:level( )
+    elseif target_type == "nick" then
+        local _, ceil_regnicks = hub.getregusers( )
+        local rec = ceil_regnicks and ceil_regnicks[ target_id ]
+        target_level = rec and tonumber( rec.level )
+    end
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your ban permission ceiling" } }
+    end
+
     -- For SID targets, addban needs the victim object so the
     -- persisted entry carries nick/cid/ip resolved from the live
     -- session (matches the ADC-side `by == "sid"` path).
@@ -1020,6 +1052,18 @@ http_handler_delete_ban = function( req )
     if not entry then
         return { status = 404, error = { code = "E_NOT_FOUND",
             message = "no ban at index " .. id .. " (use GET /v1/bans to list current indices; indices shift on every removal)" } }
+    end
+    -- Per-operator permission ceiling (cmd_unban_permission), mirroring the ADC
+    -- +unban guard `permission2[user_level] < (ban.by_level or 100)` (line ~1296):
+    -- an operator may only lift a ban whose recorded by_level is within their
+    -- unban ceiling. HTTP-created bans store by_level=100, so only a ceiling>=100
+    -- operator lifts them. Enforced BEFORE the ban is removed, only when X-Actor
+    -- resolves to a known operator level (#708); a direct token call without
+    -- X-Actor keeps the scope-only behaviour.
+    local ceil_by_level = tonumber( entry.by_level ) or 100
+    if util_http.ceiling_denied( permission2, util_http.actor_level( req ), ceil_by_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "ban level exceeds your unban permission ceiling" } }
     end
     -- Snapshot before mutation; the response surfaces what was
     -- removed so the operator's audit / undo flow has the data.
@@ -1549,5 +1593,7 @@ return {    -- export bans
     _onbmsg                   = onbmsg,
     _http_find_online         = http_find_online,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_create_ban  = http_handler_create_ban,
+    _http_handler_delete_ban  = http_handler_delete_ban,
 
 }
