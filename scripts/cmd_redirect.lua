@@ -223,10 +223,17 @@ end
 -- on the HTTP path (clean REST: don't leak internal sentinels
 -- into the public API).
 --
--- The ADC-side level-hierarchy / oplevel checks do NOT apply on
--- the HTTP path: the bearer token's `admin` scope IS the
--- authorisation gate.
+-- The bearer token's `admin` scope is the base authorisation gate. On
+-- top of it, the per-command permission ceiling (cmd_redirect_permission)
+-- is enforced when X-Actor resolves to a known operator level (#708),
+-- mirroring the ADC guard `(permission[user:level()] or 0) < target_level`
+-- above: an operator may not redirect a target above their ceiling. A
+-- direct token call without X-Actor keeps the scope-only behaviour.
 local http_handler_redirect = function( req, target )
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), target:level() ) then
+        return nil, { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your redirect permission ceiling" } }
+    end
     local url = req.body and req.body.url
     if not url or url == "" then
         url = redirect_url    -- cfg default
@@ -303,4 +310,5 @@ hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
 return {
     _onbmsg                   = onbmsg,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_redirect    = http_handler_redirect,
 }
