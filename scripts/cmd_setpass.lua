@@ -343,10 +343,12 @@ end
 -- of the registered-users nick-keyed family (§10.2). Mirrors the
 -- PR-1 / PR-2 pattern.
 --
--- The ADC-side `cmd_setpass_permission` ladder (admin can only
--- change passwords below their own ceiling) does NOT apply on
--- the HTTP path: the bearer token's `admin` scope IS the
--- authorisation gate (consistent with all prior #82 phases).
+-- The bearer token's `admin` scope is the base authorisation gate;
+-- on top of it the `cmd_setpass_permission` ladder (an operator may
+-- only change the password of a target up to their own ceiling) is
+-- enforced when X-Actor resolves to a known operator level (#708),
+-- mirroring the ADC path. A direct token call without X-Actor keeps
+-- the scope-only behaviour.
 local http_handler_set_password = function( req )
     local nick_raw = req.path_vars and req.path_vars.nick
     if not nick_raw or nick_raw == "" then
@@ -394,6 +396,18 @@ local http_handler_set_password = function( req )
     if profile.is_bot == 1 then
         return { status = 404, error = { code = "E_NOT_FOUND",
             message = "no registered user with nick '" .. nick .. "' (bots are not addressable via /v1/registered)" } }
+    end
+
+    -- Per-operator permission ceiling (cmd_setpass_permission), mirroring the
+    -- ADC +setpass guard `(permission[user_level] or 0) < target_level`: an
+    -- operator may not change the password of a target above their ceiling.
+    -- Enforced BEFORE the password is written, only when X-Actor resolves to a
+    -- known operator level (#708); a direct token call without X-Actor keeps
+    -- the scope-only behaviour.
+    local ceil_target_level = tonumber( profile.level ) or 0
+    if util_http.ceiling_denied( permission, util_http.actor_level( req ), ceil_target_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your setpass permission ceiling" } }
     end
 
     -- Mutate in place: regnicks values share table identity with
@@ -486,3 +500,9 @@ hub.setlistener( "onStart", { },
 )
 
 hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
+
+-- Test-only export (`_`-prefixed per PLUGIN_API §8): the #708 permission-ceiling
+-- regression test drives the HTTP setpass handler directly.
+return {
+    _http_handler_set_password = http_handler_set_password,
+}
