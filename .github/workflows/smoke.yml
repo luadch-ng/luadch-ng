@@ -209,6 +209,12 @@ jobs:
       - name: Run cmd_setpass endpoint unit test
         run: lua5.4 tests/unit/cmd_setpass_endpoint_test.lua
 
+      # cmd_ban DELETE /v1/bans/{id}: the per-operator cmd_unban_permission
+      # ceiling (#708 arc A7) - target level = the ban entry's by_level;
+      # deny above ceiling (no removal), skip on no actor, allow within.
+      - name: Run cmd_ban unban endpoint unit test
+        run: lua5.4 tests/unit/cmd_ban_unban_endpoint_test.lua
+
       # cmd_talk POST /v1/chat (webui#177 A): posts to main chat as the
       # hubbot, mirrors into etc_chatlog's new log_line export, audits
       # the real operator, response sender = hubbot nick (no token leak).
@@ -725,6 +731,10 @@ jobs:
       - name: Run cmd_setpass endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_setpass_endpoint_test.lua
+
+      - name: Run cmd_ban unban endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_ban_unban_endpoint_test.lua
 
       - name: Run cmd_talk chat-endpoint unit test
         shell: msys2 {0}

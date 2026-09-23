@@ -1043,6 +1043,18 @@ http_handler_delete_ban = function( req )
         return { status = 404, error = { code = "E_NOT_FOUND",
             message = "no ban at index " .. id .. " (use GET /v1/bans to list current indices; indices shift on every removal)" } }
     end
+    -- Per-operator permission ceiling (cmd_unban_permission), mirroring the ADC
+    -- +unban guard `permission2[user_level] < (ban.by_level or 100)` (line ~1296):
+    -- an operator may only lift a ban whose recorded by_level is within their
+    -- unban ceiling. HTTP-created bans store by_level=100, so only a ceiling>=100
+    -- operator lifts them. Enforced BEFORE the ban is removed, only when X-Actor
+    -- resolves to a known operator level (#708); a direct token call without
+    -- X-Actor keeps the scope-only behaviour.
+    local ceil_by_level = tonumber( entry.by_level ) or 100
+    if util_http.ceiling_denied( permission2, util_http.actor_level( req ), ceil_by_level ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "ban level exceeds your unban permission ceiling" } }
+    end
     -- Snapshot before mutation; the response surfaces what was
     -- removed so the operator's audit / undo flow has the data.
     local removed = {
@@ -1571,5 +1583,6 @@ return {    -- export bans
     _onbmsg                   = onbmsg,
     _http_find_online         = http_find_online,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_delete_ban  = http_handler_delete_ban,
 
 }
