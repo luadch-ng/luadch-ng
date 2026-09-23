@@ -311,16 +311,12 @@ end
 -- of the registered-users nick-keyed family (§10.2). Mirrors the
 -- PR-1 / PR-2 / PR-3 / PR-4 pattern.
 --
--- The bearer token's `admin` scope is the base authorisation gate; on top of
--- it the `cmd_upgrade_permission` triple ladder (see the handler) is enforced
--- when X-Actor resolves to a known operator level (#708), mirroring the ADC
--- path. A direct token call without X-Actor keeps the scope-only behaviour.
--- (Pre-#708 note, now superseded:)
--- The ADC-side `cmd_upgrade_permission` ladder (admin can only
--- promote up to their own ceiling AND can't touch users above
--- their own level) does NOT apply on the HTTP path: the bearer
--- token's `admin` scope IS the authorisation gate (consistent
--- with all prior #82 phases).
+-- The bearer token's `admin` scope is the base authorisation gate; on top of it
+-- the `cmd_upgrade_permission` TRIPLE ladder is enforced when X-Actor resolves to
+-- a known operator level (#708): an operator may not upgrade a target above their
+-- own level, grant a level above their ceiling, or touch a target whose current
+-- level is above their ceiling (see the handler for the exact three branches,
+-- mirroring the ADC path). A direct token call without X-Actor keeps scope-only.
 local http_handler_set_level = function( req )
     local nick_raw = req.path_vars and req.path_vars.nick
     if not nick_raw or nick_raw == "" then

@@ -13,9 +13,12 @@
     (b)/(c) are the shared ceiling_denied; (a) is a direct hierarchy compare.
     The check sits after the target is resolved and BEFORE the level mutation.
 
-    permission = { [50]=40, [60]=50, [100]=100 } deliberately has ceilings
-    BELOW the operator's own level so (a), (b), (c) can each be isolated:
-      (a) op 60 upgrading a level-70 target        -> 70 > 60 (own level)
+    permission = { [50]=40, [60]=50, [65]=80, [100]=100 }. The [60]=50 entry
+    (ceiling below its own level) isolates (b) and (c); the [65]=80 entry
+    (ceiling ABOVE its own level) isolates (a) - a level-70 target is above the
+    operator's own level 65 but below the ceiling 80, so only (a) trips:
+      (a) op 60 upgrading a level-70 target        -> trips (a) AND (c)
+      (a-isolated) op 65 upgrading a level-70 to 45 -> 70 > 65 own only
       (b) op 60 granting level 55 to a level-40    -> 55 > 50 (ceiling)
       (c) op 60 upgrading a level-55 target to 45  -> 55 > 50 (ceiling), not >60
       skip: no actor level                          -> 200
@@ -40,7 +43,9 @@ end
 
 local _cfg = {
     language                     = "en",
-    cmd_upgrade_permission       = { [ 50 ] = 40, [ 60 ] = 50, [ 100 ] = 100 },
+    -- [65]=80 has a ceiling ABOVE its own level, so a level-70 target trips ONLY
+    -- branch (a) (70>65 own, but 70<=80 ceiling) - isolating the own-level rule.
+    cmd_upgrade_permission       = { [ 50 ] = 40, [ 60 ] = 50, [ 65 ] = 80, [ 100 ] = 100 },
     cmd_upgrade_advanced_rc      = false,
     usr_nick_prefix_activate     = false,
     usr_nick_prefix_prefix_table = { },
@@ -116,6 +121,14 @@ do -- (a) target current level (70) above the operator's own level (60)
     local r = p._http_handler_set_level( req( "Sup", 40, 60 ) )
     ok( "upgrade (a): target above operator's own level -> 403", r and r.status == 403 )
     ok( "upgrade (a): E_FORBIDDEN + no mutation", r and r.error and r.error.code == "E_FORBIDDEN" and _regnicks.Sup.level == 70 )
+end
+do -- (a) ISOLATED: op level 65 (ceiling 80, ABOVE its own level) upgrading a
+    -- level-70 target to 45 - trips ONLY (a): 70 > 65 (own) YES, granted 45 <= 80,
+    -- target 70 <= 80. So a regression that breaks ONLY branch (a) is caught here.
+    reset_levels( )
+    local r = p._http_handler_set_level( req( "Sup", 45, 65 ) )
+    ok( "upgrade (a) isolated: target above own level only (ceiling clears) -> 403", r and r.status == 403 )
+    ok( "upgrade (a) isolated: no mutation", _regnicks.Sup.level == 70 )
 end
 do -- (b) granted level (55) above the operator's ceiling (50)
     reset_levels( )
