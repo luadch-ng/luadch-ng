@@ -7,6 +7,11 @@
         - this script adds a command "reg" to reg users
         - note: be careful when using the nick prefix script: you should reg user nicks always WITHOUT prefix
 
+        v0.38:
+            - HTTP path: attribute the reg audit + the persisted `by` field to the X-Actor
+              operator via util_http.operator_label instead of the raw API token label,
+              matching the #708 ceiling that checks the same operator (#713).
+
         v0.37:
             - HTTP path: enforce the cmd_reg_permission ceiling on POST /v1/registered
               (the granted level vs the operator's ceiling) when X-Actor resolves to an
@@ -158,7 +163,7 @@
 --------------
 
 local scriptname = "cmd_reg"
-local scriptversion = "0.37"
+local scriptversion = "0.38"
 
 local cmd = "reg"
 
@@ -650,7 +655,7 @@ local http_handler_create_reguser = function( req )
         password = util.generatepass()
     end
 
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    local actor_label = util_http.operator_label( req ) -- X-Actor operator, not the token label (#713)
     -- `by` field is persisted into user.tbl and matched against
     -- `_regex.reguser.by = "^[^ \n]+$"` by hub.reguser; the router
     -- builds token_label as `<comment> (first4...last4)` which has
@@ -741,7 +746,7 @@ local http_handler_patch_reguser = function( req )
         return { status = 404, error = { code = "E_NOT_FOUND",
             message = "no registered user with nick '" .. nick .. "' (bots are not addressable via /v1/registered)" } }
     end
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    local actor_label = util_http.operator_label( req ) -- X-Actor operator, not the token label (#713)
     local clean_comment = util.strip_control_bytes( body.comment )
     -- Empty-string comment clears the description entry entirely
     -- (matches the doc'd semantics; the ADC `+reg desc <nick> ""`
