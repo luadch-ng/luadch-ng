@@ -311,6 +311,11 @@ end
 -- of the registered-users nick-keyed family (§10.2). Mirrors the
 -- PR-1 / PR-2 / PR-3 / PR-4 pattern.
 --
+-- The bearer token's `admin` scope is the base authorisation gate; on top of
+-- it the `cmd_upgrade_permission` triple ladder (see the handler) is enforced
+-- when X-Actor resolves to a known operator level (#708), mirroring the ADC
+-- path. A direct token call without X-Actor keeps the scope-only behaviour.
+-- (Pre-#708 note, now superseded:)
 -- The ADC-side `cmd_upgrade_permission` ladder (admin can only
 -- promote up to their own ceiling AND can't touch users above
 -- their own level) does NOT apply on the HTTP path: the bearer
@@ -351,6 +356,26 @@ local http_handler_set_level = function( req )
     local new_level_name = levels[ new_level ] or "Unreg"
 
     local previous_level_name = levels[ previous_level ] or "Unreg"
+
+    -- Per-operator permission ceiling for +upgrade (cmd_upgrade_permission),
+    -- mirroring the ADC guard (cmd_upgrade.lua ~209) which is a TRIPLE condition -
+    -- DENY when the operator level resolves AND any of:
+    --   (a) the target's CURRENT level is above the operator's own level,
+    --   (b) the GRANTED level is above the operator's ceiling,
+    --   (c) the target's CURRENT level is above the operator's ceiling.
+    -- (b)/(c) are the shared ceiling_denied; (a) is a direct hierarchy compare.
+    -- Enforced BEFORE the idempotent-same-level short-circuit and the mutation,
+    -- only when X-Actor resolves to a known operator level (#708); a direct token
+    -- call without X-Actor keeps the scope-only behaviour.
+    local op_level = util_http.actor_level( req )
+    if op_level ~= nil and (
+            previous_level > op_level
+            or util_http.ceiling_denied( permission, op_level, new_level )
+            or util_http.ceiling_denied( permission, op_level, previous_level )
+        ) then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "upgrade exceeds your permission ceiling (target level and/or requested level)" } }
+    end
 
     -- Idempotent: same level => 200 with online_kicked=false and
     -- no mutation. Matches PR-3 / PR-4 treatment of "same value";
@@ -473,3 +498,9 @@ hub.setlistener( "onStart", { },
 )
 
 hub_debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
+
+-- Test-only export (`_`-prefixed per PLUGIN_API §8): the #708 permission-ceiling
+-- regression test drives the HTTP upgrade handler directly.
+return {
+    _http_handler_set_level = http_handler_set_level,
+}
