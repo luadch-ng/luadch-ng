@@ -203,6 +203,12 @@ jobs:
       - name: Run cmd_reg endpoint unit test
         run: lua5.4 tests/unit/cmd_reg_endpoint_test.lua
 
+      # cmd_setpass PUT /v1/registered/{nick}/password: the per-operator
+      # cmd_setpass_permission ceiling (#708 arc A6) - deny above ceiling,
+      # skip on no actor, allow within ceiling.
+      - name: Run cmd_setpass endpoint unit test
+        run: lua5.4 tests/unit/cmd_setpass_endpoint_test.lua
+
       # cmd_talk POST /v1/chat (webui#177 A): posts to main chat as the
       # hubbot, mirrors into etc_chatlog's new log_line export, audits
       # the real operator, response sender = hubbot nick (no token leak).
@@ -715,6 +721,10 @@ jobs:
       - name: Run cmd_reg endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_reg_endpoint_test.lua
+
+      - name: Run cmd_setpass endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_setpass_endpoint_test.lua
 
       - name: Run cmd_talk chat-endpoint unit test
         shell: msys2 {0}
