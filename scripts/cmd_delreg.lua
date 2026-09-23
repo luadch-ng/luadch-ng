@@ -6,6 +6,12 @@
         - usage: [+!#]delreg nick <NICK>  |  [+!#]delreg nick <NICK> <DESCRIPTION>
 
 
+        v0.35:
+            - HTTP path: attribute the delreg audit + blacklist `by` field to the X-Actor
+              operator via util_http.operator_label (X-Actor first, token-label fallback),
+              not the raw API token label - matching ban/gag/redirect and the #708 ceiling
+              that already checks the same operator (#713).
+
         v0.34:
             - HTTP path: enforce the cmd_delreg_permission ceiling on DELETE
               /v1/registered/{nick} when X-Actor resolves to an operator level (#708);
@@ -150,7 +156,7 @@
 --------------
 
 local scriptname = "cmd_delreg"
-local scriptversion = "0.34"
+local scriptversion = "0.35"
 
 local cmd = "delreg"
 
@@ -446,7 +452,11 @@ local http_handler_delreguser = function( req )
     if ban then ban.del( nick ) end
     if block then block.del( nick ) end
 
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- Attribute to the X-Actor operator (operator_label = X-Actor first, token-label
+    -- fallback), matching ban/gag/redirect and the #708 ceiling that checks the same
+    -- operator - not the raw token label (#713). operator_label already strips control
+    -- bytes; by_label still collapses whitespace for the blacklist snapshot `by` field.
+    local actor_label = util_http.operator_label( req )
     local by_label = ( actor_label:gsub( "[%s]+", "_" ) )
     if by_label == "" then by_label = "http-api" end
 

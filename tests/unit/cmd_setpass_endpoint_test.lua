@@ -22,6 +22,11 @@
 
     FAIL-PRE-FIX: without the ceiling block the DENY case returns 200 - red.
 
+    Also asserts the #713 attribution fix (representative for the delreg / reg /
+    setpass / upgrade family): the audit actor is the X-Actor operator
+    (util_http.operator_label), not the API token label. RED-pre-fix on the old
+    token_label code.
+
     Run: lua5.4 tests/unit/cmd_setpass_endpoint_test.lua
 
 ]]--
@@ -61,7 +66,9 @@ _G.util = {
         return lo or 0
     end,
 }
-_G.audit = { build = function( ) return { } end, fire = function( ) end }
+-- Capture the audit actor so the attribution case can assert it (#713).
+local captured_actor
+_G.audit = { build = function( _ev, actor ) captured_actor = actor; return { } end, fire = function( ) end }
 _G.hub = {
     setlistener  = function( ) end,
     debug        = function( ) end,
@@ -113,6 +120,20 @@ do
     -- hubowner (ceiling 100) clears a level-100 target -> normal 200
     local r = p._http_handler_set_password( req( 100 ) )
     ok( "setpass: hubowner (100) clears the ceiling (200, not 403)", r and r.status == 200 )
+end
+do
+    -- Attribution (#713): the audit actor must be the X-Actor operator, not the API
+    -- token label. Pass a DISTINCT actor + token_label; the old code read token_label
+    -- directly, the new code reads util_http.operator_label (X-Actor first). RED-pre-fix:
+    -- on the token_label code the captured actor is "tok...", not "operator1".
+    captured_actor = nil
+    local r = p._http_handler_set_password( {
+        path_vars = { nick = "Vip" }, body = { password = "newpassword12" },
+        _actor_level = 100, actor = "operator1", token_label = "tok (aaaa...zzzz)",
+    } )
+    ok( "setpass attribution: within-ceiling change succeeds (200)", r and r.status == 200 )
+    ok( "setpass attribution: audit actor is the X-Actor operator, not the token label",
+        captured_actor and captured_actor.nick == "operator1" )
 end
 
 io.write( string.format( "\n%d checks, %d failures\n", checks, failures ) )

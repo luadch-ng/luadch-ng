@@ -5,6 +5,11 @@
         - this script adds a command "upgrade" to set or change the level of a user by sid/nick
         - usage: [+!#]upgrade sid|nick <SID>|<NICK> <LEVEL>
 
+        v0.25:
+            - HTTP path: attribute the upgrade audit to the X-Actor operator via
+              util_http.operator_label instead of the raw API token label, matching the
+              #708 ceiling that checks the same operator (#713).
+
         v0.24:
             - HTTP path: enforce the cmd_upgrade_permission ceiling on PUT
               /v1/registered/{nick}/level (the triple guard: target-current level vs the
@@ -117,7 +122,7 @@
 --------------
 
 local scriptname = "cmd_upgrade"
-local scriptversion = "0.24"
+local scriptversion = "0.25"
 
 local cmd = "upgrade"
 
@@ -401,7 +406,7 @@ local http_handler_set_level = function( req )
     profile.level = new_level
     cfg_saveusers( regusers_list )
 
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    local actor_label = util_http.operator_label( req ) -- X-Actor operator, not the token label (#713)
     local display_nick = nick
     if prefix_activate and prefix_table and prefix_table[ previous_level ] then
         display_nick = prefix_table[ previous_level ] .. nick
