@@ -88,6 +88,21 @@ _G.hub = {
     find_online_by_firstnick = function( nick ) return ONLINE[ nick ] end,
 }
 
+-- util_http mock: the per-request operator label + the permission-ceiling
+-- helpers cmd_gag's HTTP handlers use (#708). actor_level is driven per-call by
+-- a `_actor_level` field on the req; ceiling_denied mirrors the real logic so
+-- the test verifies the handler feeds it the right (permission, actor, target)
+-- args (target = the resolved user's level).
+_G.util_http = {
+    operator_label = function( req ) return ( req and req.actor ) or "http-api" end,
+    actor_level    = function( req ) return req and req._actor_level end,
+    ceiling_denied = function( permission, operator_level, target_level )
+        if operator_level == nil or target_level == nil then return false end
+        local ceiling = ( permission and permission[ operator_level ] ) or 0
+        return ceiling < target_level
+    end,
+}
+
 local p = assert( loadfile( "scripts/cmd_gag.lua" ) )( )
 
 local failures, checks = 0, 0
@@ -157,6 +172,39 @@ seed( { } )
 local empty = p._http_handler_list_gags( { } )
 ok( "empty store: status 200",                  empty and empty.status == 200 )
 ok( "empty store: gags is an empty array",      empty and empty.data and #empty.data.gags == 0 )
+
+-- ---- Per-operator permission ceiling on POST/DELETE gag (#708) ----
+-- cmd_gag_permission = { [50]=50, [60]=60, [100]=100 }. A VIP-100 target: an
+-- operator at level 60 (ceiling 60) may not gag/ungag it; a hubowner-100 may; a
+-- direct token call with no resolvable actor level keeps the scope-only path.
+local vip = {
+    level     = function( ) return 100 end,
+    firstnick = function( ) return "Vip" end,
+    nick      = function( ) return "Vip" end,
+}
+seed( { } ) -- gag store empty: an allowed/skip ungag reaches the not-gagged 404
+
+do
+    local d, e = p._http_handler_gag( { _actor_level = 60 }, vip )
+    ok( "gag: below-ceiling op (60) on a level-100 target -> denied", d == nil and e and e.status == 403 )
+    ok( "gag: denial code is E_FORBIDDEN", e and e.error and e.error.code == "E_FORBIDDEN" )
+end
+do
+    local d, e = p._http_handler_ungag( { _actor_level = 60 }, vip )
+    ok( "ungag: below-ceiling op (60) on a level-100 target -> denied", d == nil and e and e.status == 403 )
+end
+do
+    -- no resolvable actor level -> ceiling SKIPPED -> reaches the not-gagged 404
+    -- (backward-compatible with a direct token call that sends no X-Actor)
+    local d, e = p._http_handler_ungag( { }, vip )
+    ok( "ungag: no actor level -> ceiling skipped (404 not-gagged, not 403)", d == nil and e and e.status == 404 )
+end
+do
+    -- hubowner (ceiling 100) clears a level-100 target -> passes the ceiling,
+    -- then hits the not-gagged 404 (distinguishes ALLOW from the 403 DENY above)
+    local d, e = p._http_handler_ungag( { _actor_level = 100 }, vip )
+    ok( "ungag: hubowner (100) clears the ceiling (404 not-gagged, not 403)", d == nil and e and e.status == 404 )
+end
 
 io.write( string.format( "\n%d checks, %d failures\n", checks, failures ) )
 os.exit( failures == 0 and 0 or 1 )
