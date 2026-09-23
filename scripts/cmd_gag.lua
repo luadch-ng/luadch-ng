@@ -5,6 +5,11 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.17:
+                - HTTP path: enforce the cmd_gag_permission ceiling on POST/DELETE
+                  /v1/users/{sid}/gag when X-Actor resolves to an operator level (#708);
+                  a direct token call without X-Actor keeps the scope-only behaviour.
+
             v0.16:
                 - HTTP gag/ungag: the stored added_by + opchat report + audit
                   record the real operator (req.actor), not the token label; the
@@ -158,7 +163,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.16"
+local scriptversion = "0.17"
 
 local cmd = "gag"
 local prm_mute = "mute"

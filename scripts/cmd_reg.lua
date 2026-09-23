@@ -7,6 +7,12 @@
         - this script adds a command "reg" to reg users
         - note: be careful when using the nick prefix script: you should reg user nicks always WITHOUT prefix
 
+        v0.37:
+            - HTTP path: enforce the cmd_reg_permission ceiling on POST /v1/registered
+              (the granted level vs the operator's ceiling) when X-Actor resolves to an
+              operator level (#708); a direct token call without X-Actor keeps the
+              scope-only behaviour.
+
         v0.36: by Aybo
             - doc (#612): the GET /v1/registered `lastseen` filter is a
               packed-decimal YYYYMMDDHHMMSS integer (hub local time), not
@@ -152,7 +158,7 @@
 --------------
 
 local scriptname = "cmd_reg"
-local scriptversion = "0.36"
+local scriptversion = "0.37"
 
 local cmd = "reg"
 
@@ -619,7 +625,7 @@ local http_handler_create_reguser = function( req )
     -- before hub.reguser; a direct token call without X-Actor keeps scope-only.
     if util_http.ceiling_denied( permission, util_http.actor_level( req ), level ) then
         return { status = 403, error = { code = "E_FORBIDDEN",
-            message = "requested level exceeds your registration permission ceiling" } }
+            message = "requested level exceeds your reg permission ceiling" } }
     end
 
     local blacklist_tbl_local = util.loadtable( blacklist_file ) or {}

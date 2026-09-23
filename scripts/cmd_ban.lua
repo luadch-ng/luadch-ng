@@ -11,6 +11,12 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.50:
+            - HTTP path: enforce the cmd_ban_permission ceiling on POST /v1/bans and
+              the cmd_unban_permission ceiling on DELETE /v1/bans/{id} when X-Actor
+              resolves to an operator level (#708); a direct token call without
+              X-Actor keeps the scope-only behaviour.
+
         v0.49:
             - HTTP ban: the banned user (creation kick AND later reconnect) sees the
               hubbot; the stored by_nick, opchat report, audit, and response `by`
@@ -144,10 +150,14 @@
             - HTTP path applies `util.strip_control_bytes` to `reason`
               and `req.token_label` (operator-controlled cfg comment)
               before they reach the bans table / opchat report frame.
-            - HTTP path does NOT apply the ADC-side
-              `permission[level] < target:level()` hierarchy guard:
-              the bearer token's `admin` scope IS the authorisation
-              gate (matches PR-1 / PR-2 / PR-3 convention).
+            - The bearer token's `admin` scope is the base
+              authorisation gate. On top of it, the per-command
+              permission ceiling (cmd_ban_permission) is enforced when
+              X-Actor resolves to a known operator level (#708),
+              mirroring the ADC guard `permission[level] < target:level()`
+              above: an operator may not ban a target above their
+              ceiling. A direct token call without X-Actor keeps the
+              scope-only behaviour (backward-compatible).
 
         v0.36: by pulsar
             - added "years" to util.formatseconds
@@ -307,7 +317,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.49"
+local scriptversion = "0.50"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -1583,6 +1593,7 @@ return {    -- export bans
     _onbmsg                   = onbmsg,
     _http_find_online         = http_find_online,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_create_ban  = http_handler_create_ban,
     _http_handler_delete_ban  = http_handler_delete_ban,
 
 }
