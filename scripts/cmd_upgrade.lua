@@ -5,6 +5,11 @@
         - this script adds a command "upgrade" to set or change the level of a user by sid/nick
         - usage: [+!#]upgrade sid|nick <SID>|<NICK> <LEVEL>
 
+        v0.26:
+            - #726: advertise min_level (WebUI operator floor) on PUT
+              /v1/registered/{nick}/level for the WebUI capability gate; the
+              cmd_upgrade ceiling + hierarchy guard are unchanged.
+
         v0.25:
             - HTTP path: attribute the upgrade audit to the X-Actor operator via
               util_http.operator_label instead of the raw API token label, matching the
@@ -122,7 +127,7 @@
 --------------
 
 local scriptname = "cmd_upgrade"
-local scriptversion = "0.25"
+local scriptversion = "0.26"
 
 local cmd = "upgrade"
 
@@ -487,6 +492,7 @@ hub.setlistener( "onStart", { },
         if hub.http_register then
             hub.http_register( "PUT", "/v1/registered/{nick}/level", "admin", http_handler_set_level, {
                 plugin = scriptname,
+                min_level = minlevel, -- #726: WebUI floor = ADC +upgrade floor (getlowestlevel(cmd_upgrade_permission))
                 description = "change the level of a registered user (= ADC `+upgrade nick`); humans only - bots return 404. kicks the online user with `ISTA 230 ... TL300` so the client picks up the new permission set on reconnect",
                 request_schema = {
                     level = { type = "integer", required = true },

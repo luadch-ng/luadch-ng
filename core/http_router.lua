@@ -449,6 +449,15 @@ list_endpoints = function( req )
                 method      = entry.method,
                 path        = r.template,
                 scope       = r.scope,
+                -- #726: per-endpoint operator floor for the WebUI capability
+                -- gate. Present only where the registering command declared it
+                -- (the moderation / reg "verbs" whose hub handler already
+                -- enforces a cmd_*_permission ceiling or the #718 hierarchy);
+                -- nil for scope-only admin routes, where the BFF falls back to
+                -- webui_admin_min_level. It mirrors the ADC command's own
+                -- invocation floor by construction (same value the command
+                -- computes), so it tracks cfg.levels / the permission map.
+                min_level   = r.meta.min_level,
                 plugin      = r.plugin,
                 description = r.meta.description,
                 request_schema  = r.meta.request_schema,
@@ -1932,6 +1941,7 @@ return {
     _envelope_error        = envelope_error,
     _resolve_token         = resolve_token,
     _classify_apply_status = _classify_apply_status,
+    _list_endpoints        = list_endpoints,
     _generate_request_id   = generate_request_id,
     _auth_verify_handler   = auth_verify_handler,
     _user_to_json          = _user_to_json,

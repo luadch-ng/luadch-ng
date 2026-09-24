@@ -8,6 +8,17 @@
 
         note: this script needs "nick_change = true" in "cfg/cfg.tbl"
 
+        v2.2:
+            - #726: enforce the operator hierarchy on the HTTP nickchange path -
+              a mid-level operator may not rename a reg above their own level
+              (mirrors cmd_disconnect's #718 guard; nickchange has no permission
+              map, so it is a direct level compare). Attribute the report + audit
+              to the X-Actor operator via util_http.operator_label instead of the
+              raw token label (the #713 fix, which nickchange had missed - this
+              also stops a token-label leak into the operator report). Advertise
+              min_level (= ADC +nickchange others floor, cmd_nickchange_oplevel)
+              for the WebUI capability gate.
+
         v2.1:
             - #243 family-wide consistency sweep: ADC `+nickchange
               othernick` path now uses the `activate and prefix_table`
@@ -109,7 +120,7 @@
 --------------
 
 local scriptname = "cmd_nickchange"
-local scriptversion = "2.1"
+local scriptversion = "2.2"
 
 local cmd = "nickchange"
 local cmd_param_1 = "mynick"
@@ -413,11 +424,13 @@ end
 -- property of the registered-users nick-keyed family (§10.2).
 -- Mirrors the PR-1 / PR-2 / PR-3 pattern.
 --
--- The ADC-side `cfg.nick_change` global gate + `cmd_nickchange_*level`
--- ladders do NOT apply on the HTTP path: the bearer token's
--- `admin` scope IS the authorisation gate. `cfg.nick_change` is
--- the chat-side self-service feature flag for end users and
--- conceptually does not apply to an operator action via API.
+-- Authorisation: the bearer token's `admin` scope is the base gate. On
+-- top of it, an operator-hierarchy guard (via X-Actor, #726) forbids
+-- renaming a reguser ABOVE the acting operator's level - mirroring the
+-- reg-family siblings (delreg/setpass/upgrade) and cmd_disconnect's #718
+-- guard, so a mid-level operator that the WebUI capability model opens up
+-- cannot rename the hubowner. The ADC-side `cfg.nick_change` self-service
+-- feature flag conceptually does not apply to an operator action via API.
 local http_handler_set_nick = function( req )
     local nick_raw = req.path_vars and req.path_vars.nick
     if not nick_raw or nick_raw == "" then
@@ -456,6 +469,18 @@ local http_handler_set_nick = function( req )
     if profile.is_bot == 1 then
         return { status = 404, error = { code = "E_NOT_FOUND",
             message = "no registered user with nick '" .. old_nick .. "' (bots are not addressable via /v1/registered)" } }
+    end
+
+    -- #726 / #718: operator-hierarchy guard. nickchange has no
+    -- cmd_*_permission ceiling map, so this is a direct level compare
+    -- (mirrors cmd_disconnect's #718 guard), not a ceiling_denied call:
+    -- an operator may not rename a reguser above their own level. Fails
+    -- OPEN when X-Actor does not resolve to a known operator level (a
+    -- direct token call), matching the reg-family siblings.
+    local op_level = util_http.actor_level( req )
+    if op_level ~= nil and tonumber( profile.level ) and tonumber( profile.level ) > op_level then
+        return { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your level; cannot rename" } }
     end
 
     -- Idempotent: renaming to the same nick is a 200 no-op (no
@@ -509,7 +534,9 @@ local http_handler_set_nick = function( req )
     hub.updateusers()
     description_check( new_nick, old_nick )
 
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    -- #726/#713: attribute the report + audit to the X-Actor operator, not
+    -- the raw API token label (operator_label is already control-stripped).
+    local actor_label = util_http.operator_label( req )
     local msg = utf.format( msg_op2, actor_label, old_nick, new_nick )
     report.send( report_activate, report_hubbot, report_opchat, oplevel, msg )
     audit.fire( audit.build( "reg.nickchange",
@@ -555,6 +582,7 @@ hub.setlistener( "onStart", {},
         if hub.http_register then
             hub.http_register( "PUT", "/v1/registered/{nick}/nick", "admin", http_handler_set_nick, {
                 plugin = scriptname,
+                min_level = oplevel, -- #726: WebUI floor = ADC +nickchange others floor (cmd_nickchange_oplevel)
                 description = "rename a registered user (= ADC `+nickchange othernick`); kicks the user if online so the client re-connects with the new nick. humans only - bots return 404",
                 request_schema = {
                     new_nick = { type = "string", required = true, max_length = 64 },
@@ -571,3 +599,11 @@ hub.setlistener( "onStart", {},
 )
 
 hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .. " **" )
+
+-- Internal test seam (#726 hierarchy guard + #713 attribution regression).
+-- `_`-prefixed per the repo convention for non-contract, test-only exports
+-- (mirrors cmd_disconnect._http_handler_disconnect). Nothing imports this
+-- plugin, so the return value is otherwise unused by the hub loader.
+return {
+    _http_handler_set_nick = http_handler_set_nick,
+}

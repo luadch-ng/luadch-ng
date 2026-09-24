@@ -11,6 +11,11 @@
             - <time> and <reason> are optional
             - the keyword `permanent` in the <time> slot bans forever
 
+        v0.51:
+            - #726: advertise min_level (WebUI operator floor) on POST /v1/bans
+              and DELETE /v1/bans/{id} for the WebUI capability gate; the
+              hub-side cmd_ban / cmd_unban ceilings are unchanged.
+
         v0.50:
             - HTTP path: enforce the cmd_ban_permission ceiling on POST /v1/bans and
               the cmd_unban_permission ceiling on DELETE /v1/bans/{id} when X-Actor
@@ -317,7 +322,7 @@
 --------------
 
 local scriptname = "cmd_ban"
-local scriptversion = "0.50"
+local scriptversion = "0.51"
 
 local cmd = "ban"
 local cmd2 = "unban"
@@ -1540,6 +1545,7 @@ hub.setlistener( "onStart", {},
             } )
             hub.http_register( "POST", "/v1/bans", "admin", http_handler_create_ban, {
                 plugin = scriptname,
+                min_level = minlevel, -- #726: WebUI floor = ADC +ban floor (getlowestlevel(cmd_ban_permission))
                 description = "create a ban (= ADC `+ban nick|cid|ip|sid X T R`); body { target_type, target, duration_minutes?, permanent?, reason? }. permanent:true bans forever and ignores duration_minutes.",
                 request_schema = {
                     target_type      = { type = "string", required = true, enum = { "nick", "cid", "ip", "sid" } },
@@ -1558,6 +1564,7 @@ hub.setlistener( "onStart", {},
             } )
             hub.http_register( "DELETE", "/v1/bans/{id}", "admin", http_handler_delete_ban, {
                 plugin = scriptname,
+                min_level = minlevel2, -- #726: unban floor (getlowestlevel(cmd_unban_permission)), NOT the ban floor
                 description = "remove a ban by index (= ADC `+unban`). {id} is the 1-based index from GET /v1/bans; indices shift after every removal - re-list between deletes",
                 response_schema = {
                     action  = { type = "string", required = true },

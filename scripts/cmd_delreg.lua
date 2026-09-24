@@ -6,6 +6,11 @@
         - usage: [+!#]delreg nick <NICK>  |  [+!#]delreg nick <NICK> <DESCRIPTION>
 
 
+        v0.36:
+            - #726: advertise min_level (WebUI operator floor) on DELETE
+              /v1/registered/{nick} for the WebUI capability gate; the cmd_delreg
+              ceiling is unchanged.
+
         v0.35:
             - HTTP path: attribute the delreg audit + blacklist `by` field to the X-Actor
               operator via util_http.operator_label (X-Actor first, token-label fallback),
@@ -156,7 +161,7 @@
 --------------
 
 local scriptname = "cmd_delreg"
-local scriptversion = "0.35"
+local scriptversion = "0.36"
 
 local cmd = "delreg"
 
@@ -522,6 +527,7 @@ hub.setlistener( "onStart", {},
         if hub.http_register then
             hub.http_register( "DELETE", "/v1/registered/{nick}", "admin", http_handler_delreguser, {
                 plugin = scriptname,
+                min_level = minlevel, -- #726: WebUI floor = ADC +delreg floor (getlowestlevel(cmd_delreg_permission))
                 description = "delreg a registered user (= ADC `+delreg nick`); requires `X-Confirm: yes` (§4.6). humans only - bots return 404. body { reason?: string } - non-empty reason also adds the nick to the cmd_delreg blacklist",
                 request_schema = {
                     reason = { type = "string", max_length = 256 },
