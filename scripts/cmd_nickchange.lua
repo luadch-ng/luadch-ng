@@ -478,7 +478,8 @@ local http_handler_set_nick = function( req )
     -- OPEN when X-Actor does not resolve to a known operator level (a
     -- direct token call), matching the reg-family siblings.
     local op_level = util_http.actor_level( req )
-    if op_level ~= nil and tonumber( profile.level ) and tonumber( profile.level ) > op_level then
+    local target_level = tonumber( profile.level )
+    if op_level ~= nil and target_level and target_level > op_level then
         return { status = 403, error = { code = "E_FORBIDDEN",
             message = "target level exceeds your level; cannot rename" } }
     end

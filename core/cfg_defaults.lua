@@ -452,12 +452,14 @@ local defaults = {
     -- Defaults: 60 = OPERATOR, 80 = ADMIN (the standard ladder).
     webui_min_level = { 60,
         function( value )
-            return types_number( value, nil, true )
+            -- A non-negative integer level (no upper cap, so a custom level ladder is
+            -- fine). The BFF additionally enforces webui_min_level <= webui_admin_min_level.
+            return types_number( value, nil, true ) and value >= 0 and value % 1 == 0
         end
     },
     webui_admin_min_level = { 80,
         function( value )
-            return types_number( value, nil, true )
+            return types_number( value, nil, true ) and value >= 0 and value % 1 == 0
         end
     },
     -- #84: audit-log per-field caps applied by core/audit.lua at
