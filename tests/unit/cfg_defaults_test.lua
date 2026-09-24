@@ -186,6 +186,25 @@ do
 end
 
 ----------------------------------------------------------------------
+-- webui_min_level / webui_admin_min_level validators (#726 follow-up):
+-- a non-negative integer level, no upper cap (custom-ladder-safe).
+-- RED pre-fix: the validator was `types_number(value, nil, true)` alone,
+-- so a negative or fractional value validated true.
+----------------------------------------------------------------------
+
+do
+    for _, key in ipairs( { "webui_min_level", "webui_admin_min_level" } ) do
+        local validator = settings[ key ][ 2 ]
+        assert_eq( key .. ": default-range level validates true", validator( 60 ), true )
+        assert_eq( key .. ": another valid level validates true", validator( 70 ), true )
+        assert_eq( key .. ": zero validates true (a real ladder level)", validator( 0 ), true )
+        assert_eq( key .. ": high custom level validates true (no upper cap)", validator( 250 ), true )
+        assert_eq( key .. ": negative rejected", validator( -5 ), false )
+        assert_eq( key .. ": fractional rejected", validator( 60.5 ), false )
+    end
+end
+
+----------------------------------------------------------------------
 -- Result
 ----------------------------------------------------------------------
 
