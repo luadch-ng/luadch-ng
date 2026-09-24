@@ -664,6 +664,15 @@ local reload_required = function( key )
     return _reload_required_keys[ key ] == true
 end
 
+-- Drop all plugin-declared reload-required keys. Called at the START of the script
+-- (re)load cycle (core/scripts.lua) BEFORE plugins re-execute, so a plugin removed
+-- from cfg.scripts stops over-reporting its keys "reload_required"; the plugins that
+-- ARE (re)loaded re-declare their keys as they run. Clearing here (not in cfg.reload)
+-- keeps the window tight - plugins re-declare in the same reload pass.
+local clear_reload_required = function( )
+    _reload_required_keys = { }
+end
+
 reload = function( )
     local err
     _settings, err = util_loadtable( _cfgfile )
@@ -716,6 +725,7 @@ return {
     registerevent = registerevent,
     mark_reload_required = mark_reload_required,
     reload_required = reload_required,
+    clear_reload_required = clear_reload_required,
     loadcfgprofile = loadcfgprofile,
 
 }

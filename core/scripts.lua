@@ -524,6 +524,10 @@ killscripts = function( )
     _scripts = { }
     _listeners = { }
     _len = 0
+    -- Drop plugin-declared reload-required cfg keys (#707): a plugin re-declares its
+    -- keys when startscripts re-runs, so clearing on teardown stops a plugin removed
+    -- from cfg.scripts from over-reporting its keys "reload_required" until a restart.
+    cfg.clear_reload_required( )
     mem_free( )
 end
 
