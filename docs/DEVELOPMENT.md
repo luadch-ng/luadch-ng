@@ -288,10 +288,11 @@ The conventions below are either not in it or are easy to get wrong:
   that enforces a per-operator `cmd_*_permission` ceiling or the #718 hierarchy,
   set `meta.min_level = <the command's own invocation floor>` (the same local you
   pass to `hubcmd.add` / `help.reg` - e.g. `getlowestlevel(cmd_X_permission)`, or
-  `oplevel` for a set-others verb). It is advertised on `/v1/endpoints` so the
-  WebUI shows the verb to exactly the operators the hub would allow. OMIT it on a
-  scope-only admin route (no per-operator ceiling): those fall back to the WebUI
-  admin threshold. Advisory only - the router still enforces the token scope.
+  `oplevel` for a set-others verb). It is advertised on `/v1/endpoints` so the WebUI
+  shows the verb to the operators who may attempt it (the invocation floor; the
+  finer per-target ceiling stays a server-side check). OMIT it on a scope-only admin
+  route (no per-operator ceiling): those fall back to the WebUI admin threshold.
+  Advisory only - the router still enforces the token scope.
 - Request schema uses `min`/`max` (not `minimum`/`maximum`); `enum` is
   supported. Filter/sort via `core/http_filter.lua` - pick the right field
   bucket (`string_fields` = substring, `boolean_fields` = strict true/false,
