@@ -6,6 +6,11 @@
         - usage: [+!#]setpass nick <nick> <password>
         - [+!#]setpass myself <password> sets your own pasword
 
+        v0.26:
+            - HTTP path: attribute the setpass audit to the X-Actor operator via
+              util_http.operator_label instead of the raw API token label, matching the
+              #708 ceiling that checks the same operator (#713).
+
         v0.25:
             - HTTP path: enforce the cmd_setpass_permission ceiling on PUT
               /v1/registered/{nick}/password when X-Actor resolves to an operator level
@@ -124,7 +129,7 @@
 --------------
 
 local scriptname = "cmd_setpass"
-local scriptversion = "0.25"
+local scriptversion = "0.26"
 
 local cmd = "setpass"
 
@@ -420,7 +425,7 @@ local http_handler_set_password = function( req )
     -- assigned to both indexes). saveusers persists the array.
     profile.password = password
     cfg.saveusers( regusers_list )
-    local actor_label = util.strip_control_bytes( req.token_label or "http-api" )
+    local actor_label = util_http.operator_label( req ) -- X-Actor operator, not the token label (#713)
     audit.fire( audit.build( "reg.password.change",
         { nick = actor_label, sid = "<http>" },
         { nick = nick, level = tonumber( profile.level ) or 0 },

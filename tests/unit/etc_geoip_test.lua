@@ -97,6 +97,10 @@ _G.tostring = tostring
 _G.cfg = {
     get = function( k ) return _cfg[ k ] end,
     loadlanguage = function( ) return { } end,
+    -- #707: etc_geoip declares its cfg keys reload-required at load; the plugin only
+    -- needs the call to succeed here (the classifier behaviour is covered in
+    -- http_router_test).
+    mark_reload_required = function( ) end,
 }
 _G.utf = {
     format = function( fmt, ... ) return string.format( fmt, ... ) end,

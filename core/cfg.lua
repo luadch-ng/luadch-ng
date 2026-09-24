@@ -505,6 +505,7 @@ local checkusers
 --// tables //--
 
 local _event
+local _reload_required_keys
 
 local _settings
 local _defaultsettings
@@ -521,6 +522,7 @@ local _cfgfile
 
 _settings = { }
 _event = { reload = { } }
+_reload_required_keys = { }
 
 _cfgfile = CONFIG_PATH .. "cfg.tbl"
 --_cfgfile_basic = CONFIG_PATH .. "cfg_basic.tbl"
@@ -646,6 +648,31 @@ registerevent = function( what, listener )
     _event[ what ][ #tbl + 1 ] = listener
 end
 
+-- Plugin-facing apply_status metadata (#707). A core module or plugin that caches
+-- a cfg key at load and only rebuilds it on +reload (so a hot cfg.set does not
+-- reach the running check) declares the key here at load time, so PUT /v1/config
+-- reports apply_status = "reload_required" for that key instead of lying "live".
+-- The static core-key list lives in http_router (_config_reload_required); this is
+-- the dynamic, plugin-facing half (same spirit as registerevent above), consulted
+-- by http_router's _classify_apply_status. Idempotent; safe to call more than once.
+local mark_reload_required = function( key )
+    assert( type( key ) == "string" )
+    _reload_required_keys[ key ] = true
+end
+
+local reload_required = function( key )
+    return _reload_required_keys[ key ] == true
+end
+
+-- Drop all plugin-declared reload-required keys. Called at the START of the script
+-- (re)load cycle (core/scripts.lua) BEFORE plugins re-execute, so a plugin removed
+-- from cfg.scripts stops over-reporting its keys "reload_required"; the plugins that
+-- ARE (re)loaded re-declare their keys as they run. Clearing here (not in cfg.reload)
+-- keeps the window tight - plugins re-declare in the same reload pass.
+local clear_reload_required = function( )
+    _reload_required_keys = { }
+end
+
 reload = function( )
     local err
     _settings, err = util_loadtable( _cfgfile )
@@ -696,6 +723,9 @@ return {
     saveusers = saveusers,
     loadlanguage = loadlanguage,
     registerevent = registerevent,
+    mark_reload_required = mark_reload_required,
+    reload_required = reload_required,
+    clear_reload_required = clear_reload_required,
     loadcfgprofile = loadcfgprofile,
 
 }

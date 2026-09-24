@@ -5,6 +5,14 @@
 
         - Usage: [+!#]disconnect <NICK> <REASON>
 
+        v1.7:
+            - HTTP path: enforce the ADC per-target hierarchy guard on
+              DELETE /v1/users/{sid} - an operator may not kick a target above
+              their own level (a plain level compare, mirroring the ADC
+              `user_level < targetuser_level`), when X-Actor resolves to an
+              operator level (#708 arc A9 / #718); a direct token call without
+              X-Actor keeps the scope-only behaviour.
+
         v1.6:
             - HTTP kick shows the kicked user the hubbot; the opchat report + audit
               record the real operator (req.actor). ADC path unchanged. (webui#177 C)
@@ -72,7 +80,7 @@
 --------------
 
 local scriptname = "cmd_disconnect"
-local scriptversion = "1.6"
+local scriptversion = "1.7"
 
 local cmd = "disconnect"
 
@@ -213,10 +221,20 @@ end
 -- body, drive the kick + opchat report, return the
 -- action-specific fields to merge into the envelope.
 --
--- Audit log is emitted automatically by the router; the ADC-side
--- level hierarchy check does NOT apply on the HTTP path: the
--- bearer token's `admin` scope IS the authorisation gate.
+-- Audit log is emitted automatically by the router. The bearer token's `admin`
+-- scope is the base authorisation gate; on top of it the ADC-side per-target
+-- hierarchy guard (`user_level < targetuser_level`) is enforced when X-Actor
+-- resolves to a known operator level (#718), so a mid-level operator cannot kick
+-- a higher-level user (incl. the hubowner) via the BFF. disconnect uses a plain
+-- level compare, not a cmd_*_permission map, so this is a direct check rather than
+-- util_http.ceiling_denied. A direct token call without X-Actor keeps the
+-- scope-only behaviour (backward-compatible).
 local http_handler_disconnect = function( req, target )
+    local op_level = util_http.actor_level( req )
+    if op_level ~= nil and target:level() > op_level then
+        return nil, { status = 403, error = { code = "E_FORBIDDEN",
+            message = "target level exceeds your level; cannot disconnect" } }
+    end
     local reason = ( req.body and req.body.reason ) or ""
     -- #177 C: the kicked user sees the hubbot (never the operator nick or a
     -- token label); the opchat report + audit record the real operator.
@@ -271,6 +289,7 @@ hub.debug( "** Loaded " .. scriptname .. " " .. scriptversion .." **" )
 -- per the repo convention for non-contract, test-only exports (see
 -- docs/PLUGIN_API.md §8).
 return {
-    _onbmsg                  = onbmsg,
+    _onbmsg                   = onbmsg,
     _find_online_by_firstnick = find_online_by_firstnick,
+    _http_handler_disconnect  = http_handler_disconnect,
 }

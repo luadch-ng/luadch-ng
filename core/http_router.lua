@@ -1545,6 +1545,10 @@ local _config_restart_required = {
 local _classify_apply_status = function( key )
     if _config_restart_required[ key ] then return "restart_required" end
     if _config_reload_required[ key ]  then return "reload_required"  end
+    -- Plugin-declared reload-required keys (#707): a plugin that caches a cfg key
+    -- at load (etc_geoip's blocked lists etc.) marks it via cfg.mark_reload_required
+    -- so a hot cfg.set is not mis-reported "live" while the running check stays stale.
+    if cfg.reload_required( key )      then return "reload_required"  end
     return "live"
 end
 
@@ -1915,26 +1919,27 @@ end
 
 return {
 
-    register              = register,
-    unregister_all        = unregister_all,
-    dispatch              = dispatch,
-    bootstrap_first_token = bootstrap_first_token,
-    init                  = init,
+    register               = register,
+    unregister_all         = unregister_all,
+    dispatch               = dispatch,
+    bootstrap_first_token  = bootstrap_first_token,
+    init                   = init,
 
     -- exposed for unit tests (NOT for plugin use):
-    _constant_time_eq     = constant_time_eq,
-    _validate_schema      = validate_schema,
-    _envelope_success     = envelope_success,
-    _envelope_error       = envelope_error,
-    _resolve_token        = resolve_token,
-    _generate_request_id  = generate_request_id,
-    _auth_verify_handler  = auth_verify_handler,
-    _user_to_json         = _user_to_json,
-    _compile_path_pattern = compile_path_pattern,
-    _match_path           = match_path,
-    _parse_query          = parse_query,
-    _idem_lookup          = function( ... ) return idem_lookup( ... ) end,
-    _idem_store           = function( ... ) return idem_store( ... ) end,
-    _idem_clear           = function( ... ) return idem_clear( ... ) end,
+    _constant_time_eq      = constant_time_eq,
+    _validate_schema       = validate_schema,
+    _envelope_success      = envelope_success,
+    _envelope_error        = envelope_error,
+    _resolve_token         = resolve_token,
+    _classify_apply_status = _classify_apply_status,
+    _generate_request_id   = generate_request_id,
+    _auth_verify_handler   = auth_verify_handler,
+    _user_to_json          = _user_to_json,
+    _compile_path_pattern  = compile_path_pattern,
+    _match_path            = match_path,
+    _parse_query           = parse_query,
+    _idem_lookup           = function( ... ) return idem_lookup( ... ) end,
+    _idem_store            = function( ... ) return idem_store( ... ) end,
+    _idem_clear            = function( ... ) return idem_clear( ... ) end,
 
 }
