@@ -4,6 +4,11 @@
 
         usage: [+!#]redirect <NICK> <URL>
 
+        v0.11:
+            - #726: advertise min_level (WebUI operator floor = oplevel) on
+              POST /v1/users/{sid}/redirect for the WebUI capability gate; the
+              cmd_redirect ceiling is unchanged.
+
         v0.10:
             - HTTP path: enforce the cmd_redirect_permission ceiling on POST
               /v1/users/{sid}/redirect when X-Actor resolves to an operator level
@@ -58,7 +63,7 @@
 --------------
 
 local scriptname = "cmd_redirect"
-local scriptversion = "0.10"
+local scriptversion = "0.11"
 
 local cmd = "redirect"
 
@@ -293,6 +298,7 @@ hub.setlistener( "onStart", {},
         util_http.http_register_user_action( scriptname,
             "POST", "/v1/users/{sid}/redirect", "redirect",
             http_handler_redirect, {
+                min_level = oplevel, -- #726: WebUI floor = ADC +redirect floor (oplevel)
                 description = "redirect (move) an online user to a new hub URL by SID; body { url: string optional - falls back to cfg cmd_redirect_url }",
                 request_schema = {
                     url = { type = "string", max_length = 1024,

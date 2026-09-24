@@ -436,6 +436,32 @@ local defaults = {
                 and value <= 100000
         end
     },
+    -- WebUI access thresholds (#726). Consumed by the WebUI BFF (read via
+    -- GET /v1/config); the hub itself does NOT act on them. Expressed in
+    -- THIS hub's own cfg.levels numbering, so a custom level ladder just
+    -- sets its own numbers here - nothing hard-codes 60/80. A threshold is
+    -- a comparison bound ("this level and up"), so it need not be an exact
+    -- level value.
+    --   webui_min_level       = login floor: who may sign in to the WebUI.
+    --   webui_admin_min_level = admin fallback: the level required for admin-
+    --                           scoped endpoints that advertise no per-endpoint
+    --                           min_level (config, plugins, hub control). A
+    --                           per-endpoint min_level (announced in
+    --                           GET /v1/endpoints) overrides this per route.
+    -- Keep webui_min_level <= webui_admin_min_level (enforced BFF-side).
+    -- Defaults: 60 = OPERATOR, 80 = ADMIN (the standard ladder).
+    webui_min_level = { 60,
+        function( value )
+            -- A non-negative integer level (no upper cap, so a custom level ladder is
+            -- fine). The BFF additionally enforces webui_min_level <= webui_admin_min_level.
+            return types_number( value, nil, true ) and value >= 0 and value % 1 == 0
+        end
+    },
+    webui_admin_min_level = { 80,
+        function( value )
+            return types_number( value, nil, true ) and value >= 0 and value % 1 == 0
+        end
+    },
     -- #84: audit-log per-field caps applied by core/audit.lua at
     -- event build time. Caps reason strings and per-meta string
     -- values to prevent a malicious actor from blowing up a log

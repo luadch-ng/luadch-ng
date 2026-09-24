@@ -53,12 +53,15 @@ local _mock_hub = {
 -- Plugin-declared reload-required cfg keys (#707): populated per-test to drive
 -- _classify_apply_status via the same cfg.reload_required(key) the real cfg exposes.
 local _stub_reload_required = { }
+local _stub_webui_levels = { }   -- {min=, admin=}; nil entries exercise the handler's defaults (#726)
 local _mock_cfg = {
     get = function( key )
         if key == "http_api_tokens" then return _stub_cfg_tokens end
         if key == "log_api_audit" then return true end
         if key == "http_api_log_reads" then return false end
         if key == "http_api_idempotency_max_entries" then return _stub_cfg_idem_cap end
+        if key == "webui_min_level" then return _stub_webui_levels.min end
+        if key == "webui_admin_min_level" then return _stub_webui_levels.admin end
         return nil
     end,
     reload_required = function( key ) return _stub_reload_required[ key ] == true end,
@@ -489,6 +492,55 @@ do
 
     router.unregister_all( )
     _stub_cfg_tokens = { }
+end
+
+----------------------------------------------------------------------
+-- list_endpoints: the discovery catalogue advertises a per-endpoint
+-- min_level from the registering route's meta (#726), so the WebUI BFF
+-- can gate each route at the operator floor the hub already enforces
+-- (the moderation / reg verbs). A route that declares no min_level
+-- advertises nil, and the BFF then falls back to webui_admin_min_level.
+-- RED pre-fix: list_endpoints emitted no min_level field at all.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    local h = function( ) return { status = 200, data = { } } end
+    router.register( "POST", "/v1/withfloor", "admin", h, { min_level = 70 } )
+    router.register( "POST", "/v1/nofloor",   "admin", h )   -- no meta.min_level
+
+    local res = router._list_endpoints( { token_scope = "admin" } )
+    local by_path = { }
+    for _, e in ipairs( res.data.endpoints ) do
+        by_path[ e.method .. " " .. e.path ] = e
+    end
+    local wf = by_path[ "POST /v1/withfloor" ]
+    local nf = by_path[ "POST /v1/nofloor" ]
+    eq( "list_endpoints: declared min_level is advertised",           wf and wf.min_level, 70 )
+    eq( "list_endpoints: undeclared route advertises no min_level",   nf and nf.min_level, nil )
+    eq( "list_endpoints: scope still advertised alongside min_level", wf and wf.scope, "admin" )
+
+    router.unregister_all( )
+end
+
+----------------------------------------------------------------------
+-- webui_policy_handler (#726): GET /v1/webui-policy returns the two global
+-- WebUI thresholds from cfg (webui_min_level / webui_admin_min_level), and
+-- falls back to the standard-ladder defaults (60 / 80) when a key is unset.
+----------------------------------------------------------------------
+
+do
+    _stub_webui_levels = { min = 70, admin = 90 }
+    local res = router._webui_policy_handler( { } )
+    eq( "webui-policy: status 200",                res.status, 200 )
+    eq( "webui-policy: min_level from cfg",         res.data.min_level, 70 )
+    eq( "webui-policy: admin_min_level from cfg",   res.data.admin_min_level, 90 )
+
+    _stub_webui_levels = { }   -- both unset -> handler defaults
+    local res2 = router._webui_policy_handler( { } )
+    eq( "webui-policy: min_level default (60) when unset",       res2.data.min_level, 60 )
+    eq( "webui-policy: admin_min_level default (80) when unset", res2.data.admin_min_level, 80 )
+    _stub_webui_levels = { }
 end
 
 ----------------------------------------------------------------------

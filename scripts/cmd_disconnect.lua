@@ -5,6 +5,11 @@
 
         - Usage: [+!#]disconnect <NICK> <REASON>
 
+        v1.8:
+            - #726: advertise min_level (WebUI operator floor = cmd_disconnect_minlevel)
+              on DELETE /v1/users/{sid} for the WebUI capability gate; the #718
+              hierarchy guard is unchanged.
+
         v1.7:
             - HTTP path: enforce the ADC per-target hierarchy guard on
               DELETE /v1/users/{sid} - an operator may not kick a target above
@@ -80,7 +85,7 @@
 --------------
 
 local scriptname = "cmd_disconnect"
-local scriptversion = "1.7"
+local scriptversion = "1.8"
 
 local cmd = "disconnect"
 
@@ -273,6 +278,7 @@ hub.setlistener( "onStart", {},
         util_http.http_register_user_action( scriptname,
             "DELETE", "/v1/users/{sid}", "disconnect",
             http_handler_disconnect, {
+                min_level = minlevel, -- #726: WebUI floor = ADC +disconnect floor (cfg.get("cmd_disconnect_minlevel"))
                 description = "disconnect (kick) an online user by SID; body { reason: string optional }",
                 request_schema = {
                     reason = { type = "string", max_length = 256 },

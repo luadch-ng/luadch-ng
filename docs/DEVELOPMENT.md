@@ -284,6 +284,15 @@ The conventions below are either not in it or are easy to get wrong:
   register, never accept unsigned. A `scope="none"` route is still only reachable
   per the operator's `http_port` + reverse-proxy exposure. Set
   `meta.plugin = scriptname` for `/v1/endpoints` attribution.
+- **`meta.min_level` for the WebUI capability gate (#726).** On a mutating route
+  that enforces a per-operator `cmd_*_permission` ceiling or the #718 hierarchy,
+  set `meta.min_level = <the command's own invocation floor>` (the same local you
+  pass to `hubcmd.add` / `help.reg` - e.g. `getlowestlevel(cmd_X_permission)`, or
+  `oplevel` for a set-others verb). It is advertised on `/v1/endpoints` so the WebUI
+  shows the verb to the operators who may attempt it (the invocation floor; the
+  finer per-target ceiling stays a server-side check). OMIT it on a scope-only admin
+  route (no per-operator ceiling): those fall back to the WebUI admin threshold.
+  Advisory only - the router still enforces the token scope.
 - Request schema uses `min`/`max` (not `minimum`/`maximum`); `enum` is
   supported. Filter/sort via `core/http_filter.lua` - pick the right field
   bucket (`string_fields` = substring, `boolean_fields` = strict true/false,
@@ -491,10 +500,16 @@ crash / hang / OOM takes down the single-threaded hub. Required:
   A privilege check (can actor act on target?) MUST cover BOTH paths - fixing
   only one leaves an escalation hole. Grep both when touching any
   kick/ban/reg/level-change surface.
-- **HTTP admin token is total-trust.** It maps to a synthetic level-100 actor
-  and bypasses the ADC hierarchy guard by design - the token IS the trust
-  surface. Document it at the call site; never treat a token request as a
-  lower-privilege actor.
+- **A raw HTTP admin token maps to a synthetic level-100 actor** for SCOPE, and
+  with no `X-Actor` it bypasses the per-operator hierarchy/ceiling guard - the
+  token IS the trust surface. Since #708/#718/#726 that bypass holds ONLY without
+  `X-Actor`: when a request carries `X-Actor` (the WebUI BFF sends the operator's
+  base nick), the handler resolves it to that operator's REAL level and the HTTP
+  path enforces the SAME per-operator `cmd_*_permission` ceiling / #718 hierarchy
+  as the ADC path. So the WebUI capability model (per-endpoint `min_level` on
+  `/v1/endpoints`) is only safe because the BFF sends `X-Actor` on every mutating
+  call and keeps the admin token internal - a leaked token still clears the
+  ceiling. Never treat a token request as a lower-privilege actor for scope.
 - **A user-action command must reject a bot target (#355).** Any ADC command
   that resolves an online target and does something disruptive (gag / kick /
   ban / disconnect / redirect / nick or level change / setpass) must guard

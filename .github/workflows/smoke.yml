@@ -229,6 +229,14 @@ jobs:
       - name: Run cmd_disconnect endpoint unit test
         run: lua5.4 tests/unit/cmd_disconnect_endpoint_test.lua
 
+      # cmd_nickchange PUT /v1/registered/{nick}/nick (#726): the operator-
+      # hierarchy guard (deny renaming a reg above the operator's own level -
+      # no permission map, a direct level compare like #718) plus operator
+      # attribution (operator_label, not the raw token label; the #713 fix
+      # nickchange had missed).
+      - name: Run cmd_nickchange endpoint unit test
+        run: lua5.4 tests/unit/cmd_nickchange_endpoint_test.lua
+
       # cmd_talk POST /v1/chat (webui#177 A): posts to main chat as the
       # hubbot, mirrors into etc_chatlog's new log_line export, audits
       # the real operator, response sender = hubbot nick (no token leak).
@@ -757,6 +765,10 @@ jobs:
       - name: Run cmd_disconnect endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_disconnect_endpoint_test.lua
+
+      - name: Run cmd_nickchange endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_nickchange_endpoint_test.lua
 
       - name: Run cmd_talk chat-endpoint unit test
         shell: msys2 {0}

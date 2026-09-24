@@ -449,6 +449,15 @@ list_endpoints = function( req )
                 method      = entry.method,
                 path        = r.template,
                 scope       = r.scope,
+                -- #726: per-endpoint operator floor for the WebUI capability
+                -- gate. Present only where the registering command declared it
+                -- (the moderation / reg "verbs" whose hub handler already
+                -- enforces a cmd_*_permission ceiling or the #718 hierarchy);
+                -- nil for scope-only admin routes, where the BFF falls back to
+                -- webui_admin_min_level. It mirrors the ADC command's own
+                -- invocation floor by construction (same value the command
+                -- computes), so it tracks cfg.levels / the permission map.
+                min_level   = r.meta.min_level,
                 plugin      = r.plugin,
                 description = r.meta.description,
                 request_schema  = r.meta.request_schema,
@@ -1579,6 +1588,21 @@ local function config_get_handler( req )
     } }
 end
 
+-- #726 GET /v1/webui-policy: read-scoped. Exposes the two global WebUI access
+-- thresholds (cfg keys webui_min_level / webui_admin_min_level) as a small,
+-- stable contract for the WebUI BFF, so it need not scrape the full /v1/config
+-- snapshot just for them. Values are in THIS hub's own cfg.levels numbering
+-- (see cfg_defaults.lua): min_level is the login floor; admin_min_level is the
+-- fallback required level for scope-only admin routes (a per-route min_level
+-- from GET /v1/endpoints overrides it per endpoint). The hub does NOT act on
+-- these - it only advertises them; the BFF is the authorization gate.
+local function webui_policy_handler( req )
+    return { status = 200, data = {
+        min_level       = tonumber( cfg_get( "webui_min_level" ) ) or 60,
+        admin_min_level = tonumber( cfg_get( "webui_admin_min_level" ) ) or 80,
+    } }
+end
+
 -- A JSON object always decodes (dkjson) to a Lua table with STRING
 -- keys, but a level-keyed cfg map (e.g. cmd_ban_permission =
 -- { [ 0 ] = 0, ... , [ 100 ] = 100 }) is validated with INTEGER keys
@@ -1882,6 +1906,17 @@ register_core_endpoints = function( )
         -- plaintext credential - keep it out of the audit trail.
         audit_redact_body = true,
     } )
+    -- #726 WebUI access policy: the two global thresholds the WebUI BFF gates
+    -- with (login floor + admin fallback). A curated read-model over cfg so the
+    -- BFF depends on a small stable contract, not the raw /v1/config dump.
+    register( "GET", "/v1/webui-policy", "read", webui_policy_handler, {
+        plugin = "core",
+        description = "WebUI access thresholds { min_level (login floor), admin_min_level (fallback required level for admin routes that advertise no per-endpoint min_level) }; per-route floors are on GET /v1/endpoints (min_level)",
+        response_schema = {
+            min_level       = { type = "integer", required = true },
+            admin_min_level = { type = "integer", required = true },
+        },
+    } )
     -- #263 PR-A event stream (immediate-return polling).
     register( "GET", "/v1/events", "read", events_get_handler, {
         plugin = "core",
@@ -1932,6 +1967,8 @@ return {
     _envelope_error        = envelope_error,
     _resolve_token         = resolve_token,
     _classify_apply_status = _classify_apply_status,
+    _list_endpoints        = list_endpoints,
+    _webui_policy_handler  = webui_policy_handler,
     _generate_request_id   = generate_request_id,
     _auth_verify_handler   = auth_verify_handler,
     _user_to_json          = _user_to_json,
