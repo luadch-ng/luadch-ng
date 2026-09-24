@@ -50,6 +50,9 @@ local _mock_hub = {
         }
     end,
 }
+-- Plugin-declared reload-required cfg keys (#707): populated per-test to drive
+-- _classify_apply_status via the same cfg.reload_required(key) the real cfg exposes.
+local _stub_reload_required = { }
 local _mock_cfg = {
     get = function( key )
         if key == "http_api_tokens" then return _stub_cfg_tokens end
@@ -58,6 +61,7 @@ local _mock_cfg = {
         if key == "http_api_idempotency_max_entries" then return _stub_cfg_idem_cap end
         return nil
     end,
+    reload_required = function( key ) return _stub_reload_required[ key ] == true end,
 }
 local _mock_out = {
     put       = function() end,
@@ -935,6 +939,25 @@ do
     eq( "user_to_json: level intact",           j.level,       60 )
     eq( "user_to_json: share_bytes intact",     j.share_bytes, 1024 )
     eq( "user_to_json: hubs_normal intact",     j.hubs_normal, 1 )
+end
+
+----------------------------------------------------------------------
+-- #707: _classify_apply_status consults cfg.reload_required(key), so a plugin
+-- that caches a cfg key at load (etc_geoip's blocked lists etc.) and declares it
+-- via cfg.mark_reload_required makes PUT /v1/config honestly report
+-- "reload_required" instead of a lying "live". The static core key tables are
+-- checked first and are unaffected.
+do
+    _stub_reload_required = { etc_geoip_blocked_countries = true }
+    eq( "classify: plugin-declared key -> reload_required",
+        router._classify_apply_status( "etc_geoip_blocked_countries" ), "reload_required" )
+    eq( "classify: undeclared key -> live",
+        router._classify_apply_status( "some_unknown_key" ), "live" )
+    eq( "classify: static core reload key still reload_required",
+        router._classify_apply_status( "scripts" ), "reload_required" )
+    eq( "classify: static core restart key still restart_required",
+        router._classify_apply_status( "tcp_ports" ), "restart_required" )
+    _stub_reload_required = { }
 end
 
 ----------------------------------------------------------------------

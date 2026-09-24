@@ -58,6 +58,14 @@
         validation is a precondition for any connect-time policy
         filter.
 
+        v0.03:
+            - #707: declare all etc_geoip_* cfg keys reload-required via
+              cfg.mark_reload_required. They are cached at load and only rebuilt
+              on +reload, so PUT /v1/config used to report apply_status "live"
+              while the running check stayed stale (an operator thought a country
+              /ASN block was active when it was not). Now it honestly reports
+              "reload_required" and the WebUI reload-pending indicator lights up.
+
         v0.02: by Aybo
             - persist the auto-update check time (scripts/data/etc_geoip.tbl)
               and schedule the next check from it across +reload, so a
@@ -74,7 +82,7 @@
 --------------
 
 local scriptname = "etc_geoip"
-local scriptversion = "0.02"
+local scriptversion = "0.03"
 
 local cmd_status = "geoip"
 
@@ -135,6 +143,21 @@ local msg_denied      = lang.msg_denied      or "You are not allowed to use this
 -- etc_clientblocker's cfg-driven reason.
 local kick_reason     = cfg.get( "etc_geoip_kick_reason" )
                         or "Your region is not permitted on this hub."
+
+-- #707: every etc_geoip_* cfg key above is read into a module local at load and
+-- only rebuilt on +reload (the block sets at onStart, the DB handles / auto-update
+-- timer / policy scalars likewise), so a hot cfg.set does NOT reach the running
+-- check. Declare them reload-required so PUT /v1/config honestly reports
+-- apply_status = "reload_required" (the WebUI reload-pending indicator then lights
+-- up) instead of lying "live". Keep this list one-to-one with the cfg.get calls above.
+for _, k in ipairs( {
+    "etc_geoip_enabled", "etc_geoip_country_db_path", "etc_geoip_asn_db_path",
+    "etc_geoip_blocked_countries", "etc_geoip_blocked_asns", "etc_geoip_action",
+    "etc_geoip_check_levels", "etc_geoip_recheck_interval_sec", "etc_geoip_oplevel",
+    "etc_geoip_auto_update", "etc_geoip_account_id", "etc_geoip_edition_ids",
+    "etc_geoip_update_interval_sec", "etc_geoip_report", "etc_geoip_report_hubbot",
+    "etc_geoip_report_opchat", "etc_geoip_llevel", "etc_geoip_kick_reason",
+} ) do cfg.mark_reload_required( k ) end
 local msg_report      = lang.msg_report      or "[ GEOIP ]--> The user %s with IP %s (%s) is not permitted (%s). Action: %s."
 local msg_db_missing  = lang.msg_db_missing  or "etc_geoip.lua: %s database not found at '%s' - GeoIP checks for it are disabled. Run geoipupdate (see docs/BLOCKLIST.md)."
 local msg_db_stale    = lang.msg_db_stale    or "etc_geoip.lua: %s database is older than 30 days (built %s) - run geoipupdate to refresh."
