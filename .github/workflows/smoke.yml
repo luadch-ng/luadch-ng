@@ -222,6 +222,13 @@ jobs:
       - name: Run cmd_upgrade endpoint unit test
         run: lua5.4 tests/unit/cmd_upgrade_endpoint_test.lua
 
+      # cmd_disconnect DELETE /v1/users/{sid}: the per-operator hierarchy guard
+      # (#708 arc A9 / #718) - a plain level compare, not a permission map: deny
+      # kicking a target above the operator's own level (no kill), skip on no
+      # actor, allow at/below.
+      - name: Run cmd_disconnect endpoint unit test
+        run: lua5.4 tests/unit/cmd_disconnect_endpoint_test.lua
+
       # cmd_talk POST /v1/chat (webui#177 A): posts to main chat as the
       # hubbot, mirrors into etc_chatlog's new log_line export, audits
       # the real operator, response sender = hubbot nick (no token leak).
@@ -746,6 +753,10 @@ jobs:
       - name: Run cmd_upgrade endpoint unit test
         shell: msys2 {0}
         run: lua5.4 tests/unit/cmd_upgrade_endpoint_test.lua
+
+      - name: Run cmd_disconnect endpoint unit test
+        shell: msys2 {0}
+        run: lua5.4 tests/unit/cmd_disconnect_endpoint_test.lua
 
       - name: Run cmd_talk chat-endpoint unit test
         shell: msys2 {0}
