@@ -1545,6 +1545,10 @@ local _config_restart_required = {
 local _classify_apply_status = function( key )
     if _config_restart_required[ key ] then return "restart_required" end
     if _config_reload_required[ key ]  then return "reload_required"  end
+    -- Plugin-declared reload-required keys (#707): a plugin that caches a cfg key
+    -- at load (etc_geoip's blocked lists etc.) marks it via cfg.mark_reload_required
+    -- so a hot cfg.set is not mis-reported "live" while the running check stays stale.
+    if cfg.reload_required( key )      then return "reload_required"  end
     return "live"
 end
 
@@ -1927,6 +1931,7 @@ return {
     _envelope_success     = envelope_success,
     _envelope_error       = envelope_error,
     _resolve_token        = resolve_token,
+    _classify_apply_status = _classify_apply_status,
     _generate_request_id  = generate_request_id,
     _auth_verify_handler  = auth_verify_handler,
     _user_to_json         = _user_to_json,
