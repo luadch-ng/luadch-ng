@@ -6,6 +6,12 @@
         - usage: [+!#]setpass nick <nick> <password>
         - [+!#]setpass myself <password> sets your own pasword
 
+        v0.27:
+            - #726: advertise min_level (WebUI operator floor = oplevel, the
+              set-OTHERS floor, not the own-password minlevel) on PUT
+              /v1/registered/{nick}/password for the WebUI capability gate; the
+              cmd_setpass ceiling is unchanged.
+
         v0.26:
             - HTTP path: attribute the setpass audit to the X-Actor operator via
               util_http.operator_label instead of the raw API token label, matching the
@@ -129,7 +135,7 @@
 --------------
 
 local scriptname = "cmd_setpass"
-local scriptversion = "0.26"
+local scriptversion = "0.27"
 
 local cmd = "setpass"
 
@@ -492,6 +498,7 @@ hub.setlistener( "onStart", { },
         if hub.http_register then
             hub.http_register( "PUT", "/v1/registered/{nick}/password", "admin", http_handler_set_password, {
                 plugin = scriptname,
+                min_level = oplevel, -- #726: set-OTHERS floor (getlowestlevel(cmd_setpass_permission)), NOT the own-pw minlevel
                 description = "rotate the password of a registered user (= ADC `+setpass nick`); humans only - bots return 404",
                 -- Body is the new password verbatim; redact from
                 -- api_audit.log per §6.8.

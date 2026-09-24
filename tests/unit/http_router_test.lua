@@ -492,6 +492,35 @@ do
 end
 
 ----------------------------------------------------------------------
+-- list_endpoints: the discovery catalogue advertises a per-endpoint
+-- min_level from the registering route's meta (#726), so the WebUI BFF
+-- can gate each route at the operator floor the hub already enforces
+-- (the moderation / reg verbs). A route that declares no min_level
+-- advertises nil, and the BFF then falls back to webui_admin_min_level.
+-- RED pre-fix: list_endpoints emitted no min_level field at all.
+----------------------------------------------------------------------
+
+do
+    router.unregister_all( )
+    local h = function( ) return { status = 200, data = { } } end
+    router.register( "POST", "/v1/withfloor", "admin", h, { min_level = 70 } )
+    router.register( "POST", "/v1/nofloor",   "admin", h )   -- no meta.min_level
+
+    local res = router._list_endpoints( { token_scope = "admin" } )
+    local by_path = { }
+    for _, e in ipairs( res.data.endpoints ) do
+        by_path[ e.method .. " " .. e.path ] = e
+    end
+    local wf = by_path[ "POST /v1/withfloor" ]
+    local nf = by_path[ "POST /v1/nofloor" ]
+    eq( "list_endpoints: declared min_level is advertised",           wf and wf.min_level, 70 )
+    eq( "list_endpoints: undeclared route advertises no min_level",   nf and nf.min_level, nil )
+    eq( "list_endpoints: scope still advertised alongside min_level", wf and wf.scope, "admin" )
+
+    router.unregister_all( )
+end
+
+----------------------------------------------------------------------
 -- dispatch body-shape guard (§6.1): a top-level JSON *array* must be
 -- rejected, not silently accepted as a body whose named fields all read
 -- nil. Real dkjson tags a decoded array with metatable

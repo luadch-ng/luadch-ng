@@ -7,6 +7,10 @@
         - this script adds a command "reg" to reg users
         - note: be careful when using the nick prefix script: you should reg user nicks always WITHOUT prefix
 
+        v0.39:
+            - #726: advertise min_level (WebUI operator floor) on POST /v1/registered
+              for the WebUI capability gate; the cmd_reg ceiling is unchanged.
+
         v0.38:
             - HTTP path: attribute the reg audit + the persisted `by` field to the X-Actor
               operator via util_http.operator_label instead of the raw API token label,
@@ -163,7 +167,7 @@
 --------------
 
 local scriptname = "cmd_reg"
-local scriptversion = "0.38"
+local scriptversion = "0.39"
 
 local cmd = "reg"
 
@@ -813,6 +817,7 @@ hub.setlistener( "onStart", {},
             } )
             hub.http_register( "POST", "/v1/registered", "admin", http_handler_create_reguser, {
                 plugin = scriptname,
+                min_level = minlevel, -- #726: WebUI floor = ADC +reg floor (getlowestlevel(cmd_reg_permission))
                 description = "register a new user (= ADC `+reg nick`). body { nick, level, password?, comment? }; absent/empty password => auto-generated + returned",
                 -- Body may carry an operator-supplied password; redact
                 -- from api_audit.log per §6.8. Diagnostics still get

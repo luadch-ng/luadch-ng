@@ -5,6 +5,11 @@
             - this script adds a command "gag" to mute, kennylize or shadowmute a user
             - usage: [+!#]gag mute|kennylize|shadowmute|ungag|show <NICK> [<DURATION>]
 
+            v0.18:
+                - #726: advertise min_level (WebUI operator floor) on the gag /
+                  ungag endpoints for the WebUI capability gate; the cmd_gag
+                  ceiling is unchanged.
+
             v0.17:
                 - HTTP path: enforce the cmd_gag_permission ceiling on POST/DELETE
                   /v1/users/{sid}/gag when X-Actor resolves to an operator level (#708);
@@ -163,7 +168,7 @@
 --// settings begin //--
 
 local scriptname = "cmd_gag"
-local scriptversion = "0.17"
+local scriptversion = "0.18"
 
 local cmd = "gag"
 local prm_mute = "mute"
@@ -595,6 +600,7 @@ hub.setlistener("onStart", {},
         util_http.http_register_user_action(scriptname,
             "POST", "/v1/users/{sid}/gag", "gag",
             http_handler_gag, {
+                min_level = minlevel, -- #726: WebUI floor = ADC +gag floor (getlowestlevel(cmd_gag_permission))
                 description = "gag (silence) an online user by SID; body { mode: \"mute\"|\"kennylize\"|\"shadowmute\" required, duration_minutes: integer optional (omitted = permanent) }",
                 request_schema = {
                     mode = { type = "string", required = true,
@@ -607,6 +613,7 @@ hub.setlistener("onStart", {},
         util_http.http_register_user_action(scriptname,
             "DELETE", "/v1/users/{sid}/gag", "ungag",
             http_handler_ungag, {
+                min_level = minlevel, -- #726: ungag shares the +gag floor (getlowestlevel(cmd_gag_permission))
                 description = "remove an existing gag from an online user by SID",
             }
         )
