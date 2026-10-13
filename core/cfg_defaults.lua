@@ -4700,6 +4700,10 @@ local defaults = {
 
     --// RATE-LIMIT / DOS-HARDENING //--
     --
+    -- Full reference (every key, default, and what it guards): docs/SECURITY.md
+    -- section 5 "Network-level defenses". Change only the keys you want; any key
+    -- left out of cfg.tbl keeps its default here. Apply with +reload.
+    --
     -- Phase 7c. All defaults are conservative; tune to traffic profile.
     -- Op-level users (level >= ratelimit_bypass_level) bypass every
     -- per-user check below. Per-IP checks always apply.
